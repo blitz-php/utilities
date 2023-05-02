@@ -18,6 +18,8 @@ use Exception;
 use HTMLPurifier;
 use HTMLPurifier_Config;
 use InvalidArgumentException;
+use RuntimeException;
+use Throwable;
 
 class Helpers
 {
@@ -644,11 +646,11 @@ class Helpers
     }
 
     /**
-     * Recursively strips slashes from all values in an array
+     * Supprime de manière récursive les barres obliques de toutes les valeurs d'un tableau
      *
-     * @param array|string $values Array of values to strip slashes
+     * @param array|string $values Tableau de valeurs pour supprimer les barres obliques
      *
-     * @return mixed What is returned from calling stripslashes
+     * @return mixed Ce qui est retourné en appelant stripslashes
      *
      * @credit http://book.cakephp.org/2.0/en/core-libraries/global-constants-and-functions.html#stripslashes_deep
      */
@@ -705,6 +707,66 @@ class Helpers
         return $value;
     }
 
+	/**
+     * Réessayez une opération un certain nombre de fois.
+     *
+     * @throws Exception
+	 *
+	 * @credit <a href="http://laravel.com/">Laravel</a>
+     */
+    public static function retry(int|array $times, callable $callback, int|Closure $sleepMilliseconds = 0, ?callable $when = null): mixed
+    {
+        $attempts = 0;
+
+        $backoff = [];
+
+        if (is_array($times)) {
+            $backoff = $times;
+
+            $times = count($times) + 1;
+        }
+
+        beginning:
+        $attempts++;
+        $times--;
+
+        try {
+            return $callback($attempts);
+        } catch (Exception $e) {
+            if ($times < 1 || ($when && ! $when($e))) {
+                throw $e;
+            }
+
+            $sleepMilliseconds = $backoff[$attempts - 1] ?? $sleepMilliseconds;
+
+            if ($sleepMilliseconds) {
+                usleep(static::value($sleepMilliseconds, $attempts, $e) * 1000);
+            }
+
+            goto beginning;
+        }
+    }
+
+	/**
+     * Lève l'exception donnée si la condition donnée est vraie.
+     *
+     * @throws Throwable
+	 *
+	 * @credit <a href="http://laravel.com/">Laravel</a>
+     */
+    public static function throwIf(mixed $condition, string|Throwable $exception = 'RuntimeException', ...$parameters): mixed
+    {
+        if ($condition) {
+            if (is_string($exception) && class_exists($exception)) {
+                $exception = new $exception(...$parameters);
+            }
+
+            throw is_string($exception) ? new RuntimeException($exception) : $exception;
+        }
+
+        return $condition;
+    }
+
     /**
      * Récupère la classe "basename" de l'objet/classe donné.
      *
@@ -732,7 +794,7 @@ class Helpers
     }
 
     /**
-     * Returns all traits used by a class, its parent classes and trait of their traits.
+     * Renvoie tous les traits utilisés par une classe, ses classes parentes et le trait de leurs traits.
      *
      * @codeCoverageIgnore
      */
@@ -752,7 +814,7 @@ class Helpers
     }
 
     /**
-     * Returns all traits used by a trait and its traits.
+     * Renvoie tous les traits utilisés par un trait et ses traits.
      *
      * @codeCoverageIgnore
      */

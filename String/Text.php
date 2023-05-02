@@ -662,6 +662,10 @@ class Text
      */
     public static function isAscii(string $value): bool
     {
+        if (function_exists('mb_detect_encoding')) {
+            return mb_detect_encoding($value, 'ASCII', true) !== false;
+        }
+
         return preg_match('/[^\x00-\x7F]/S', $value) === 0;
     }
 
