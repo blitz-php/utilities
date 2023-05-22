@@ -105,7 +105,7 @@ class Date extends DateTime
         }
 
         $timezone       = $timezone ?: date_default_timezone_get();
-        $this->timezone = $this->parseSuppliedTimezone($timezone);
+        $this->timezone = static::parseSuppliedTimezone($timezone);
 
         // If the time string was a relative string (i.e. 'next Tuesday')
         // then we need to adjust the time going in so that we have a current
@@ -245,8 +245,10 @@ class Date extends DateTime
     /**
      * Parse a string into a new DateTime object according to the specified format
      */
-    public static function createFromFormat(string $format, string $datetime, ?DateTimeZone $timezone = null): static
+    public static function createFromFormat(string $format, string $datetime, DateTimeZone|string|null $timezone = null): static
     {
+		$timezone = static::parseSuppliedTimezone($timezone);
+
         $date = parent::createFromFormat($format, $datetime, $timezone);
 
         return static::create($date->format('Y-m-d H:i:s'), $timezone);
@@ -868,7 +870,7 @@ class Date extends DateTime
      */
     public function setTimezone(string|DateTimeZone $timezone): static
     {
-        $this->timezone = $this->parseSuppliedTimezone($timezone);
+        $this->timezone = static::parseSuppliedTimezone($timezone);
 
         return static::createFromInstance($this->toDateTime()->setTimezone($this->timezone));
     }
@@ -1777,7 +1779,7 @@ class Date extends DateTime
     /**
      * Parse a supplied timezone.
      */
-    protected function parseSuppliedTimezone(string|DateTimeZone|null $timezone): ?DateTimeZone
+    protected static function parseSuppliedTimezone(string|DateTimeZone|null $timezone): ?DateTimeZone
     {
         if ($timezone instanceof DateTimeZone || null === $timezone) {
             return $timezone;
