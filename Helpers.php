@@ -100,7 +100,7 @@ class Helpers
      */
     public static function isReallyWritable(string $file): bool
     {
-        // If we're on a Unix server with safe_mode off we call is_writable
+        // Si nous sommes sur un serveur Unix avec safe_mode désactivé, nous appelons is_writable
         if (DIRECTORY_SEPARATOR === '/' || ! ini_get('safe_mode')) {
             return is_writable($file);
         }
@@ -127,6 +127,56 @@ class Helpers
         fclose($fp);
 
         return true;
+    }
+
+    /**
+     * Verifies si un chemin donnée est une url absolue ou relative
+     */
+    public static function isAbsoluteUrl(string $path): bool
+    {
+        return preg_match('#^(?:[a-z+]+:)?//#i', $path);
+    }
+
+    /**
+     * Verifies si un chemin donnée est un chemin absolu ou relatif
+     */
+    public static function isAbsolutePath(string $path, bool $verbose = false): bool
+    {
+        if (!ctype_print($path)) {
+            if ($verbose) {
+                throw new \DomainException('Le chemin ne peut PAS contenir de caractères non imprimables ou être vide');
+            }
+            return false;
+        }
+
+        // Emballage(s) facultatif(s).
+        $regExp = '%^(?<wrappers>(?:[[:print:]]{2,}://)*)';
+        // Préfixe racine facultatif.
+        $regExp .= '(?<root>(?:[[:alpha:]]:/|/)?)';
+        // Chemin réel.
+        $regExp .= '(?<path>(?:[[:print:]]*))$%';
+        $parts = [];
+         
+        if (!preg_match($regExp, $path, $parts)) {
+            if ($verbose) {
+                throw new \DomainException(sprintf('Le chemin n\'est PAS valide, a été donné %s', $path));
+            }
+            return false;
+        }
+
+        return '' !== $parts['root'];
+    }
+
+    /**
+     * Vérifiez si une chaîne est encodée en Base64.
+     */
+    public static function isBase64Encoded(string $input)
+    {
+        if (false === $str = base64_decode($input, false)) {
+            return false;
+        } 
+  
+        return $input === base64_encode($str);
     }
 
     public static function cleanUrl(string $url): string
