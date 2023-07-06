@@ -906,6 +906,23 @@ class Text
         return implode('', $parts) . static::plural($lastWord, $count);
     }
 
+	/**
+     * Encode une chaîne sous forme de chaîne entre guillemets, si nécessaire.
+     *
+     * Si une chaîne contient des caractères non autorisés par la construction "token" dans la spécification HTTP,
+	 * il est échappé par une barre oblique inverse et placé entre guillemets pour correspondre à la construction "quoted-string".
+	 *
+	 * @credit <a href="symfony.com">Symfony - Symfony\Component\HttpFoundation::quote</a>
+     */
+    public static function quote(string $value): string
+    {
+        if (preg_match('/^[a-z0-9!#$%&\'*.^_`|~-]+$/i', $value)) {
+            return $value;
+        }
+
+        return '"' . addcslashes($value, '"\\"') . '"';
+    }
+
     /**
      * Generate a more truly "random" alpha-numeric string.
      */

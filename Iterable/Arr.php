@@ -1414,6 +1414,32 @@ class Arr
         return implode(' ', $styles);
     }
 
+	/**
+     * Joint un tableau associatif dans une chaîne.
+     *
+     * La clé et la valeur de chaque entrée sont jointes par "=", et toutes les entrées sont jointes par le séparateur spécifié et un espace supplémentaire (pour la lisibilité).
+	 * Les valeurs sont citées si nécessaire.
+     *
+     * Exemple:
+     *
+     *     Arr::toString(["foo" => "abc", "bar" => true, "baz" => "a b c"], ",")
+     *     // => 'foo=abc, bar, baz="a b c"'
+	 * @credit <a href="symfony.com">Symfony - Symfony\Component\HttpFoundation::toString</a>
+     */
+    public static function toString(array $array, string $separator, bool $space = true): string
+    {
+        $parts = [];
+        foreach ($array as $name => $value) {
+            if (true === $value) {
+                $parts[] = $name;
+            } else {
+                $parts[] = $name . '=' . Text::quote($value);
+            }
+        }
+
+        return implode($separator . ($space ? ' ' : ''), $parts);
+    }
+
     /**
      * Filter the array using the given callback.
      */
