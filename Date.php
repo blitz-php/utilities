@@ -124,6 +124,10 @@ class Date extends DateTime
      */
     public function __call(string $method, array $parameters = []): mixed
     {
+        if (isset($this->facadesMethodsMapping[$method])) {
+            return call_user_func_array([$this, $this->facadesMethodsMapping[$method]], $parameters);
+        }
+
         if (substr($method, 0, 3) === 'set') {
             return $this->setDateAttribute(substr($method, 3), $parameters[0]);
         }
@@ -132,10 +136,6 @@ class Date extends DateTime
         }
         if (substr($method, 0, 2) === 'is') {
             return $this->isDateAttribute(substr($method, 2));
-        }
-
-        if (isset($this->facadesMethodsMapping[$method])) {
-            return call_user_func_array([$this, $this->facadesMethodsMapping[$method]], $parameters);
         }
 
         if (method_exists($this, $m = 'get' . ucfirst($method)) && $parameters === []) {
