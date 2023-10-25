@@ -134,7 +134,7 @@ class Helpers
      */
     public static function isAbsoluteUrl(string $path): bool
     {
-        return preg_match('#^(?:[a-z+]+:)?//#i', $path);
+        return preg_match('#^(?:[a-z+]+:)?//#i', $path) !== false;
     }
 
     /**
@@ -156,7 +156,7 @@ class Helpers
         // Chemin réel.
         $regExp .= '(?<path>(?:[[:print:]]*))$%';
         $parts = [];
-         
+
         if (!preg_match($regExp, $path, $parts)) {
             if ($verbose) {
                 throw new \DomainException(sprintf('Le chemin n\'est PAS valide, a été donné %s', $path));
@@ -174,8 +174,8 @@ class Helpers
     {
         if (false === $str = base64_decode($input, false)) {
             return false;
-        } 
-  
+        }
+
         return $input === base64_encode($str);
     }
 
