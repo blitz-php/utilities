@@ -14,6 +14,7 @@ namespace BlitzPHP\Utilities;
 use BlitzPHP\Traits\Mixins\HigherOrderTapProxy;
 use BlitzPHP\Utilities\Iterable\Collection;
 use Closure;
+use DomainException;
 use Exception;
 use HTMLPurifier;
 use HTMLPurifier_Config;
@@ -115,7 +116,7 @@ class Helpers
             }
 
             fclose($fp);
-            @chmod($file, 0777);
+            @chmod($file, 0o777);
             @unlink($file);
 
             return true;
@@ -142,10 +143,11 @@ class Helpers
      */
     public static function isAbsolutePath(string $path, bool $verbose = false): bool
     {
-        if (!ctype_print($path)) {
+        if (! ctype_print($path)) {
             if ($verbose) {
-                throw new \DomainException('Le chemin ne peut PAS contenir de caractères non imprimables ou être vide');
+                throw new DomainException('Le chemin ne peut PAS contenir de caractères non imprimables ou être vide');
             }
+
             return false;
         }
 
@@ -157,10 +159,11 @@ class Helpers
         $regExp .= '(?<path>(?:[[:print:]]*))$%';
         $parts = [];
 
-        if (!preg_match($regExp, $path, $parts)) {
+        if (! preg_match($regExp, $path, $parts)) {
             if ($verbose) {
-                throw new \DomainException(sprintf('Le chemin n\'est PAS valide, a été donné %s', $path));
+                throw new DomainException(sprintf('Le chemin n\'est PAS valide, a été donné %s', $path));
             }
+
             return false;
         }
 
@@ -461,7 +464,7 @@ class Helpers
                 return ! empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
             }
 
-            return strpos((string) self::env('SCRIPT_URI'), 'https://') === 0;
+            return str_starts_with((string) self::env('SCRIPT_URI'), 'https://');
         }
 
         if ($key === 'SCRIPT_NAME' && self::env('CGI_MODE') && isset($_ENV['SCRIPT_URL'])) {
@@ -511,7 +514,7 @@ class Helpers
     public static function findBaseUrl(): string
     {
         if (isset($_SERVER['SERVER_ADDR'])) {
-            $server_addr = $_SERVER['HTTP_HOST'] ?? ((strpos($_SERVER['SERVER_ADDR'], ':') !== false) ? '[' . $_SERVER['SERVER_ADDR'] . ']' : $_SERVER['SERVER_ADDR']);
+            $server_addr = $_SERVER['HTTP_HOST'] ?? ((str_contains($_SERVER['SERVER_ADDR'], ':')) ? '[' . $_SERVER['SERVER_ADDR'] . ']' : $_SERVER['SERVER_ADDR']);
 
             if (
                 (! empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off')
@@ -531,41 +534,41 @@ class Helpers
         return $base_url;
     }
 
-	/**
-	 * Obtenez l'adresse IP que le client utilise ou dit qu'il utilise.
-	 */
-	public static function ipAddress(): string
-	{
-		// Obtenez une véritable IP de visiteur derrière le réseau CloudFlare
-		if (isset($_SERVER["HTTP_CF_CONNECTING_IP"])) {
-			$_SERVER['REMOTE_ADDR'] = $_SERVER["HTTP_CF_CONNECTING_IP"];
-			$_SERVER['HTTP_CLIENT_IP'] = $_SERVER["HTTP_CF_CONNECTING_IP"];
-    	}
+    /**
+     * Obtenez l'adresse IP que le client utilise ou dit qu'il utilise.
+     */
+    public static function ipAddress(): string
+    {
+        // Obtenez une véritable IP de visiteur derrière le réseau CloudFlare
+        if (isset($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+            $_SERVER['REMOTE_ADDR']    = $_SERVER['HTTP_CF_CONNECTING_IP'];
+            $_SERVER['HTTP_CLIENT_IP'] = $_SERVER['HTTP_CF_CONNECTING_IP'];
+        }
 
-		$client  = $_SERVER['HTTP_CLIENT_IP'] ?? '';
-    	$forward = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '';
-    	$remote  = $_SERVER['REMOTE_ADDR'] ?? '';
+        $client  = $_SERVER['HTTP_CLIENT_IP'] ?? '';
+        $forward = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '';
+        $remote  = $_SERVER['REMOTE_ADDR'] ?? '';
 
-    	if (filter_var($client, FILTER_VALIDATE_IP)) {
-        	$ip = $client;
-    	} else if (filter_var($forward, FILTER_VALIDATE_IP)) {
-        	$ip = $forward;
-    	} else if (filter_var($remote, FILTER_VALIDATE_IP)) {
-        	$ip = $remote;
-    	} else {
-			$ip = $_SERVER["SERVER_ADDR"] ?? '';
-			if (empty($ip) || $ip === '::1') {
-				$ip = gethostname();
-				if ($ip) {
-					$ip = gethostbyname($ip);
-				} else {
-					$ip = $_SESSION['HTTP_HOST'] ?? '127.0.0.1';
-				}
-			}
-		}
+        if (filter_var($client, FILTER_VALIDATE_IP)) {
+            $ip = $client;
+        } elseif (filter_var($forward, FILTER_VALIDATE_IP)) {
+            $ip = $forward;
+        } elseif (filter_var($remote, FILTER_VALIDATE_IP)) {
+            $ip = $remote;
+        } else {
+            $ip = $_SERVER['SERVER_ADDR'] ?? '';
+            if (empty($ip) || $ip === '::1') {
+                $ip = gethostname();
+                if ($ip) {
+                    $ip = gethostbyname($ip);
+                } else {
+                    $ip = $_SESSION['HTTP_HOST'] ?? '127.0.0.1';
+                }
+            }
+        }
 
-    	return $ip;
-	}
+        return $ip;
+    }
 
     /**
      * Jolie fonction de commodité d'impression JSON.
@@ -663,7 +666,7 @@ class Helpers
      */
     public static function pluginSplit(string $name, bool $dotAppend = false, ?string $plugin = null): array
     {
-        if (strpos($name, '.') !== false) {
+        if (str_contains($name, '.')) {
             $parts = explode('.', $name, 2);
             if ($dotAppend) {
                 $parts[0] .= '.';
@@ -757,14 +760,14 @@ class Helpers
         return $value;
     }
 
-	/**
+    /**
      * Réessayez une opération un certain nombre de fois.
      *
      * @throws Exception
-	 *
-	 * @credit <a href="http://laravel.com/">Laravel</a>
+     *
+     * @credit <a href="http://laravel.com/">Laravel</a>
      */
-    public static function retry(int|array $times, callable $callback, int|Closure $sleepMilliseconds = 0, ?callable $when = null): mixed
+    public static function retry(array|int $times, callable $callback, Closure|int $sleepMilliseconds = 0, ?callable $when = null): mixed
     {
         $attempts = 0;
 
@@ -797,12 +800,12 @@ class Helpers
         }
     }
 
-	/**
+    /**
      * Lève l'exception donnée si la condition donnée est vraie.
      *
      * @throws Throwable
-	 *
-	 * @credit <a href="http://laravel.com/">Laravel</a>
+     *
+     * @credit <a href="http://laravel.com/">Laravel</a>
      */
     public static function throwIf(mixed $condition, string|Throwable $exception = 'RuntimeException', ...$parameters): mixed
     {
@@ -824,7 +827,7 @@ class Helpers
      *
      * @codeCoverageIgnore
      */
-    public static function classBasename(string|object $class): string
+    public static function classBasename(object|string $class): string
     {
         $class = is_object($class) ? get_class($class) : $class;
 
@@ -848,7 +851,7 @@ class Helpers
      *
      * @codeCoverageIgnore
      */
-    public static function classUsesRecursive(string|object $class): array
+    public static function classUsesRecursive(object|string $class): array
     {
         if (is_object($class)) {
             $class = get_class($class);

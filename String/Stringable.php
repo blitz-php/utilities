@@ -190,7 +190,7 @@ class Stringable implements JsonSerializable
     /**
      * Determine if the string is an exact match with the given value.
      */
-    public function exactly(Stringable|string $value): bool
+    public function exactly(string|Stringable $value): bool
     {
         if ($value instanceof Stringable) {
             $value = $value->toString();
@@ -218,7 +218,7 @@ class Stringable implements JsonSerializable
     /**
      * Split a string using a regular expression or by length.
      */
-    public function split(string|int $pattern, int $limit = -1, int $flags = 0): Collection
+    public function split(int|string $pattern, int $limit = -1, int $flags = 0): Collection
     {
         if (filter_var($pattern, FILTER_VALIDATE_INT) !== false) {
             return new Collection(mb_str_split($this->value, $pattern));

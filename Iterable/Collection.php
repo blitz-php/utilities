@@ -388,7 +388,7 @@ class Collection implements ArrayAccess, Enumerable
     /**
      * {@inheritDoc}
      */
-    public function get(int|string|null $key, mixed $default = null): mixed
+    public function get(null|int|string $key, mixed $default = null): mixed
     {
         if ($this->offsetExists($key)) {
             return $this->items[$key];
@@ -1164,7 +1164,7 @@ class Collection implements ArrayAccess, Enumerable
     /**
      * Triez la collection à l'aide de plusieurs comparaisons.
      *
-     * @param  array<int|string, (callable(mixed, mixed): mixed)|(callable(TValue, TKey): mixed)|string|array{string, string}>  $comparisons
+     * @param array<int|string, (callable(mixed, mixed): mixed)|(callable(TValue, TKey): mixed)|array{string, string}|string> $comparisons
      *
      * @return static
      */
@@ -1289,7 +1289,7 @@ class Collection implements ArrayAccess, Enumerable
     /**
      * Transformez chaque élément de la collection à l'aide d'un callback.
      *
-     * @param  callable(mixed $value, int|string $key): mixed  $callback
+     * @param callable(mixed $value, int|string $key): mixed $callback
      */
     public function transform(callable $callback)
     {

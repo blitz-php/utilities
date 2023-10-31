@@ -386,7 +386,7 @@ class Arr
     /**
      * Explode the "value" and "key" arguments passed to "pluck".
      */
-    protected static function explodePluckParameters(array|string $value, array|string|null $key): array
+    protected static function explodePluckParameters(array|string $value, null|array|string $key): array
     {
         $value = is_string($value) ? explode('.', $value) : $value;
 
@@ -437,7 +437,7 @@ class Arr
             return (array) self::get($data, $path);
         }
 
-        if (strpos($path, '[') === false) {
+        if (! str_contains($path, '[')) {
             $tokens = explode('.', $path);
         } else {
             $tokens = Text::tokenize($path, '.', '[', ']');
@@ -795,7 +795,7 @@ class Arr
     /**
      * Determine if any of the keys exist in an array using "dot" notation.
      */
-    public static function hasAny(ArrayAccess|array $array, string|array $keys): bool
+    public static function hasAny(array|ArrayAccess $array, array|string $keys): bool
     {
         if (null === $keys) {
             return false;
@@ -834,12 +834,12 @@ class Arr
      */
     public static function insert(array $data, $path, $values = null)
     {
-        if (strpos($path, '[') === false) {
+        if (! str_contains($path, '[')) {
             $tokens = explode('.', $path);
         } else {
             $tokens = Text::tokenize($path, '.', '[', ']');
         }
-        if (strpos($path, '{') === false && strpos($path, '[') === false) {
+        if (! str_contains($path, '{') && ! str_contains($path, '[')) {
             return self::_simpleOp('insert', $data, $tokens, $values);
         }
 
@@ -1077,7 +1077,7 @@ class Arr
     /**
      * Push an item onto the beginning of an array.
      */
-    public static function prepend(array $array, mixed $value, int|string $key = null): array
+    public static function prepend(array $array, mixed $value, null|int|string $key = null): array
     {
         if (null === $key) {
             array_unshift($array, $value);
@@ -1091,7 +1091,7 @@ class Arr
     /**
      * Get a value from the array, and remove it.
      */
-    public static function pull(array &$array, string|int $key, mixed $default = null): mixed
+    public static function pull(array &$array, int|string $key, mixed $default = null): mixed
     {
         $value = static::get($array, $key, $default);
 
@@ -1166,13 +1166,13 @@ class Arr
      */
     public static function remove(array $data, $path)
     {
-        if (strpos($path, '[') === false) {
+        if (! str_contains($path, '[')) {
             $tokens = explode('.', $path);
         } else {
             $tokens = Text::tokenize($path, '.', '[', ']');
         }
 
-        if (strpos($path, '{') === false && strpos($path, '[') === false) {
+        if (! str_contains($path, '{') && ! str_contains($path, '[')) {
             return self::_simpleOp('remove', $data, $tokens);
         }
 
@@ -1206,7 +1206,7 @@ class Arr
      *
      * If no key is given to the method, the entire array will be replaced.
      */
-    public static function set(array &$array, string|int|null $key, mixed $value): array
+    public static function set(array &$array, null|int|string $key, mixed $value): array
     {
         if (null === $key) {
             return $array = $value;
@@ -1414,21 +1414,23 @@ class Arr
         return implode(' ', $styles);
     }
 
-	/**
+    /**
      * Joint un tableau associatif dans une chaîne.
      *
      * La clé et la valeur de chaque entrée sont jointes par "=", et toutes les entrées sont jointes par le séparateur spécifié et un espace supplémentaire (pour la lisibilité).
-	 * Les valeurs sont citées si nécessaire.
+     * Les valeurs sont citées si nécessaire.
      *
      * Exemple:
      *
      *     Arr::toString(["foo" => "abc", "bar" => true, "baz" => "a b c"], ",")
      *     // => 'foo=abc, bar, baz="a b c"'
-	 * @credit <a href="symfony.com">Symfony - Symfony\Component\HttpFoundation::toString</a>
+     *
+     * @credit <a href="symfony.com">Symfony - Symfony\Component\HttpFoundation::toString</a>
      */
     public static function toString(array $array, string $separator, bool $space = true): string
     {
         $parts = [];
+
         foreach ($array as $name => $value) {
             if (true === $value) {
                 $parts[] = $name;

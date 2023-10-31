@@ -89,7 +89,7 @@ class Date extends DateTime
     /**
      * Create a new Date instance.
      */
-    public function __construct(?string $time = '', string|DateTimeZone|null $timezone = self::DEFAULT_TIMEZONE, protected ?string $locale = null)
+    public function __construct(?string $time = '', null|DateTimeZone|string $timezone = self::DEFAULT_TIMEZONE, protected ?string $locale = null)
     {
         $time ??= '';
 
@@ -210,7 +210,7 @@ class Date extends DateTime
      *
      * @return static
      */
-    public static function create(string $time = 'now', string|DateTimeZone|null $timezone = null, ?string $locale = null)
+    public static function create(string $time = 'now', null|DateTimeZone|string $timezone = null, ?string $locale = null)
     {
         return new static($time, $timezone, $locale);
     }
@@ -220,7 +220,7 @@ class Date extends DateTime
      *
      * @return static
      */
-    public static function createFromDate(?int $year = null, ?int $month = null, ?int $day = null, string|DateTimeZone $timezone = null)
+    public static function createFromDate(?int $year = null, ?int $month = null, ?int $day = null, null|DateTimeZone|string $timezone = null)
     {
         return static::createFromDateTime($year, $month, $day, null, null, null, $timezone);
     }
@@ -230,7 +230,7 @@ class Date extends DateTime
      *
      * @return static
      */
-    public static function createFromDateTime(?int $year = null, ?int $month = null, ?int $day = null, ?int $hour = null, ?int $minutes = null, ?int $seconds = null, string|DateTimeZone $timezone = null)
+    public static function createFromDateTime(?int $year = null, ?int $month = null, ?int $day = null, ?int $hour = null, ?int $minutes = null, ?int $seconds = null, null|DateTimeZone|string $timezone = null)
     {
         $year ??= date('Y');
         $month ??= date('m');
@@ -245,9 +245,9 @@ class Date extends DateTime
     /**
      * Parse a string into a new DateTime object according to the specified format
      */
-    public static function createFromFormat(string $format, string $datetime, DateTimeZone|string|null $timezone = null): static
+    public static function createFromFormat(string $format, string $datetime, null|DateTimeZone|string $timezone = null): static
     {
-		$timezone = static::parseSuppliedTimezone($timezone);
+        $timezone = static::parseSuppliedTimezone($timezone);
 
         $date = parent::createFromFormat($format, $datetime, $timezone);
 
@@ -272,7 +272,7 @@ class Date extends DateTime
      *
      * @return static
      */
-    public static function createFromTime(?int $hour = null, ?int $minutes = null, ?int $seconds = null, string|DateTimeZone $timezone = null)
+    public static function createFromTime(?int $hour = null, ?int $minutes = null, ?int $seconds = null, null|DateTimeZone|string $timezone = null)
     {
         return static::createFromDateTime(null, null, null, $hour, $minutes, $seconds, $timezone);
     }
@@ -282,7 +282,7 @@ class Date extends DateTime
      *
      * @return static
      */
-    public static function createFromTimestamp(int $timestamp, DateTimeZone|string $timezone = null)
+    public static function createFromTimestamp(int $timestamp, null|DateTimeZone|string $timezone = null)
     {
         return static::create(gmdate('Y-m-d H:i:s', $timestamp), $timezone);
     }
@@ -296,7 +296,7 @@ class Date extends DateTime
      *
      * @return static|string The DateTime object or a formatted string
      */
-    public static function now(DateTimeZone|string|null $timezone = null, ?string $format = null)
+    public static function now(null|DateTimeZone|string $timezone = null, ?string $format = null)
     {
         $date = new static(null, $timezone);
         $date->setTimestamp(time());
@@ -316,7 +316,7 @@ class Date extends DateTime
      *
      * @return static
      */
-    public static function parse(string $datetime, DateTimeZone|string|null $timezone = null, ?string $locale = null)
+    public static function parse(string $datetime, null|DateTimeZone|string $timezone = null, ?string $locale = null)
     {
         return new static($datetime, $timezone, $locale);
     }
@@ -330,7 +330,7 @@ class Date extends DateTime
      *
      * @return static|string The DateTime object or a formatted string
      */
-    public static function today(string|DateTimeZone|null $timezone = null, ?string $format = null)
+    public static function today(null|DateTimeZone|string $timezone = null, ?string $format = null)
     {
         $date = new static(date('Y-m-d 00:00:00'), $timezone);
 
@@ -350,7 +350,7 @@ class Date extends DateTime
      *
      * @return static|string The DateTime object or a formatted string
      */
-    public static function tomorrow(string|DateTimeZone|null $timezone = null, ?string $format = null)
+    public static function tomorrow(null|DateTimeZone|string $timezone = null, ?string $format = null)
     {
         $date = new static(date('Y-m-d 00:00:00', strtotime('+1 day')), $timezone);
 
@@ -370,7 +370,7 @@ class Date extends DateTime
      *
      * @return static|string The DateTime object or a formatted string
      */
-    public static function yesterday(string|DateTimeZone|null $timezone = null, ?string $format = null)
+    public static function yesterday(null|DateTimeZone|string $timezone = null, ?string $format = null)
     {
         $date = new static(date('Y-m-d 00:00:00', strtotime('-1 day')), $timezone);
 
@@ -409,7 +409,7 @@ class Date extends DateTime
      *
      * @return DateTimeInterface|false Date if valid and false if not
      */
-    public static function convertToDate(string|DateTimeInterface $date, string $timezone = self::DEFAULT_TIMEZONE)
+    public static function convertToDate(DateTimeInterface|string $date, string $timezone = self::DEFAULT_TIMEZONE)
     {
         if (is_string($date)) {
             // Set the timezone to default
@@ -492,7 +492,7 @@ class Date extends DateTime
      * Creates an instance of Date that will be returned during testing
      * when calling 'Date::now()' instead of the current time.
      */
-    public static function setTestNow(DateTimeInterface|string|null $datetime = null, DateTimeZone|string|null $timezone = null, ?string $locale = null)
+    public static function setTestNow(null|DateTimeInterface|string $datetime = null, null|DateTimeZone|string $timezone = null, ?string $locale = null)
     {
         // Reset the test instance
         if ($datetime === null) {
@@ -868,7 +868,7 @@ class Date extends DateTime
     /**
      * Returns a new instance with the revised timezone.
      */
-    public function setTimezone(string|DateTimeZone $timezone): static
+    public function setTimezone(DateTimeZone|string $timezone): static
     {
         $this->timezone = static::parseSuppliedTimezone($timezone);
 
@@ -939,7 +939,7 @@ class Date extends DateTime
     /**
      * Add a given amount of days.
      */
-    public function addDays(int|float $value): static
+    public function addDays(float|int $value): static
     {
         return $this->modifyDays($value);
     }
@@ -947,7 +947,7 @@ class Date extends DateTime
     /**
      * Add a given amount of hours.
      */
-    public function addHours(int|float $value): static
+    public function addHours(float|int $value): static
     {
         return $this->modifyHours($value);
     }
@@ -955,7 +955,7 @@ class Date extends DateTime
     /**
      * Add a given amount of minutes.
      */
-    public function addMinutes(int|float $value): static
+    public function addMinutes(float|int $value): static
     {
         return $this->modifyMinutes($value);
     }
@@ -963,7 +963,7 @@ class Date extends DateTime
     /**
      * Add a given amount of months.
      */
-    public function addMonths(int|float $value): static
+    public function addMonths(float|int $value): static
     {
         return $this->modifyMonths($value);
     }
@@ -1027,7 +1027,7 @@ class Date extends DateTime
     /**
      * Add a given amount of seconds.
      */
-    public function addSeconds(int|float $value): static
+    public function addSeconds(float|int $value): static
     {
         return $this->modifySeconds($value);
     }
@@ -1035,7 +1035,7 @@ class Date extends DateTime
     /**
      * Add a given amount of weeks.
      */
-    public function addWeeks(int|float $value): static
+    public function addWeeks(float|int $value): static
     {
         return $this->modifyWeeks($value);
     }
@@ -1043,7 +1043,7 @@ class Date extends DateTime
     /**
      * Add a given amount of years.
      */
-    public function addYears(int|float $value): static
+    public function addYears(float|int $value): static
     {
         return $this->modifyYears($value);
     }
@@ -1051,7 +1051,7 @@ class Date extends DateTime
     /**
      * Minus a given amount of days.
      */
-    public function subDays(int|float $value): static
+    public function subDays(float|int $value): static
     {
         return $this->modifyDays($value, true);
     }
@@ -1059,7 +1059,7 @@ class Date extends DateTime
     /**
      * Minus a given amount of hours.
      */
-    public function subHours(int|float $value): static
+    public function subHours(float|int $value): static
     {
         return $this->modifyHours($value, true);
     }
@@ -1067,7 +1067,7 @@ class Date extends DateTime
     /**
      * Minus a given amount of minutes.
      */
-    public function subMinutes(int|float $value): static
+    public function subMinutes(float|int $value): static
     {
         return $this->modifyMinutes($value, true);
     }
@@ -1075,7 +1075,7 @@ class Date extends DateTime
     /**
      * Minus a given amount of months.
      */
-    public function subMonths(int|float $value): static
+    public function subMonths(float|int $value): static
     {
         return $this->modifyMonths($value, true);
     }
@@ -1139,7 +1139,7 @@ class Date extends DateTime
     /**
      * Minus a given amount of seconds.
      */
-    public function subSeconds(int|float $value): static
+    public function subSeconds(float|int $value): static
     {
         return $this->modifySeconds($value, true);
     }
@@ -1147,7 +1147,7 @@ class Date extends DateTime
     /**
      * Minus a given amount of weeks.
      */
-    public function subWeeks(int|float $value): static
+    public function subWeeks(float|int $value): static
     {
         return $this->modifyWeeks($value, true);
     }
@@ -1155,7 +1155,7 @@ class Date extends DateTime
     /**
      * Minus a given amount of years.
      */
-    public function subYears(int|float $value): static
+    public function subYears(float|int $value): static
     {
         return $this->modifyYears($value, true);
     }
@@ -1167,7 +1167,7 @@ class Date extends DateTime
     /**
      * Determine if date is equal to another  Date instance.
      */
-    public function equalTo(string|DateTimeInterface $date, ?string $timezone = null): bool
+    public function equalTo(DateTimeInterface|string $date, ?string $timezone = null): bool
     {
         if (is_string($date)) {
             $date = static::create($date, $this->getTimezone());
@@ -1186,7 +1186,7 @@ class Date extends DateTime
     /**
      * Determine if date is not equal to another  Date instance.
      */
-    public function notEqualTo(string|DateTimeInterface $date, ?string $timezone = null): bool
+    public function notEqualTo(DateTimeInterface|string $date, ?string $timezone = null): bool
     {
         return ! $this->equalTo($date, $timezone);
     }
@@ -1293,7 +1293,7 @@ class Date extends DateTime
     /**
      * Get the difference in days.
      */
-    public function diffInDays(string|DateTimeInterface $date = null, ?string $timezone = null): string
+    public function diffInDays(null|DateTimeInterface|string $date = null, ?string $timezone = null): string
     {
         if (! ($date instanceof DateTimeInterface)) {
             $date = new static($date, $this->getTimezone());
@@ -1312,7 +1312,7 @@ class Date extends DateTime
     /**
      * Get the difference in hours.
      */
-    public function diffInHours(string|DateTimeInterface $date = null, ?string $timezone = null)
+    public function diffInHours(null|DateTimeInterface|string $date = null, ?string $timezone = null)
     {
         return $this->diffInMinutes($date, $timezone) / 60;
     }
@@ -1320,7 +1320,7 @@ class Date extends DateTime
     /**
      * Get the difference in minutes.
      */
-    public function diffInMinutes(string|DateTimeInterface $date = null, ?string $timezone = null)
+    public function diffInMinutes(null|DateTimeInterface|string $date = null, ?string $timezone = null)
     {
         return $this->diffInSeconds($date, $timezone) / 60;
     }
@@ -1328,7 +1328,7 @@ class Date extends DateTime
     /**
      * Get the difference in months.
      */
-    public function diffInMonths(string|DateTimeInterface $date = null, ?string $timezone = null)
+    public function diffInMonths(null|DateTimeInterface|string $date = null, ?string $timezone = null)
     {
         if (! ($date instanceof DateTimeInterface)) {
             $date = new static($date, $this->getTimezone());
@@ -1351,7 +1351,7 @@ class Date extends DateTime
     /**
      * Get the difference in seconds.
      */
-    public function diffInSeconds(string|DateTimeInterface $date = null, ?string $timezone = null)
+    public function diffInSeconds(null|DateTimeInterface|string $date = null, ?string $timezone = null)
     {
         if (! ($date instanceof DateTimeInterface)) {
             $date = new static($date, $this->getTimezone());
@@ -1383,7 +1383,7 @@ class Date extends DateTime
     /**
      * Get the difference in years.
      */
-    public function diffInYears(string|DateTimeInterface $date = null, ?string $timezone = null)
+    public function diffInYears(null|DateTimeInterface|string $date = null, ?string $timezone = null)
     {
         if (! ($date instanceof DateTimeInterface)) {
             $date = new static($date, $this->getTimezone());
@@ -1404,10 +1404,10 @@ class Date extends DateTime
      *
      * @return false|int Returns the number of days or false if invalid dates
      */
-    public static function diffDays(string|DateTimeInterface $date1, string|DateTimeInterface $date2 = null)
+    public static function diffDays(DateTimeInterface|string $date1, null|DateTimeInterface|string $date2 = null)
     {
         // Get the difference between the two dates
-        $interval = self::differenceInterval($date1, $date2);
+        $interval = static::differenceInterval($date1, $date2);
 
         if ($interval) {
             return $interval->days;
@@ -1422,9 +1422,9 @@ class Date extends DateTime
      *
      * @return false|int Returns the number of hours or false if invalid dates
      */
-    public static function diffHours(string|DateTimeInterface $date1, string|DateTimeInterface $date2 = null)
+    public static function diffHours(DateTimeInterface|string $date1, null|DateTimeInterface|string $date2 = null)
     {
-        $interval = self::differenceInterval($date1, $date2);
+        $interval = static::differenceInterval($date1, $date2);
 
         if ($interval) {
             // Return the number of hours
@@ -1439,7 +1439,7 @@ class Date extends DateTime
      *
      * @return false|int Returns the number of minutes or false if invalid dates
      */
-    public static function diffMinutes(string|DateTimeInterface $date1, string|DateTimeInterface $date2 = null)
+    public static function diffMinutes(DateTimeInterface|string $date1, null|DateTimeInterface|string $date2 = null)
     {
         $interval = static::differenceInterval($date1, $date2);
 
@@ -1455,7 +1455,7 @@ class Date extends DateTime
      *
      * @return false|int Returns the number of months or false if invalid dates
      */
-    public static function diffMonths(string|DateTimeInterface $date1, string|DateTimeInterface $date2 = null)
+    public static function diffMonths(DateTimeInterface|string $date1, null|DateTimeInterface|string $date2 = null)
     {
         $interval = static::differenceInterval($date1, $date2);
 
@@ -1471,9 +1471,9 @@ class Date extends DateTime
      *
      * @return false|int Returns the number of seconds or false if invalid dates
      */
-    public static function diffSeconds(string|DateTimeInterface $date1, string|DateTimeInterface $date2 = null)
+    public static function diffSeconds(DateTimeInterface|string $date1, null|DateTimeInterface|string $date2 = null)
     {
-        $interval = self::differenceInterval($date1, $date2);
+        $interval = static::differenceInterval($date1, $date2);
 
         if ($interval) {
             return ((((($interval->days * 24) + $interval->h) * 60) +
@@ -1493,7 +1493,7 @@ class Date extends DateTime
      */
     public static function differenceYears($date1, $date2 = null)
     {
-        $interval = self::differenceInterval($date1, $date2);
+        $interval = static::differenceInterval($date1, $date2);
 
         if ($interval) {
             return $interval->y;
@@ -1505,7 +1505,7 @@ class Date extends DateTime
     /**
      * Get a relative date string, e.g., 3 days ago.
      */
-    public function relativeTo(string|DateTimeInterface $date = null): string
+    public function relativeTo(null|DateTimeInterface|string $date = null): string
     {
         if (! ($date instanceof DateTimeInterface)) {
             $date = new static($date, $this->getTimezone());
@@ -1519,7 +1519,7 @@ class Date extends DateTime
         $difference = abs($date->getTimestamp() - $this->getTimestamp());
 
         for ($i = 0; $i < count($values) && $difference >= $values[$i]; $i++) {
-            $difference = $difference / $values[$i];
+            $difference /= $values[$i];
         }
 
         // Round the difference to the nearest whole number.
@@ -1610,7 +1610,7 @@ class Date extends DateTime
     /**
      * Modify by an amount of days.
      */
-    protected function modifyDays(int|float $value, bool $invert = false): self
+    protected function modifyDays(float|int $value, bool $invert = false): self
     {
         if ($this->isFloat($value)) {
             return $this->modifyHours($value * 24, $invert);
@@ -1624,7 +1624,7 @@ class Date extends DateTime
     /**
      * Modify by an amount of hours.
      */
-    protected function modifyHours(int|float $value, bool $invert = false): self
+    protected function modifyHours(float|int $value, bool $invert = false): self
     {
         if ($this->isFloat($value)) {
             return $this->modifyMinutes($value * 60, $invert);
@@ -1638,7 +1638,7 @@ class Date extends DateTime
     /**
      * Modify by an amount of minutes.
      */
-    protected function modifyMinutes(int|float $value, bool $invert = false): self
+    protected function modifyMinutes(float|int $value, bool $invert = false): self
     {
         if ($this->isFloat($value)) {
             return $this->modifySeconds($value * 60, $invert);
@@ -1652,7 +1652,7 @@ class Date extends DateTime
     /**
      * Modify by an amount of months.
      */
-    protected function modifyMonths(int|float $value, bool $invert = false): self
+    protected function modifyMonths(float|int $value, bool $invert = false): self
     {
         if ($this->isFloat($value)) {
             return $this->modifyWeeks($value * 4, $invert);
@@ -1666,7 +1666,7 @@ class Date extends DateTime
     /**
      * Modify by an amount of seconds.
      */
-    protected function modifySeconds(int|float $value, bool $invert = false): self
+    protected function modifySeconds(float|int $value, bool $invert = false): self
     {
         $interval = new DateInterval("PT{$value}S");
 
@@ -1676,7 +1676,7 @@ class Date extends DateTime
     /**
      * Modify by an amount of weeks.
      */
-    protected function modifyWeeks(int|float $value, bool $invert = false): self
+    protected function modifyWeeks(float|int $value, bool $invert = false): self
     {
         if ($this->isFloat($value)) {
             return $this->modifyDays($value * 7, $invert);
@@ -1690,7 +1690,7 @@ class Date extends DateTime
     /**
      * Modify by an amount of Years.
      */
-    protected function modifyYears(int|float $value, bool $invert = false): self
+    protected function modifyYears(float|int $value, bool $invert = false): self
     {
         if ($this->isFloat($value)) {
             return $this->modifyMonths($value * 12, $invert);
@@ -1771,7 +1771,7 @@ class Date extends DateTime
     /**
      * Determine if a given amount is a floating point number.
      */
-    protected function isFloat(int|float $value): bool
+    protected function isFloat(float|int $value): bool
     {
         return is_float($value) && (int) $value !== $value;
     }
@@ -1779,7 +1779,7 @@ class Date extends DateTime
     /**
      * Parse a supplied timezone.
      */
-    protected static function parseSuppliedTimezone(string|DateTimeZone|null $timezone): ?DateTimeZone
+    protected static function parseSuppliedTimezone(null|DateTimeZone|string $timezone): ?DateTimeZone
     {
         if ($timezone instanceof DateTimeZone || null === $timezone) {
             return $timezone;
@@ -1799,7 +1799,7 @@ class Date extends DateTime
      *
      * @return DateInterval|false Returns an interval object
      */
-    private static function differenceInterval(string|DateTimeInterface $date1, string|DateTimeInterface $date2 = null)
+    private static function differenceInterval(DateTimeInterface|string $date1, null|DateTimeInterface|string $date2 = null)
     {
         if (null === $date2) {
             $date2 = $date1;

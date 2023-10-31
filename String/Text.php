@@ -586,7 +586,7 @@ class Text
             );
         }
 
-        if (strpos($str, '?') !== false && is_numeric(key($data))) {
+        if (str_contains($str, '?') && is_numeric(key($data))) {
             $offset = 0;
 
             while (($pos = strpos($str, '?', $offset)) !== false) {
@@ -906,13 +906,13 @@ class Text
         return implode('', $parts) . static::plural($lastWord, $count);
     }
 
-	/**
+    /**
      * Encode une chaîne sous forme de chaîne entre guillemets, si nécessaire.
      *
      * Si une chaîne contient des caractères non autorisés par la construction "token" dans la spécification HTTP,
-	 * il est échappé par une barre oblique inverse et placé entre guillemets pour correspondre à la construction "quoted-string".
-	 *
-	 * @credit <a href="symfony.com">Symfony - Symfony\Component\HttpFoundation::quote</a>
+     * il est échappé par une barre oblique inverse et placé entre guillemets pour correspondre à la construction "quoted-string".
+     *
+     * @credit <a href="symfony.com">Symfony - Symfony\Component\HttpFoundation::quote</a>
      */
     public static function quote(string $value): string
     {
@@ -1284,7 +1284,7 @@ class Text
         $pattern = '/&[0-9a-z]{2,8};|&#[0-9]{1,7};|&#x[0-9a-f]{1,6};/i';
         $replace = preg_replace_callback(
             $pattern,
-            function ($match) use ($strlen) {
+            static function ($match) use ($strlen) {
                 $utf8 = html_entity_decode($match[0], ENT_HTML5 | ENT_QUOTES, 'UTF-8');
 
                 return str_repeat(' ', $strlen($utf8, 'UTF-8'));
@@ -1387,7 +1387,7 @@ class Text
             $len = static::strlen($part, $options);
             if ($offset !== 0 || $totalLength + $len > $length) {
                 if (
-                    strpos($part, '&') === 0 && preg_match($pattern, $part)
+                    str_starts_with($part, '&') && preg_match($pattern, $part)
                     && $part !== html_entity_decode($part, ENT_HTML5 | ENT_QUOTES, $options['encoding'])
                 ) {
                     // Entities cannot be passed substr.

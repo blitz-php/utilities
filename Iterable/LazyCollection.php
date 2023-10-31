@@ -35,14 +35,14 @@ class LazyCollection implements Enumerable
     /**
      * The source from which to generate items.
      *
-     * @var (Closure(): Generator<int|string, mixed, mixed, void>)|static|array<int|string, mixed>
+     * @var (Closure(): Generator<int|string, mixed, mixed, void>)|array<int|string, mixed>|static
      */
     public $source;
 
     /**
      * Create a new lazy collection instance.
      *
-     * @param  Arrayable|iterable|(Closure(): Generator<int|string, mixed, mixed, void>)|self<int|string, mixed>|array<int|string, mixed>|null  $source
+     * @param (Closure(): Generator<int|string, mixed, mixed, void>)|array<int|string, mixed>|Arrayable|iterable|self<int|string, mixed>|null $source
      */
     public function __construct($source = null)
     {
@@ -62,7 +62,7 @@ class LazyCollection implements Enumerable
     /**
      *{@inheritDoc}
      *
-     * @param  Arrayable|iterable|(Closure(): Generator<int|string, mixed, mixed, void>)|self<int|string, mixed>|array<int|string, mixed>|null  $items
+     * @param (Closure(): Generator<int|string, mixed, mixed, void>)|array<int|string, mixed>|Arrayable|iterable|self<int|string, mixed>|null $items
      */
     public static function make($items = [])
     {
@@ -77,7 +77,7 @@ class LazyCollection implements Enumerable
      */
     public static function range($from, $to)
     {
-        return new static(function () use ($from, $to) {
+        return new static(static function () use ($from, $to) {
             if ($from <= $to) {
                 for (; $from <= $to; $from++) {
                     yield $from;
@@ -125,7 +125,7 @@ class LazyCollection implements Enumerable
 
         $cache = [];
 
-        return new static(function () use ($iterator, &$iteratorIndex, &$cache) {
+        return new static(static function () use ($iterator, &$iteratorIndex, &$cache) {
             for ($index = 0; true; $index++) {
                 if (array_key_exists($index, $cache)) {
                     yield $cache[$index][0] => $cache[$index][1];
@@ -223,7 +223,7 @@ class LazyCollection implements Enumerable
     public function containsStrict($key, mixed $value = null): bool
     {
         if (func_num_args() === 2) {
-            return $this->contains(fn ($item) => Arr::getRecursive($item, $key) === $value);
+            return $this->contains(static fn ($item) => Arr::getRecursive($item, $key) === $value);
         }
 
         if ($this->useAsCallable($key)) {
@@ -359,7 +359,7 @@ class LazyCollection implements Enumerable
     public function filter(?callable $callback = null)
     {
         if (null === $callback) {
-            $callback = fn ($value) => (bool) $value;
+            $callback = static fn ($value) => (bool) $value;
         }
 
         return new static(function () use ($callback) {
@@ -430,7 +430,7 @@ class LazyCollection implements Enumerable
     /**
      * {@inheritDoc}
      */
-    public function get(int|string|null $key, mixed $default = null): mixed
+    public function get(null|int|string $key, mixed $default = null): mixed
     {
         if (null === $key) {
             return null;
@@ -697,7 +697,7 @@ class LazyCollection implements Enumerable
     /**
      * {@inheritDoc}
      *
-     * @param  \IteratorAggregate|array|(callable(): Generator)  $values
+     * @param (callable(): Generator)|array|IteratorAggregate $values
      */
     public function combine($values)
     {
@@ -854,7 +854,7 @@ class LazyCollection implements Enumerable
         /** @var (callable(mixed,int|string): bool) $predicate */
         $predicate = $this->useAsCallable($value)
             ? $value
-            : fn ($item) => $strict ? $item === $value : $item === $value;
+            : static fn ($item) => $strict ? $item === $value : $item === $value;
 
         foreach ($this as $key => $item) {
             if ($predicate($item, $key)) {
@@ -887,7 +887,7 @@ class LazyCollection implements Enumerable
                 $chunk[$iterator->key()] = $iterator->current();
 
                 if (count($chunk) === $size) {
-                    yield (new static($chunk))->tap(function () use (&$chunk, $step) {
+                    yield (new static($chunk))->tap(static function () use (&$chunk, $step) {
                         $chunk = array_slice($chunk, $step, null, true);
                     });
 
@@ -1229,7 +1229,7 @@ class LazyCollection implements Enumerable
         /** @var callable(mixed, int|string): bool $callback */
         $callback = $this->useAsCallable($value) ? $value : $this->equality($value);
 
-        return $this->takeUntil(fn ($item, $key) => ! $callback($item, $key));
+        return $this->takeUntil(static fn ($item, $key) => ! $callback($item, $key));
     }
 
     /**
@@ -1351,7 +1351,7 @@ class LazyCollection implements Enumerable
     /**
      * Créez un itérateur à partir de la source donnée.
      *
-     * @param  IteratorAggregate|array|(callable(): Generator)  $source
+     * @param (callable(): Generator)|array|IteratorAggregate $source
      */
     protected function makeIterator($source): Traversable
     {
