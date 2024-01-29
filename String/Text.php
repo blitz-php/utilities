@@ -93,6 +93,29 @@ class Text
      */
     protected static $studlyCache = [];
 
+	/**
+	 * Cache utilisé par la methode convertTo qui utilise \Jawira\CaseConverter\Convert
+	 *
+	 * @var array<string,array<string,string>>
+	 *
+	 * @example
+	 * [
+	 * 		'pascal' => [
+	 * 			'blitz php' => 'BlitzPhp',
+	 * 			'my variable' => 'MyVariable',
+	 * 		],
+	 * 		'snake' => [
+	 * 			'blitz php' => 'blitz_php',
+	 * 			'my variable' => 'my_variable',
+	 * 		],
+	 * 		'camel' => [
+	 * 			'blitz php' => 'blitzPhp',
+	 * 			'my variable' => 'myVariable',
+	 * 		],
+	 * ]
+	 */
+	protected static array $converterCache = [];
+
     /**
      * The callback that should be used to generate random strings.
      *
@@ -144,7 +167,11 @@ class Text
             throw new InvalidArgumentException("Invalid converter type: `{$converter}`");
         }
 
-        return call_user_func([new \Jawira\CaseConverter\Convert($str), 'to' . ucfirst($converter)]);
+		if (! isset(static::$converterCache[$converter][$str])) {
+			static::$converterCache[$converter][$str] = call_user_func([new \Jawira\CaseConverter\Convert($str), 'to' . ucfirst($converter)]);
+		}
+
+        return static::$converterCache[$converter][$str];
     }
 
     /**
