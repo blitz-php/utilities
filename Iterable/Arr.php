@@ -703,8 +703,8 @@ class Arr
      * Does not support the full dot notation feature set,
      * but is faster for simple read operations.
      *
-     * @param array|ArrayAccess $data    Array of data to operate on.
-     * @param array|string      $path    The path being searched for. Either a dot
+     * @param array|ArrayAccess $array    Array of data to operate on.
+     * @param array|int|string  $key      The path being searched for. Either a dot
      *                                   separated string, or an array of path segments.
      * @param mixed             $default The return value when the path does not exist
      *
@@ -712,26 +712,37 @@ class Arr
      *
      * @credit CakePHP - http://book.cakephp.org/2.0/en/core-utility-libraries/hash.html#Hash::get
      */
-    public static function get($data, $path, $default = null)
+    public static function get($array, $key, $default = null)
     {
-        if (! static::accessible($data)) {
-            return $default;
-        }
-        if (is_string($path) || is_numeric($path)) {
-            $parts = explode('.', $path);
-        } else {
-            $parts = $path;
+        if (! static::accessible($array)) {
+            return Helpers::value($default);
         }
 
-        foreach ($parts as $key) {
-            if (is_array($data) && isset($data[$key])) {
-                $data = &$data[$key];
+        if (null === $key) {
+            return $array;
+        }
+
+        if (is_array($key)) {
+            $key = implode('.', $key);
+        }
+
+        if (static::exists($array, $key)) {
+            return $array[$key];
+        }
+
+        if (! str_contains($key, '.')) {
+            return $array[$key] ?? Helpers::value($default);
+        }
+
+        foreach (explode('.', $key) as $segment) {
+            if (static::accessible($array) && static::exists($array, $segment)) {
+                $array = $array[$segment];
             } else {
-                return $default;
+                return value($default);
             }
         }
 
-        return $data;
+        return $array;
     }
 
     /**
