@@ -220,9 +220,9 @@ class Date extends DateTime
      *
      * @return static
      */
-    public static function createFromDate(?int $year = null, ?int $month = null, ?int $day = null, null|DateTimeZone|string $timezone = null)
+    public static function createFromDate(?int $year = null, ?int $month = null, ?int $day = null, null|DateTimeZone|string $timezone = null, ?string $locale = null)
     {
-        return static::createFromDateTime($year, $month, $day, null, null, null, $timezone);
+        return static::createFromDateTime($year, $month, $day, null, null, null, $timezone, $locale);
     }
 
     /**
@@ -230,16 +230,16 @@ class Date extends DateTime
      *
      * @return static
      */
-    public static function createFromDateTime(?int $year = null, ?int $month = null, ?int $day = null, ?int $hour = null, ?int $minutes = null, ?int $seconds = null, null|DateTimeZone|string $timezone = null)
+    public static function createFromDateTime(?int $year = null, ?int $month = null, ?int $day = null, ?int $hour = null, ?int $minutes = null, ?int $seconds = null, null|DateTimeZone|string $timezone = null, ?string $locale = null)
     {
         $year ??= date('Y');
         $month ??= date('m');
         $day ??= date('d');
-        $hour    = empty($hour) ? 0 : $hour;
-        $minutes = empty($minutes) ? 0 : $minutes;
-        $seconds = empty($seconds) ? 0 : $seconds;
+        $hour ??= 0;
+        $minutes ??= 0;
+        $seconds ??= 0;
 
-        return new static(date('Y-m-d H:i:s', strtotime("{$year}-{$month}-{$day} {$hour}:{$minutes}:{$seconds}")), $timezone);
+        return new static(date('Y-m-d H:i:s', strtotime("{$year}-{$month}-{$day} {$hour}:{$minutes}:{$seconds}")), $timezone, $locale);
     }
 
     /**
@@ -920,14 +920,14 @@ class Date extends DateTime
 
         ${$name} = $value;
 
-        return static::create(
+        return static::createFromDateTime(
             (int) $year,
             (int) $month,
             (int) $day,
             (int) $hour,
             (int) $minute,
             (int) $second,
-            $this->getTimezoneName(),
+            $this->timezoneName(),
             $this->locale
         );
     }
