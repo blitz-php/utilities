@@ -360,7 +360,7 @@ class Collection implements ArrayAccess, Enumerable
     /**
      * {@inheritDoc}
      */
-    public function flatten(int $depth = INF)
+    public function flatten(float|int $depth = INF)
     {
         return new static(Arr::flatten($this->items, $depth));
     }
