@@ -283,6 +283,12 @@ class DataTransfertObject implements Arrayable, Jsonable
             $type = $annotationType;
         }
 
+        if (class_exists($type) && !in_array($subtype, ['array', 'collection'])) {
+            $this->{$key} = $this->cast($value, $type);
+
+            return;
+        }
+
         $result = Helpers::collect($value)->map(fn ($v) => $this->cast($v, $type));
 
         $this->{$key} = match ($subtype) {
