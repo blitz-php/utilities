@@ -102,6 +102,10 @@ class DataTransfertObject implements Arrayable, Jsonable
      */
     public static function collection(array $arrayOfattributes): Collection
     {
+        if (empty($arrayOfattributes)) {
+            return Helpers::collect($arrayOfattributes);
+        }
+
         if (Arr::dimensions($arrayOfattributes) < 2) {
             throw new InvalidArgumentException();
         }
