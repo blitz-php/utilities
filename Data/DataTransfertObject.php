@@ -18,6 +18,7 @@ use BlitzPHP\Utilities\Date;
 use BlitzPHP\Utilities\Helpers;
 use BlitzPHP\Utilities\Iterable\Arr;
 use BlitzPHP\Utilities\Iterable\Collection;
+use BlitzPHP\Utilities\String\Text;
 use InvalidArgumentException;
 use JsonSerializable;
 use ReflectionClass;
@@ -169,12 +170,28 @@ class DataTransfertObject implements Arrayable, Jsonable
 
     public function __get($name)
     {
-        return $this->attributes[$name] ?? null;
+        if (isset($this->attributes[$name])) {
+            return $this->attributes[$name];
+        }
+
+        if (method_exists($this, $method = Text::camel('get_' . $name . '_attribute'))) {
+            return $this->{$method}();
+        }
+
+        return null;
     }
 
     public function __set($name, $value)
     {
         $this->attributes[$name] = $value;
+    }
+
+    /**
+     * Transforme les valeurs a affecter aux proprietes lors de leur initialisation
+     */
+    protected function transform(string $attribute, mixed $value): mixed
+    {
+        return $value;
     }
 
     /**
@@ -254,6 +271,8 @@ class DataTransfertObject implements Arrayable, Jsonable
         if (empty($value) && $property->hasDefaultValue()) {
             $value = $property->getDefaultValue();
         }
+
+        $value = $this->transform($key, $value);
 
         if (in_array($type, [null, 'null', 'mixed'], true) && [] === $annotations) {
             $this->{$key} = $value;
