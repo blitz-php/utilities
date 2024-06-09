@@ -29,19 +29,35 @@ class DataTransfertObject implements Arrayable, Jsonable
 {
     /**
      * Donnees originales sans alteration quelconque
+	 *
+	 * @var array<string, mixed>
      */
     private array $original = [];
 
     /**
      * Proprietes a ne pas afficher lors de la serialisation
+	 *
+	 * @var string[]
      */
     protected array $except = [];
 
     /**
      * Proprietes a afficher lors de la serialisation
+	 *
+	 * @var string[]
      */
     protected array $only = [];
 
+    /**
+     * Proprietes calculées qui doivent etre ajoutés aux données lors de la serialisation
+	 *
+	 * @var string[]
+     */
+    protected array $appends = [];
+
+	/**
+	 * @param array<string, mixed> $attributes
+	 */
     public function __construct(protected array $attributes = [])
     {
         foreach ($attributes as $key => $value) {
@@ -157,6 +173,10 @@ class DataTransfertObject implements Arrayable, Jsonable
 
         $data = Arr::except($data, array_keys($this->attributes));
 
+		foreach ($this->appends as $computed) {
+			$data[$computed] = $this->__get($computed);
+		}
+
         foreach ($data as $key => $value) {
             $data[$key] = $this->format($value);
         }
@@ -178,7 +198,7 @@ class DataTransfertObject implements Arrayable, Jsonable
             return $this->attributes[$name];
         }
 
-        if (method_exists($this, $method = Text::camel('get_' . $name . '_attribute'))) {
+        if (method_exists($this, $method = $this->getComputedAttributeName($name))) {
             return $this->{$method}();
         }
 
@@ -203,6 +223,10 @@ class DataTransfertObject implements Arrayable, Jsonable
      */
     protected function cast(mixed $value, string $type): mixed
     {
+		if ($value === null) {
+			return null;
+		}
+
         return match ($type) {
             'int', 'integer' => (int) $value,
             'string' => (string) $value,
@@ -255,6 +279,14 @@ class DataTransfertObject implements Arrayable, Jsonable
         return (new ReflectionClass($this))->getProperties(ReflectionProperty::IS_PUBLIC);
     }
 
+	/**
+	 * Cree le nom de la methode a utiliser pour obtenir la valeur d'une proprieté calculée
+	 */
+	private function getComputedAttributeName(string $name): string
+	{
+		return Text::camel('get_' . $name . '_attribute');
+	}
+
     /**
      * Verifie si une cle existe comme etant propriete de la classe et le caste au bon type le cas echeant
      */
@@ -278,7 +310,7 @@ class DataTransfertObject implements Arrayable, Jsonable
 
         $value = $this->transform($key, $value);
 
-        if (in_array($type, [null, 'null', 'mixed'], true) && [] === $annotations) {
+		if ((in_array($type, [null, 'null', 'mixed'], true) && [] === $annotations) || ($value === null && $property->getType()?->allowsNull())) {
             $this->{$key} = $value;
 
             return;
