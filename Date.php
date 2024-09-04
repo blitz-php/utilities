@@ -20,6 +20,7 @@ use Exception;
 use IntlCalendar;
 use IntlDateFormatter;
 use InvalidArgumentException;
+use Stringable;
 
 /**
  * Date class encapsulates various date and time functionality.
@@ -45,14 +46,14 @@ use InvalidArgumentException;
  * @credit <a href="https://github.com/jasonlewis/expressive-date">Expressive Date</a>
  * @credit <a href="http://www.codeigniter.com">CodeIgniter 4.2 - CodeIgniter\I18n\TimeTrait</a>
  */
-class Date extends DateTime
+class Date extends DateTime implements Stringable
 {
     public const DEFAULT_TIMEZONE = 'UTC'; // UTC&#65533;00:00 Coordinated Universal Time
 
     /**
      * Default date format used when casting object to string.
      */
-    protected string $defaultDateFormat = 'jS F, Y \a\\t g:ia';
+    protected string $defaultDateFormat = 'Y-m-d H:i:s';
 
     /**
      * Starting day of the week, where 0 is Sunday and 1 is Monday.
