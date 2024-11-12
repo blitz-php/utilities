@@ -1411,6 +1411,63 @@ class Arr
         return $array;
     }
 
+	/**
+     * Compare récursivement deux tableaux associatifs et renvoie la différence sous la forme d'un nouveau tableau.
+     * Retourne les clés qui existent dans `$original` mais pas dans `$compareWith`.
+     */
+    public static function diffRecursive(array $original, array $compareWith): array
+    {
+        $difference = [];
+
+        if ($original === []) {
+            return [];
+        }
+
+        if ($compareWith === []) {
+            return $original;
+        }
+
+        foreach ($original as $originalKey => $originalValue) {
+            if ($originalValue === []) {
+                continue;
+            }
+
+            if (is_array($originalValue)) {
+                $diffArrays = [];
+
+                if (isset($compareWith[$originalKey]) && is_array($compareWith[$originalKey])) {
+                    $diffArrays = self::diffRecursive($originalValue, $compareWith[$originalKey]);
+                } else {
+                    $difference[$originalKey] = $originalValue;
+                }
+
+                if ($diffArrays !== []) {
+                    $difference[$originalKey] = $diffArrays;
+                }
+            } elseif (is_string($originalValue) && ! array_key_exists($originalKey, $compareWith)) {
+                $difference[$originalKey] = $originalValue;
+            }
+        }
+
+        return $difference;
+    }
+
+    /**
+     * Compte récursivement toutes les clés.
+     */
+    public static function countRecursive(array $array, int $counter = 0): int
+    {
+        foreach ($array as $value) {
+            if (is_array($value)) {
+                $counter = self::countRecursive($value, $counter);
+            }
+
+            $counter++;
+        }
+
+        return $counter;
+    }
+
     /**
      * Conditionally compile classes from an array into a CSS class list.
      */
