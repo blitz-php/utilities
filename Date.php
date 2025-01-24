@@ -1572,6 +1572,14 @@ class Date extends DateTime implements Stringable
     }
 
     /**
+     * Use the start of the minute.
+     */
+    public function startOfMinute(): static
+    {
+        return $this->setTime((int) $this->getHour(), (int) $this->getMinute(), 0, 0);
+    }
+
+    /**
      * Use the start of the day.
      */
     public function startOfDay(): self
