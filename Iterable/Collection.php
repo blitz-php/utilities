@@ -1411,7 +1411,7 @@ class Collection implements ArrayAccess, Enumerable
      */
     public function offsetGet(mixed $key): mixed
     {
-        return $this->items[$key];
+        return $this->items[$key] ?? null;
     }
 
     /**
