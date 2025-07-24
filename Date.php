@@ -718,6 +718,21 @@ class Date extends DateTime implements Stringable
         return date_default_timezone_get() === $this->timezoneName();
     }
 
+	public function isToday(): bool
+	{
+		return $this->startOfDay()->equalTo(static::now()->startOfDay());
+	}
+
+	public function isTomorrow(): bool
+	{
+		return $this->startOfDay()->equalTo(static::now()->addOneDay()->startOfDay());
+	}
+
+	public function isYesterday(): bool
+	{
+		return $this->startOfDay()->equalTo(static::now()->subOneDay()->startOfDay());
+	}
+
     /**
      * Returns boolean whether object is in UTC.
      */
