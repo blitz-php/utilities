@@ -35,14 +35,14 @@ class LazyCollection implements Enumerable
     /**
      * The source from which to generate items.
      *
-     * @var (Closure(): Generator<int|string, mixed, mixed, void>)|array<int|string, mixed>|static
+     * @var array<int|string, mixed>|(Closure(): Generator<int|string, mixed, mixed, void>)|static
      */
     public $source;
 
     /**
      * Create a new lazy collection instance.
      *
-     * @param (Closure(): Generator<int|string, mixed, mixed, void>)|array<int|string, mixed>|Arrayable|iterable|self<int|string, mixed>|null $source
+     * @param array<int|string, mixed>|Arrayable|(Closure(): Generator<int|string, mixed, mixed, void>)|iterable|self<int|string, mixed>|null $source
      */
     public function __construct($source = null)
     {
@@ -62,7 +62,7 @@ class LazyCollection implements Enumerable
     /**
      *{@inheritDoc}
      *
-     * @param (Closure(): Generator<int|string, mixed, mixed, void>)|array<int|string, mixed>|Arrayable|iterable|self<int|string, mixed>|null $items
+     * @param array<int|string, mixed>|Arrayable|(Closure(): Generator<int|string, mixed, mixed, void>)|iterable|self<int|string, mixed>|null $items
      */
     public static function make($items = [])
     {
@@ -430,7 +430,7 @@ class LazyCollection implements Enumerable
     /**
      * {@inheritDoc}
      */
-    public function get(null|int|string $key, mixed $default = null): mixed
+    public function get(int|string|null $key, mixed $default = null): mixed
     {
         if (null === $key) {
             return null;
@@ -697,7 +697,7 @@ class LazyCollection implements Enumerable
     /**
      * {@inheritDoc}
      *
-     * @param (callable(): Generator)|array|IteratorAggregate $values
+     * @param array|(callable(): Generator)|IteratorAggregate $values
      */
     public function combine($values)
     {
@@ -1351,7 +1351,7 @@ class LazyCollection implements Enumerable
     /**
      * Créez un itérateur à partir de la source donnée.
      *
-     * @param (callable(): Generator)|array|IteratorAggregate $source
+     * @param array|(callable(): Generator)|IteratorAggregate $source
      */
     protected function makeIterator($source): Traversable
     {
@@ -1377,10 +1377,10 @@ class LazyCollection implements Enumerable
     /**
      * Décomposez les arguments "value" et "key" passés à "pluck".
      *
-     * @param string|string[]      $value
-     * @param string|string[]|null $key
+     * @param list<string>|string      $value
+     * @param list<string>|string|null $key
      *
-     * @return array{string[],string[]|null}
+     * @return array{list<string>,list<string>|null}
      */
     protected function explodePluckParameters($value, $key): array
     {

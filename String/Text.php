@@ -93,28 +93,28 @@ class Text
      */
     protected static $studlyCache = [];
 
-	/**
-	 * Cache utilisé par la methode convertTo qui utilise \Jawira\CaseConverter\Convert
-	 *
-	 * @var array<string,array<string,string>>
-	 *
-	 * @example
-	 * [
-	 * 		'pascal' => [
-	 * 			'blitz php' => 'BlitzPhp',
-	 * 			'my variable' => 'MyVariable',
-	 * 		],
-	 * 		'snake' => [
-	 * 			'blitz php' => 'blitz_php',
-	 * 			'my variable' => 'my_variable',
-	 * 		],
-	 * 		'camel' => [
-	 * 			'blitz php' => 'blitzPhp',
-	 * 			'my variable' => 'myVariable',
-	 * 		],
-	 * ]
-	 */
-	protected static array $converterCache = [];
+    /**
+     * Cache utilisé par la methode convertTo qui utilise \Jawira\CaseConverter\Convert
+     *
+     * @var array<string,array<string,string>>
+     *
+     * @example
+     * [
+     * 		'pascal' => [
+     * 			'blitz php' => 'BlitzPhp',
+     * 			'my variable' => 'MyVariable',
+     * 		],
+     * 		'snake' => [
+     * 			'blitz php' => 'blitz_php',
+     * 			'my variable' => 'my_variable',
+     * 		],
+     * 		'camel' => [
+     * 			'blitz php' => 'blitzPhp',
+     * 			'my variable' => 'myVariable',
+     * 		],
+     * ]
+     */
+    protected static array $converterCache = [];
 
     /**
      * The callback that should be used to generate random strings.
@@ -167,9 +167,9 @@ class Text
             throw new InvalidArgumentException("Invalid converter type: `{$converter}`");
         }
 
-		if (! isset(static::$converterCache[$converter][$str])) {
-			static::$converterCache[$converter][$str] = call_user_func([new \Jawira\CaseConverter\Convert($str), 'to' . ucfirst($converter)]);
-		}
+        if (! isset(static::$converterCache[$converter][$str])) {
+            static::$converterCache[$converter][$str] = call_user_func([new \Jawira\CaseConverter\Convert($str), 'to' . ucfirst($converter)]);
+        }
 
         return static::$converterCache[$converter][$str];
     }
@@ -1450,12 +1450,12 @@ class Text
     /**
      * Replace text within a portion of a string.
      *
-     * @param string|string[] $string
-     * @param string|string[] $replace
-     * @param int|int[]       $offset
-     * @param int|int[]|null  $length
+     * @param list<string>|string $string
+     * @param list<string>|string $replace
+     * @param int|list<int>       $offset
+     * @param int|list<int>|null  $length
      *
-     * @return string|string[]
+     * @return list<string>|string
      */
     public static function substrReplace($string, $replace, $offset = 0, $length = null)
     {
@@ -1493,7 +1493,7 @@ class Text
     /**
      * Split a string into pieces by uppercase characters.
      *
-     * @return string[]
+     * @return list<string>
      */
     public static function ucsplit(string $string): array
     {
@@ -1608,7 +1608,7 @@ class Text
     /**
      * Creates a comma separated list where the last two items are joined with 'and', forming natural language.
      *
-     * @param string[] $list The list to be joined.
+     * @param list<string> $list The list to be joined.
      *
      * @return string The glued together string.
      */

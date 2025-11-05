@@ -376,10 +376,10 @@ class Helpers
      * Purifiez l'entrée à l'aide de la classe autonome HTMLPurifier.
      * Utilisez facilement plusieurs configurations de purificateur.
      *
-     * @param string|string[] $dirty_html
-     * @param false|string    $config
+     * @param list<string>|string $dirty_html
+     * @param false|string        $config
      *
-     * @return string|string[]
+     * @return list<string>|string
      */
     public static function purify($dirty_html, $config = false, string $charset = 'UTF-8')
     {
@@ -687,7 +687,7 @@ class Helpers
      *
      * @param string $class Le nom complet de la classe, ie `BlitzPHP\Core\App`.
      *
-     * @return array<string> Tableau avec 2 index. 0 => namespace, 1 => nom de la classe.
+     * @return list<string> Tableau avec 2 index. 0 => namespace, 1 => nom de la classe.
      */
     public static function namespaceSplit(string $class): array
     {

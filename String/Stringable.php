@@ -745,9 +745,9 @@ class Stringable implements JsonSerializable
     /**
      * Replace text within a portion of a string.
      *
-     * @param string|string[] $replace
-     * @param int|int[]       $offset
-     * @param int|int[]|null  $length
+     * @param list<string>|string $replace
+     * @param int|list<int>       $offset
+     * @param int|list<int>|null  $length
      *
      * @return static
      */

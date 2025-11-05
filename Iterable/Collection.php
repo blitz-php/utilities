@@ -74,7 +74,7 @@ class Collection implements ArrayAccess, Enumerable
     {
         $callback = $this->valueRetriever($callback);
 
-        $items = $this->map(fn ($value) => $callback($value))->filter(fn ($value) => null !== $value);
+        $items = $this->map(static fn ($value) => $callback($value))->filter(static fn ($value) => null !== $value);
 
         if ($count = $items->count()) {
             return $items->sum() / $count;
@@ -116,13 +116,13 @@ class Collection implements ArrayAccess, Enumerable
 
         $counts = new static();
 
-        $collection->each(fn ($value) => $counts[$value] = isset($counts[$value]) ? $counts[$value] + 1 : 1);
+        $collection->each(static fn ($value) => $counts[$value] = isset($counts[$value]) ? $counts[$value] + 1 : 1);
 
         $sorted = $counts->sort();
 
         $highestValue = $sorted->last();
 
-        return $sorted->filter(fn ($value) => $value === $highestValue)->sort()->keys()->all();
+        return $sorted->filter(static fn ($value) => $value === $highestValue)->sort()->keys()->all();
     }
 
     /**
@@ -388,7 +388,7 @@ class Collection implements ArrayAccess, Enumerable
     /**
      * {@inheritDoc}
      */
-    public function get(null|int|string $key, mixed $default = null): mixed
+    public function get(int|string|null $key, mixed $default = null): mixed
     {
         if ($this->offsetExists($key)) {
             return $this->items[$key];
@@ -1164,7 +1164,7 @@ class Collection implements ArrayAccess, Enumerable
     /**
      * Triez la collection à l'aide de plusieurs comparaisons.
      *
-     * @param array<int|string, (callable(mixed, mixed): mixed)|(callable(TValue, TKey): mixed)|array{string, string}|string> $comparisons
+     * @param array<int|string, array{string, string}|(callable(mixed, mixed): mixed)|(callable(TValue, TKey): mixed)|string> $comparisons
      *
      * @return static
      */
@@ -1172,7 +1172,7 @@ class Collection implements ArrayAccess, Enumerable
     {
         $items = $this->items;
 
-        uasort($items, function ($a, $b) use ($comparisons) {
+        uasort($items, static function ($a, $b) use ($comparisons) {
             foreach ($comparisons as $comparison) {
                 $comparison = Arr::wrap($comparison);
 
@@ -1319,7 +1319,7 @@ class Collection implements ArrayAccess, Enumerable
 
         $exists = [];
 
-        return $this->reject(function ($item, $key) use ($callback, $strict, &$exists) {
+        return $this->reject(static function ($item, $key) use ($callback, $strict, &$exists) {
             if (in_array($id = $callback($item, $key), $exists, $strict)) {
                 return true;
             }

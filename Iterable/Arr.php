@@ -386,7 +386,7 @@ class Arr
     /**
      * Explode the "value" and "key" arguments passed to "pluck".
      */
-    protected static function explodePluckParameters(array|string $value, null|array|string $key): array
+    protected static function explodePluckParameters(array|string $value, array|string|null $key): array
     {
         $value = is_string($value) ? explode('.', $value) : $value;
 
@@ -729,8 +729,8 @@ class Arr
      * Does not support the full dot notation feature set,
      * but is faster for simple read operations.
      *
-     * @param array|ArrayAccess $array    Array of data to operate on.
-     * @param array|int|string  $key      The path being searched for. Either a dot
+     * @param array|ArrayAccess $array   Array of data to operate on.
+     * @param array|int|string  $key     The path being searched for. Either a dot
      *                                   separated string, or an array of path segments.
      * @param mixed             $default The return value when the path does not exist
      *
@@ -960,7 +960,7 @@ class Arr
      */
     public static function prependKeysWith(array $array, string $prependWith): array
     {
-        return Collection::make($array)->mapWithKeys(fn ($item, $key) => [$prependWith . $key => $item])->all();
+        return Collection::make($array)->mapWithKeys(static fn ($item, $key) => [$prependWith . $key => $item])->all();
     }
 
     /**
@@ -1114,7 +1114,7 @@ class Arr
     /**
      * Push an item onto the beginning of an array.
      */
-    public static function prepend(array $array, mixed $value, null|int|string $key = null): array
+    public static function prepend(array $array, mixed $value, int|string|null $key = null): array
     {
         if (null === $key) {
             array_unshift($array, $value);
@@ -1243,7 +1243,7 @@ class Arr
      *
      * If no key is given to the method, the entire array will be replaced.
      */
-    public static function set(array &$array, null|int|string $key, mixed $value): array
+    public static function set(array &$array, int|string|null $key, mixed $value): array
     {
         if (null === $key) {
             return $array = $value;
@@ -1411,7 +1411,7 @@ class Arr
         return $array;
     }
 
-	/**
+    /**
      * Compare récursivement deux tableaux associatifs et renvoie la différence sous la forme d'un nouveau tableau.
      * Retourne les clés qui existent dans `$original` mais pas dans `$compareWith`.
      */
@@ -1549,7 +1549,7 @@ class Arr
      */
     public static function whereNotNull(array $array): array
     {
-        return static::where($array, fn ($value) => null !== $value);
+        return static::where($array, static fn ($value) => null !== $value);
     }
 
     /**
