@@ -28,7 +28,7 @@ class Arr
     public const SORT_DESC = 2;
 
     /**
-     * Déterminez si la valeur donnée est un tableau accessible.
+     * Détermine si la valeur donnée est un tableau accessible.
      *
      * @param mixed $value
      */
@@ -38,7 +38,7 @@ class Arr
     }
 
     /**
-     * Ajoutez un élément à un tableau en utilisant la notation "point" s'il n'existe pas.
+     * Ajoute un élément à un tableau en utilisant la notation "point" s'il n'existe pas.
      *
      * @param mixed $value
      */
@@ -233,49 +233,13 @@ class Arr
     /**
      * Récupère un élément d'un tableau ou d'un objet en utilisant la notation "point".
      *
-     * @param mixed $key
+     * @param  string|array|int|null  $key
+	 *
+	 * @deprecated 1.9 use Helpers::dataGet instead
      */
     public static function dataGet(mixed $target, $key, mixed $default = null): mixed
     {
-        if (null === $key) {
-            return $target;
-        }
-
-        $key = is_array($key) ? $key : explode('.', $key);
-
-        foreach ($key as $i => $segment) {
-            unset($key[$i]);
-
-            if (null === $segment) {
-                return $target;
-            }
-
-            if ($segment === '*') {
-                if ($target instanceof Collection) {
-                    $target = $target->all();
-                } elseif (! is_array($target)) {
-                    return value($default);
-                }
-
-                $result = [];
-
-                foreach ($target as $item) {
-                    $result[] = static::dataGet($item, $key);
-                }
-
-                return in_array('*', $key, true) ? static::collapse($result) : $result;
-            }
-
-            if (static::accessible($target) && static::exists($target, $segment)) {
-                $target = $target[$segment];
-            } elseif (is_object($target) && isset($target->{$segment})) {
-                $target = $target->{$segment};
-            } else {
-                return Helpers::value($default);
-            }
-        }
-
-        return $target;
+        return Helpers::dataGet($target, $key, $default);
     }
 
     /**
@@ -381,18 +345,6 @@ class Arr
         }
 
         return array_key_exists($key, $array);
-    }
-
-    /**
-     * Explode the "value" and "key" arguments passed to "pluck".
-     */
-    protected static function explodePluckParameters(array|string $value, array|string|null $key): array
-    {
-        $value = is_string($value) ? explode('.', $value) : $value;
-
-        $key = null === $key || is_array($key) ? $key : explode('.', $key);
-
-        return [$value, $key];
     }
 
     /**
@@ -557,7 +509,7 @@ class Arr
     /**
      * Flatten a multi-dimensional array into a single level.
      */
-    public static function flatten(array $array, float|int $depth = INF): array
+    public static function flatten(iterable $array, float|int $depth = INF): array
     {
         $result = [];
 
@@ -626,12 +578,10 @@ class Arr
     /**
      * Remove one or many array items from a given array using "dot" notation.
      *
+     * @param array                  $array
      * @param array|float|int|string $keys
-     * @param mixed                  $array
-     *
-     * @return void
      */
-    public static function forget(&$array, $keys)
+    public static function forget(&$array, $keys): void
     {
         $original = &$array;
 
@@ -725,20 +675,15 @@ class Arr
     }
 
     /**
-     * Get a single value specified by $path out of $data.
-     * Does not support the full dot notation feature set,
-     * but is faster for simple read operations.
+     * Get an item from an array using "dot" notation.
      *
      * @param array|ArrayAccess $array   Array of data to operate on.
      * @param array|int|string  $key     The path being searched for. Either a dot
      *                                   separated string, or an array of path segments.
-     * @param mixed             $default The return value when the path does not exist
      *
      * @return mixed The value fetched from the array, or null.
-     *
-     * @credit CakePHP - http://book.cakephp.org/2.0/en/core-utility-libraries/hash.html#Hash::get
      */
-    public static function get($array, $key, $default = null)
+    public static function get($array, $key, mixed $default = null): mixed
     {
         if (! static::accessible($array)) {
             return Helpers::value($default);
@@ -764,7 +709,7 @@ class Arr
             if (static::accessible($array) && static::exists($array, $segment)) {
                 $array = $array[$segment];
             } else {
-                return value($default);
+                return Helpers::value($default);
             }
         }
 
@@ -908,9 +853,7 @@ class Arr
      */
     public static function isAssoc(array $array): bool
     {
-        $keys = array_keys($array);
-
-        return array_keys($keys) !== $keys;
+        return ! array_is_list($array);
     }
 
     /**
@@ -920,7 +863,7 @@ class Arr
      */
     public static function isList(array $array): bool
     {
-        return ! self::isAssoc($array);
+        return array_is_list($array);
     }
 
     /**
@@ -960,13 +903,13 @@ class Arr
      */
     public static function prependKeysWith(array $array, string $prependWith): array
     {
-        return Collection::make($array)->mapWithKeys(static fn ($item, $key) => [$prependWith . $key => $item])->all();
+        return static::mapWithKeys($array, fn ($item, $key) => [$prependWith.$key => $item]);
     }
 
     /**
      * Return the last element in an array passing a given truth test.
      */
-    public static function last(array $array, ?callable $callback = null, mixed $default = null): mixed
+    public static function last(iterable $array, ?callable $callback = null, mixed $default = null): mixed
     {
         if (null === $callback) {
             return empty($array) ? Helpers::value($default) : end($array);
@@ -1053,10 +996,8 @@ class Arr
 
     /**
      * Get a subset of the items from the given array.
-     *
-     * @param array|string $keys
      */
-    public static function only(array $array, $keys): array
+    public static function only(array $array, array|string $keys): array
     {
         return array_intersect_key($array, array_flip((array) $keys));
     }
@@ -1077,6 +1018,79 @@ class Arr
         return array_combine($keys, $items);
     }
 
+	/**
+     * Run a map over each nested chunk of items.
+     *
+     * @template TKey
+     * @template TValue
+     *
+     * @param  array<TKey, array>  $array
+     * @param  callable(mixed...): TValue  $callback
+     * @return array<TKey, TValue>
+     */
+    public static function mapSpread(array $array, callable $callback): array
+    {
+        return static::map($array, function ($chunk, $key) use ($callback) {
+            $chunk[] = $key;
+
+            return $callback(...$chunk);
+        });
+    }
+
+	/**
+     * Run an associative map over each of the items.
+     *
+     * The callback should return an associative array with a single key/value pair.
+     *
+     * @template TKey
+     * @template TValue
+     * @template TMapWithKeysKey of array-key
+     * @template TMapWithKeysValue
+     *
+     * @param  array<TKey, TValue>  $array
+     * @param  callable(TValue, TKey): array<TMapWithKeysKey, TMapWithKeysValue>  $callback
+     */
+    public static function mapWithKeys(array $array, callable $callback): array
+    {
+        $result = [];
+
+        foreach ($array as $key => $value) {
+            $assoc = $callback($value, $key);
+
+            foreach ($assoc as $mapKey => $mapValue) {
+                $result[$mapKey] = $mapValue;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Partition the array into two arrays using the given callback.
+     *
+     * @template TKey of array-key
+     * @template TValue of mixed
+     *
+     * @param  iterable<TKey, TValue>  $array
+     * @param  callable(TValue, TKey): bool  $callback
+     * @return array<int<0, 1>, array<TKey, TValue>>
+     */
+    public static function partition(iterable $array, callable $callback): array
+    {
+        $passed = [];
+        $failed = [];
+
+        foreach ($array as $key => $item) {
+            if ($callback($item, $key)) {
+                $passed[$key] = $item;
+            } else {
+                $failed[$key] = $item;
+            }
+        }
+
+        return [$passed, $failed];
+    }
+
     /**
      * Pluck an array of values from an array.
      *
@@ -1090,7 +1104,7 @@ class Arr
         [$value, $key] = static::explodePluckParameters($value, $key);
 
         foreach ($array as $item) {
-            $itemValue = static::dataGet($item, $value);
+            $itemValue = Helpers::dataGet($item, $value);
 
             // If the key is "null", we will just append the value to the array and keep
             // looping. Otherwise we will key the array using the value of the key we
@@ -1098,7 +1112,7 @@ class Arr
             if (null === $key) {
                 $results[] = $itemValue;
             } else {
-                $itemKey = static::dataGet($item, $key);
+                $itemKey = Helpers::dataGet($item, $key);
 
                 if (is_object($itemKey) && method_exists($itemKey, '__toString')) {
                     $itemKey = (string) $itemKey;
@@ -1109,6 +1123,18 @@ class Arr
         }
 
         return $results;
+    }
+
+    /**
+     * Explode the "value" and "key" arguments passed to "pluck".
+     */
+    protected static function explodePluckParameters(array|string $value, array|string|null $key): array
+    {
+        $value = is_string($value) ? explode('.', $value) : $value;
+
+        $key = null === $key || is_array($key) ? $key : explode('.', $key);
+
+        return [$value, $key];
     }
 
     /**
@@ -1148,11 +1174,9 @@ class Arr
     /**
      * Get one or a specified number of random values from an array.
      *
-     * @return mixed
-     *
      * @throws InvalidArgumentException
      */
-    public static function random(array $array, ?int $number = null, bool $preserveKeys = false)
+    public static function random(array $array, ?int $number = null, bool $preserveKeys = false): mixed
     {
         $requested = null === $number ? 1 : $number;
 
@@ -1164,29 +1188,41 @@ class Arr
             );
         }
 
+        if ($array === [] || ($number !== null && $number <= 0)) {
+            return null === $number ? null : [];
+        }
+
+        $keys = (array) array_rand($array, $number);
+
         if (null === $number) {
-            return $array[array_rand($array)];
+            return $array[$keys[0]];
         }
 
         if ((int) $number === 0) {
             return [];
         }
 
-        $keys = array_rand($array, $number);
-
         $results = [];
 
         if ($preserveKeys) {
-            foreach ((array) $keys as $key) {
+            foreach ($keys as $key) {
                 $results[$key] = $array[$key];
             }
         } else {
-            foreach ((array) $keys as $key) {
+            foreach ($keys as $key) {
                 $results[] = $array[$key];
             }
         }
 
         return $results;
+    }
+
+    /**
+     * Filter the array using the negation of the given callback.
+     */
+    public static function reject(array $array, callable $callback): array
+    {
+        return static::where($array, fn ($value, $key) => ! $callback($value, $key));
     }
 
     /**
@@ -1236,6 +1272,28 @@ class Arr
         }
 
         return $data;
+    }
+
+	/**
+     * Select an array of values from an array.
+     */
+    public static function select(array $array, array|string $keys): array
+    {
+        $keys = static::wrap($keys);
+
+        return static::map($array, function ($item) use ($keys) {
+            $result = [];
+
+            foreach ($keys as $key) {
+                if (Arr::accessible($item) && Arr::exists($item, $key)) {
+                    $result[$key] = $item[$key];
+                } elseif (is_object($item) && isset($item->{$key})) {
+                    $result[$key] = $item->{$key};
+                }
+            }
+
+            return $result;
+        });
     }
 
     /**
@@ -1333,6 +1391,16 @@ class Arr
     }
 
     /**
+     * Sort the array in descending order using the given callback or "dot" notation.
+     *
+     * @param array|callable|string|null $callback
+     */
+    public static function sortDesc(array $array, $callback = null): array
+    {
+        return Collection::make($array)->sortByDesc($callback)->all();
+    }
+
+    /**
      * Sort an array in ASC/DESC order relativly to a specific position
      *
      * @param array  $data      Array to sort
@@ -1378,16 +1446,6 @@ class Arr
     }
 
     /**
-     * Sort the array in descending order using the given callback or "dot" notation.
-     *
-     * @param array|callable|string|null $callback
-     */
-    public static function sortDesc(array $array, $callback = null): array
-    {
-        return Collection::make($array)->sortByDesc($callback)->all();
-    }
-
-    /**
      * Recursively sort an array by keys and values.
      */
     public static function sortRecursive(array $array, int $options = SORT_REGULAR, bool $descending = false): array
@@ -1398,7 +1456,7 @@ class Arr
             }
         }
 
-        if (static::isAssoc($array)) {
+        if (! array_is_list($array)) {
             $descending
                     ? krsort($array, $options)
                     : ksort($array, $options);
@@ -1409,6 +1467,26 @@ class Arr
         }
 
         return $array;
+    }
+
+    /**
+     * Recursively sort an array by keys and values in descending order.
+     */
+    public static function sortRecursiveDesc(array $array, int $options = SORT_REGULAR): array
+    {
+        return static::sortRecursive($array, $options, true);
+    }
+
+	/**
+     * Take the first or last {$limit} items from an array.
+     */
+    public static function take(array $array, int $limit): array
+    {
+        if ($limit < 0) {
+            return array_slice($array, $limit, abs($limit));
+        }
+
+        return array_slice($array, 0, $limit);
     }
 
     /**
