@@ -17,6 +17,7 @@ use BlitzPHP\Contracts\Support\Enumerable;
 use BlitzPHP\Traits\Macroable;
 use BlitzPHP\Utilities\Helpers;
 use BlitzPHP\Utilities\String\Text;
+use Closure;
 use Exception;
 use InvalidArgumentException;
 
@@ -1094,8 +1095,8 @@ class Arr
     /**
      * Pluck an array of values from an array.
      *
-     * @param array|int|string|null $value
-     * @param array|string|null     $key
+     * @param array|int|string|Closure|null $value
+     * @param array|string|Closure|null     $key
      */
     public static function pluck(iterable $array, $value, $key = null): array
     {
@@ -1104,7 +1105,9 @@ class Arr
         [$value, $key] = static::explodePluckParameters($value, $key);
 
         foreach ($array as $item) {
-            $itemValue = Helpers::dataGet($item, $value);
+            $itemValue = $value instanceof Closure
+                ? $value($item)
+                : Helpers::dataGet($item, $value);
 
             // If the key is "null", we will just append the value to the array and keep
             // looping. Otherwise we will key the array using the value of the key we
@@ -1112,7 +1115,9 @@ class Arr
             if (null === $key) {
                 $results[] = $itemValue;
             } else {
-                $itemKey = Helpers::dataGet($item, $key);
+                $itemKey = $key instanceof Closure
+                    ? $key($item)
+                    : Helpers::dataGet($item, $key);
 
                 if (is_object($itemKey) && method_exists($itemKey, '__toString')) {
                     $itemKey = (string) $itemKey;
@@ -1127,12 +1132,15 @@ class Arr
 
     /**
      * Explode the "value" and "key" arguments passed to "pluck".
+	 *
+	 * @param string|array|Closure $value
+     * @param string|array|Closure|null $key
      */
-    protected static function explodePluckParameters(array|string $value, array|string|null $key): array
+    protected static function explodePluckParameters($value, $key): array
     {
         $value = is_string($value) ? explode('.', $value) : $value;
 
-        $key = null === $key || is_array($key) ? $key : explode('.', $key);
+        $key = is_string($key) ? explode('.', $key) : $key;
 
         return [$value, $key];
     }
