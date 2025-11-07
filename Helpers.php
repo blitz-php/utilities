@@ -12,6 +12,7 @@
 namespace BlitzPHP\Utilities;
 
 use BlitzPHP\Traits\Mixins\HigherOrderTapProxy;
+use BlitzPHP\Utilities\Iterable\Arr;
 use BlitzPHP\Utilities\Iterable\Collection;
 use Closure;
 use DomainException;
@@ -24,6 +25,161 @@ use Throwable;
 
 class Helpers
 {
+	/**
+     * Fill in data where it's missing.
+     */
+    public static function dataFill(mixed &$target, array|string $key, mixed $value): mixed
+    {
+        return static::dataSet($target, $key, $value, false);
+    }
+
+	/**
+     * Remove / unset an item from an array or object using "dot" notation.
+     */
+    public static function dataForget(mixed &$target, array|int|string|null $key): mixed
+    {
+        $segments = is_array($key) ? $key : explode('.', $key);
+
+        if (($segment = array_shift($segments)) === '*' && Arr::accessible($target)) {
+            if ($segments) {
+                foreach ($target as &$inner) {
+                    static::dataForget($inner, $segments);
+                }
+            }
+        } elseif (Arr::accessible($target)) {
+            if ($segments && Arr::exists($target, $segment)) {
+                static::dataForget($target[$segment], $segments);
+            } else {
+                Arr::forget($target, $segment);
+            }
+        } elseif (is_object($target)) {
+            if ($segments && isset($target->{$segment})) {
+                static::dataForget($target->{$segment}, $segments);
+            } elseif (isset($target->{$segment})) {
+                unset($target->{$segment});
+            }
+        }
+
+        return $target;
+    }
+
+	/**
+     * Récupère un élément d'un tableau ou d'un objet en utilisant la notation "point".
+     */
+    public static function dataGet(mixed $target, array|int|string|null $key, mixed $default = null): mixed
+    {
+        if (null === $key) {
+            return $target;
+        }
+
+        $key = is_array($key) ? $key : explode('.', $key);
+
+        foreach ($key as $i => $segment) {
+            unset($key[$i]);
+
+            if (null === $segment) {
+                return $target;
+            }
+
+            if ($segment === '*') {
+                if ($target instanceof Collection) {
+                    $target = $target->all();
+                } elseif (! is_iterable($target)) {
+                    return static::value($default);
+                }
+
+                $result = [];
+
+                foreach ($target as $item) {
+                    $result[] = static::dataGet($item, $key);
+                }
+
+                return in_array('*', $key, true) ? Arr::collapse($result) : $result;
+            }
+
+			$segment = match ($segment) {
+                '\*'       => '*',
+                '\{first}' => '{first}',
+                '{first}'  => array_key_first(is_array($target) ? $target : static::collect($target)->all()),
+                '\{last}'  => '{last}',
+                '{last}'   => array_key_last(is_array($target) ? $target : static::collect($target)->all()),
+                default    => $segment,
+            };
+
+            if (Arr::accessible($target) && Arr::exists($target, $segment)) {
+                $target = $target[$segment];
+            } elseif (is_object($target) && isset($target->{$segment})) {
+                $target = $target->{$segment};
+            } else {
+                return static::value($default);
+            }
+        }
+
+        return $target;
+    }
+
+	/**
+     * Set an item on an array or object using dot notation.
+     */
+    public static function dataSet(mixed &$target, array|string $key, mixed $value, bool $overwrite = true): mixed
+    {
+        $segments = is_array($key) ? $key : explode('.', $key);
+
+        if (($segment = array_shift($segments)) === '*') {
+            if (! Arr::accessible($target)) {
+                $target = [];
+            }
+
+            if ($segments) {
+                foreach ($target as &$inner) {
+                    static::dataSet($inner, $segments, $value, $overwrite);
+                }
+            } elseif ($overwrite) {
+                foreach ($target as &$inner) {
+                    $inner = $value;
+                }
+            }
+        } elseif (Arr::accessible($target)) {
+            if ($segments) {
+                if (! Arr::exists($target, $segment)) {
+                    $target[$segment] = [];
+                }
+
+                static::dataSet($target[$segment], $segments, $value, $overwrite);
+            } elseif ($overwrite || ! Arr::exists($target, $segment)) {
+                $target[$segment] = $value;
+            }
+        } elseif (is_object($target)) {
+            if ($segments) {
+                if (! isset($target->{$segment})) {
+                    $target->{$segment} = [];
+                }
+
+                static::dataSet($target->{$segment}, $segments, $value, $overwrite);
+            } elseif ($overwrite || ! isset($target->{$segment})) {
+                $target->{$segment} = $value;
+            }
+        } else {
+            $target = [];
+
+            if ($segments) {
+                static::dataSet($target[$segment], $segments, $value, $overwrite);
+            } elseif ($overwrite) {
+                $target[$segment] = $value;
+            }
+        }
+
+        return $target;
+    }
+
+	/**
+     * Get the first element of an array. Useful for method chaining.
+     */
+    public static function head(array $array): mixed
+    {
+        return reset($array);
+    }
+
     /**
      * Testez pour voir si une demande a été faite à partir de la ligne de commande.
      */
@@ -181,6 +337,14 @@ class Helpers
         }
 
         return $input === base64_encode($str);
+    }
+
+	/**
+     * Get the last element from an array.
+     */
+    public static function last(array $array): mixed
+    {
+        return end($array);
     }
 
     public static function cleanUrl(string $url): string
@@ -376,10 +540,10 @@ class Helpers
      * Purifiez l'entrée à l'aide de la classe autonome HTMLPurifier.
      * Utilisez facilement plusieurs configurations de purificateur.
      *
-     * @param string|string[] $dirty_html
-     * @param false|string    $config
+     * @param list<string>|string $dirty_html
+     * @param false|string        $config
      *
-     * @return string|string[]
+     * @return list<string>|string
      */
     public static function purify($dirty_html, $config = false, string $charset = 'UTF-8')
     {
@@ -687,7 +851,7 @@ class Helpers
      *
      * @param string $class Le nom complet de la classe, ie `BlitzPHP\Core\App`.
      *
-     * @return array<string> Tableau avec 2 index. 0 => namespace, 1 => nom de la classe.
+     * @return list<string> Tableau avec 2 index. 0 => namespace, 1 => nom de la classe.
      */
     public static function namespaceSplit(string $class): array
     {
@@ -735,6 +899,23 @@ class Helpers
     public static function collect(mixed $value = null): Collection
     {
         return new Collection($value);
+    }
+
+	/**
+     * Return a value if the given condition is true.
+     *
+     * @param  \Closure|mixed  $value
+     * @param  \Closure|mixed  $default
+     */
+    public static function when(mixed $condition, $value, $default = null): mixed
+    {
+        $condition = $condition instanceof Closure ? $condition() : $condition;
+
+        if ($condition) {
+            return static::value($value, $condition);
+        }
+
+        return static::value($default, $condition);
     }
 
     /**
