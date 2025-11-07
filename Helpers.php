@@ -12,6 +12,8 @@
 namespace BlitzPHP\Utilities;
 
 use BlitzPHP\Traits\Mixins\HigherOrderTapProxy;
+use BlitzPHP\Utilities\Invade\Invader;
+use BlitzPHP\Utilities\Invade\StaticInvader;
 use BlitzPHP\Utilities\Iterable\Arr;
 use BlitzPHP\Utilities\Iterable\Collection;
 use Closure;
@@ -550,6 +552,22 @@ class Helpers
     public static function head(array $array): mixed
     {
         return reset($array);
+    }
+
+	/**
+     * @template T of object
+     *
+     * @param T|class-string $object
+	 *
+     * @return Invader<T>|StaticInvader
+     */
+    public static function invade(object|string $object): Invader|StaticInvader
+    {
+        if (is_object($object)) {
+            return new Invader($object);
+        }
+
+        return new StaticInvader($object);
     }
 
     /**
