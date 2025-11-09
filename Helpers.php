@@ -11,6 +11,7 @@
 
 namespace BlitzPHP\Utilities;
 
+use BackedEnum;
 use BlitzPHP\Traits\Mixins\HigherOrderTapProxy;
 use BlitzPHP\Utilities\Invade\Invader;
 use BlitzPHP\Utilities\Invade\StaticInvader;
@@ -24,6 +25,7 @@ use HTMLPurifier_Config;
 use InvalidArgumentException;
 use RuntimeException;
 use Throwable;
+use UnitEnum;
 
 class Helpers
 {
@@ -31,8 +33,6 @@ class Helpers
      * Récupère la classe "basename" de l'objet/classe donné.
      *
      * @see https://github.com/laravel/framework/blob/8.x/src/Illuminate/Support/helpers.php
-     *
-     * @codeCoverageIgnore
      */
     public static function classBasename(object|string $class): string
     {
@@ -43,8 +43,6 @@ class Helpers
 
     /**
      * Renvoie tous les traits utilisés par une classe, ses classes parentes et le trait de leurs traits.
-     *
-     * @codeCoverageIgnore
      */
     public static function classUsesRecursive(object|string $class): array
     {
@@ -61,7 +59,7 @@ class Helpers
         return array_unique($results);
     }
 
-	public static function cleanUrl(string $url): string
+    public static function cleanUrl(string $url): string
     {
         $path  = parse_url($url);
         $query = '';
@@ -103,7 +101,7 @@ class Helpers
         return new Collection($value);
     }
 
-	/**
+    /**
      * Fill in data where it's missing.
      */
     public static function dataFill(mixed &$target, array|string $key, mixed $value): mixed
@@ -111,7 +109,7 @@ class Helpers
         return static::dataSet($target, $key, $value, false);
     }
 
-	/**
+    /**
      * Remove / unset an item from an array or object using "dot" notation.
      */
     public static function dataForget(mixed &$target, array|int|string|null $key): mixed
@@ -141,10 +139,10 @@ class Helpers
         return $target;
     }
 
-	/**
+    /**
      * Determine if a key / property exists on an array or object using "dot" notation.
      *
-     * @param string|array|int|null $key
+     * @param array|int|string|null $key
      */
     public static function dataHas(mixed $target, $key): bool
     {
@@ -167,7 +165,7 @@ class Helpers
         return true;
     }
 
-	/**
+    /**
      * Récupère un élément d'un tableau ou d'un objet en utilisant la notation "point".
      */
     public static function dataGet(mixed $target, array|int|string|null $key, mixed $default = null): mixed
@@ -201,7 +199,7 @@ class Helpers
                 return in_array('*', $key, true) ? Arr::collapse($result) : $result;
             }
 
-			$segment = match ($segment) {
+            $segment = match ($segment) {
                 '\*'       => '*',
                 '\{first}' => '{first}',
                 '{first}'  => array_key_first(is_array($target) ? $target : static::collect($target)->all()),
@@ -222,7 +220,7 @@ class Helpers
         return $target;
     }
 
-	/**
+    /**
      * Set an item on an array or object using dot notation.
      */
     public static function dataSet(mixed &$target, array|string $key, mixed $value, bool $overwrite = true): mixed
@@ -325,21 +323,22 @@ class Helpers
         return trim($path);
     }
 
-	/**
+    /**
      * Return a scalar value for the given value that might be an enum.
      *
      * @template TValue
      * @template TDefault
      *
-     * @param  TValue  $value
-     * @param  TDefault|callable(TValue): TDefault  $default
+     * @param TValue                              $value
+     * @param callable(TValue): TDefault|TDefault $default
+     *
      * @return ($value is empty ? TDefault : mixed)
      */
     public static function enumValue($value, $default = null)
     {
         return match (true) {
-            $value instanceof \BackedEnum => $value->value,
-            $value instanceof \UnitEnum => $value->name,
+            $value instanceof BackedEnum => $value->value,
+            $value instanceof UnitEnum   => $value->name,
 
             default => $value ?? static::value($default),
         };
@@ -473,25 +472,25 @@ class Helpers
      */
     public static function findBaseUrl(): string
     {
-		if (! isset($_SERVER['SERVER_ADDR'])) {
-			return 'http://localhost:' . ($_SERVER['SERVER_PORT'] ?? '80');
-		}
+        if (! isset($_SERVER['SERVER_ADDR'])) {
+            return 'http://localhost:' . ($_SERVER['SERVER_PORT'] ?? '80');
+        }
 
-		$server_addr = $_SERVER['HTTP_HOST'] ?? ((str_contains($_SERVER['SERVER_ADDR'], ':')) ? '[' . $_SERVER['SERVER_ADDR'] . ']' : $_SERVER['SERVER_ADDR']);
-		$scheme      = 'http';
+        $server_addr = $_SERVER['HTTP_HOST'] ?? ((str_contains($_SERVER['SERVER_ADDR'], ':')) ? '[' . $_SERVER['SERVER_ADDR'] . ']' : $_SERVER['SERVER_ADDR']);
+        $scheme      = 'http';
 
-		if (
-			(! empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off')
-			|| (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https')
-			|| (! empty($_SERVER['HTTP_FRONT_END_HTTPS']) && strtolower($_SERVER['HTTP_FRONT_END_HTTPS']) !== 'off')
-		) {
-			$scheme = 'https';
-		}
+        if (
+            (! empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off')
+            || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https')
+            || (! empty($_SERVER['HTTP_FRONT_END_HTTPS']) && strtolower($_SERVER['HTTP_FRONT_END_HTTPS']) !== 'off')
+        ) {
+            $scheme = 'https';
+        }
 
-		return $scheme . '://' . $server_addr . dirname(substr($_SERVER['SCRIPT_NAME'], 0, strpos($_SERVER['SCRIPT_NAME'], basename($_SERVER['SCRIPT_FILENAME']))));
+        return $scheme . '://' . $server_addr . dirname(substr($_SERVER['SCRIPT_NAME'], 0, strpos($_SERVER['SCRIPT_NAME'], basename($_SERVER['SCRIPT_FILENAME']))));
     }
 
-	/**
+    /**
      * Méthode pratique pour htmlspecialchars.
      *
      * @param mixed       $text    Texte à envelopper dans htmlspecialchars. Fonctionne également avec des tableaux et des objets.
@@ -546,7 +545,7 @@ class Helpers
         return htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, $charset ?: $defaultCharset, $double);
     }
 
-	/**
+    /**
      * Get the first element of an array. Useful for method chaining.
      */
     public static function head(array $array): mixed
@@ -554,11 +553,11 @@ class Helpers
         return reset($array);
     }
 
-	/**
+    /**
      * @template T of object
      *
-     * @param T|class-string $object
-	 *
+     * @param class-string|T $object
+     *
      * @return Invader<T>|StaticInvader
      */
     public static function invade(object|string $object): Invader|StaticInvader
@@ -765,7 +764,7 @@ class Helpers
         return true;
     }
 
-	/**
+    /**
      * Get the last element from an array.
      */
     public static function last(array $array): mixed
@@ -1098,11 +1097,11 @@ class Helpers
         return $value instanceof Closure ? $value(...$args) : $value;
     }
 
-	/**
+    /**
      * Return a value if the given condition is true.
      *
-     * @param  \Closure|mixed  $value
-     * @param  \Closure|mixed  $default
+     * @param Closure|mixed $value
+     * @param Closure|mixed $default
      */
     public static function when(mixed $condition, $value, $default = null): mixed
     {

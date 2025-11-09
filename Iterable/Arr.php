@@ -234,9 +234,9 @@ class Arr
     /**
      * Récupère un élément d'un tableau ou d'un objet en utilisant la notation "point".
      *
-     * @param  string|array|int|null  $key
-	 *
-	 * @deprecated 1.9 use Helpers::dataGet instead
+     * @param array|int|string|null $key
+     *
+     * @deprecated 1.9 use Helpers::dataGet instead
      */
     public static function dataGet(mixed $target, $key, mixed $default = null): mixed
     {
@@ -678,9 +678,9 @@ class Arr
     /**
      * Get an item from an array using "dot" notation.
      *
-     * @param array|ArrayAccess $array   Array of data to operate on.
-     * @param array|int|string  $key     The path being searched for. Either a dot
-     *                                   separated string, or an array of path segments.
+     * @param array|ArrayAccess $array Array of data to operate on.
+     * @param array|int|string  $key   The path being searched for. Either a dot
+     *                                 separated string, or an array of path segments.
      *
      * @return mixed The value fetched from the array, or null.
      */
@@ -904,7 +904,7 @@ class Arr
      */
     public static function prependKeysWith(array $array, string $prependWith): array
     {
-        return static::mapWithKeys($array, fn ($item, $key) => [$prependWith.$key => $item]);
+        return static::mapWithKeys($array, static fn ($item, $key) => [$prependWith . $key => $item]);
     }
 
     /**
@@ -1019,26 +1019,27 @@ class Arr
         return array_combine($keys, $items);
     }
 
-	/**
+    /**
      * Run a map over each nested chunk of items.
      *
      * @template TKey
      * @template TValue
      *
-     * @param  array<TKey, array>  $array
-     * @param  callable(mixed...): TValue  $callback
+     * @param array<TKey, array>         $array
+     * @param callable(mixed...): TValue $callback
+     *
      * @return array<TKey, TValue>
      */
     public static function mapSpread(array $array, callable $callback): array
     {
-        return static::map($array, function ($chunk, $key) use ($callback) {
+        return static::map($array, static function ($chunk, $key) use ($callback) {
             $chunk[] = $key;
 
             return $callback(...$chunk);
         });
     }
 
-	/**
+    /**
      * Run an associative map over each of the items.
      *
      * The callback should return an associative array with a single key/value pair.
@@ -1048,8 +1049,8 @@ class Arr
      * @template TMapWithKeysKey of array-key
      * @template TMapWithKeysValue
      *
-     * @param  array<TKey, TValue>  $array
-     * @param  callable(TValue, TKey): array<TMapWithKeysKey, TMapWithKeysValue>  $callback
+     * @param array<TKey, TValue>                                               $array
+     * @param callable(TValue, TKey): array<TMapWithKeysKey, TMapWithKeysValue> $callback
      */
     public static function mapWithKeys(array $array, callable $callback): array
     {
@@ -1072,8 +1073,9 @@ class Arr
      * @template TKey of array-key
      * @template TValue of mixed
      *
-     * @param  iterable<TKey, TValue>  $array
-     * @param  callable(TValue, TKey): bool  $callback
+     * @param iterable<TKey, TValue>       $array
+     * @param callable(TValue, TKey): bool $callback
+     *
      * @return array<int<0, 1>, array<TKey, TValue>>
      */
     public static function partition(iterable $array, callable $callback): array
@@ -1095,8 +1097,8 @@ class Arr
     /**
      * Pluck an array of values from an array.
      *
-     * @param array|int|string|Closure|null $value
-     * @param array|string|Closure|null     $key
+     * @param array|Closure|int|string|null $value
+     * @param array|Closure|string|null     $key
      */
     public static function pluck(iterable $array, $value, $key = null): array
     {
@@ -1132,9 +1134,9 @@ class Arr
 
     /**
      * Explode the "value" and "key" arguments passed to "pluck".
-	 *
-	 * @param string|array|Closure $value
-     * @param string|array|Closure|null $key
+     *
+     * @param array|Closure|string      $value
+     * @param array|Closure|string|null $key
      */
     protected static function explodePluckParameters($value, $key): array
     {
@@ -1230,7 +1232,7 @@ class Arr
      */
     public static function reject(array $array, callable $callback): array
     {
-        return static::where($array, fn ($value, $key) => ! $callback($value, $key));
+        return static::where($array, static fn ($value, $key) => ! $callback($value, $key));
     }
 
     /**
@@ -1282,14 +1284,14 @@ class Arr
         return $data;
     }
 
-	/**
+    /**
      * Select an array of values from an array.
      */
     public static function select(array $array, array|string $keys): array
     {
         $keys = static::wrap($keys);
 
-        return static::map($array, function ($item) use ($keys) {
+        return static::map($array, static function ($item) use ($keys) {
             $result = [];
 
             foreach ($keys as $key) {
@@ -1485,7 +1487,7 @@ class Arr
         return static::sortRecursive($array, $options, true);
     }
 
-	/**
+    /**
      * Take the first or last {$limit} items from an array.
      */
     public static function take(array $array, int $limit): array
