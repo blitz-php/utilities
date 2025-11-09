@@ -37,7 +37,7 @@ use Traversable;
  */
 class Fluent implements Arrayable, ArrayAccess, Jsonable, JsonSerializable
 {
-	use Conditionable, InteractsWithData, Macroable {
+    use Conditionable, InteractsWithData, Macroable {
         __call as macroCall;
     }
 
@@ -78,18 +78,18 @@ class Fluent implements Arrayable, ArrayAccess, Jsonable, JsonSerializable
      */
     public function get($key, $default = null)
     {
-		return Helpers::dataGet($this->attributes, $key, $default);
+        return Helpers::dataGet($this->attributes, $key, $default);
     }
 
     /**
      * Set an attribute on the fluent instance using "dot" notation.
      *
-     * @param TKey $key
+     * @param TKey   $key
      * @param TValue $value
      */
     public function set($key, $value): self
     {
-		Helpers::dataSet($this->attributes, $key, $value);
+        Helpers::dataSet($this->attributes, $key, $value);
 
         return $this;
     }
@@ -281,7 +281,7 @@ class Fluent implements Arrayable, ArrayAccess, Jsonable, JsonSerializable
      */
     public function __call($method, $parameters)
     {
-		if (static::hasMacro($method)) {
+        if (static::hasMacro($method)) {
             return $this->macroCall($method, $parameters);
         }
 

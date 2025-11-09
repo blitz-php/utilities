@@ -12,6 +12,7 @@
 namespace BlitzPHP\Utilities\Exceptions;
 
 use RuntimeException;
+use Throwable;
 
 class MultipleItemsFoundException extends RuntimeException
 {
@@ -25,16 +26,17 @@ class MultipleItemsFoundException extends RuntimeException
     /**
      * Create a new exception instance.
      *
-     * @param  int  $count
-     * @param  int  $code
-     * @param  \Throwable|null  $previous
+     * @param int            $count
+     * @param int            $code
+     * @param Throwable|null $previous
+     *
      * @return void
      */
     public function __construct($count, $code = 0, $previous = null)
     {
         $this->count = $count;
 
-        parent::__construct("$count items were found.", $code, $previous);
+        parent::__construct("{$count} items were found.", $code, $previous);
     }
 
     /**

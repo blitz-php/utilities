@@ -27,7 +27,7 @@ class StaticInvader
      * @param class-string $className
      */
     public function __construct(public string $className)
-	{
+    {
     }
 
     public static function make(string $className)
@@ -63,6 +63,6 @@ class StaticInvader
             );
         }
 
-        return (fn ($method) => static::{$method}(...$params))->bindTo(null, $this->className)($this->method);
+        return (static fn ($method) => static::{$method}(...$params))->bindTo(null, $this->className)($this->method);
     }
 }
