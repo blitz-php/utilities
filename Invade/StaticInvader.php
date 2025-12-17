@@ -59,7 +59,7 @@ class StaticInvader
     {
         if ($this->method === null) {
             throw new Exception(
-                'No method to be called. Use it like: invadeStatic(Foo::class)->method(\'bar\')->call()'
+                'Aucune méthode à appeler. Utilisez-la comme: invadeStatic(Foo::class)->method(\'bar\')->call()'
             );
         }
 
