@@ -664,35 +664,198 @@ class ReflectionClass extends PhpReflectionClass
      * @internal Méthode interne utilisée pour parser les docblocks
      */
     private function parseDocComment(string|false $docComment): array
-    {
-        if (!$docComment) {
-            return [];
-        }
+	{
+		if (!$docComment) {
+			return [];
+		}
 
-        $annotations = [];
-        $lines = explode("\n", $docComment);
+		// Supprime les balises de commentaire
+		$content = trim($docComment);
+		$content = preg_replace(['/^\/\*\*\s*/', '/\s*\*\/$/'], '', $content);
 
-        foreach ($lines as $line) {
-            if (preg_match('/^\s*\*\s*@(\w+)(?:\s+(.*))?$/', $line, $matches)) {
-                $name = $matches[1];
-                $value = $matches[2] ?? '';
+		// Divise en lignes et nettoie
+		$lines = explode("\n", $content);
+		$cleanedLines = [];
 
-                if (!isset($annotations[$name])) {
-                    $annotations[$name] = [];
-                }
-                $annotations[$name][] = trim($value);
-            }
-        }
+		foreach ($lines as $line) {
+			$line = trim(preg_replace('/^\s*\*\s*/', '', $line));
+			if ($line !== '') {
+				$cleanedLines[] = $line;
+			}
+		}
 
-        // Simplifie les annotations uniques
-        foreach ($annotations as $key => $value) {
-            if (count($value) === 1) {
-                $annotations[$key] = $value[0];
-            }
-        }
+		// Rejoindre et analyser
+		$content = implode("\n", $cleanedLines);
 
-        return $annotations;
-    }
+		// Pattern principal
+		$pattern = '/
+			@([a-zA-Z_\\\\][a-zA-Z0-9_\\\\]*)   # Nom de lannotation
+			(?:
+				\s*\(([^)]*)\)                  # Contenu entre parenthèses
+			)?
+			\s*
+			(
+				(?:
+					(?!\s*@)
+					.
+				)*?
+			)
+			(?=\s*@|$)
+		/sx';
+
+		preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
+
+		$annotations = [];
+
+		foreach ($matches as $match) {
+			$name = $match[1];
+			$parenValue = isset($match[2]) ? trim($match[2]) : '';
+			$value = trim($match[3]);
+
+			if (!isset($annotations[$name])) {
+				$annotations[$name] = [];
+			}
+
+			// Traitement spécial pour @var et @return - ne prendre que le type
+			if ($name === 'var' || $name === 'return') {
+				// Extrait le type (premier mot)
+				$parts = preg_split('/\s+/', $value, 2);
+				$type = $parts[0] ?? '';
+				$rest = $parts[1] ?? '';
+
+				$annotations[$name][] = $type;
+
+				// Si il y a une description après le type
+				if (!empty($rest)) {
+					// Stocke la description séparément
+					if (!isset($annotations[$name . '_desc'])) {
+						$annotations[$name . '_desc'] = [];
+					}
+					$annotations[$name . '_desc'][] = trim($rest);
+				}
+
+				// Extrait les annotations inline du reste
+				$inlineAnnotations = $this->parseInlineAnnotations($rest);
+				foreach ($inlineAnnotations as $inlineName => $inlineValue) {
+					if (!isset($annotations[$inlineName])) {
+						$annotations[$inlineName] = [];
+					}
+					$annotations[$inlineName][] = $inlineValue;
+				}
+			}
+			// Traitement spécial pour @param - format: type $nom description
+			elseif ($name === 'param') {
+				// Pattern: type $variable description
+				if (preg_match('/^([^\s]+)\s+(\$\w+)(?:\s+(.*))?$/s', $value, $paramMatches)) {
+					$paramType = $paramMatches[1];
+					$paramName = $paramMatches[2];
+					$paramDesc = $paramMatches[3] ?? '';
+
+					$annotations[$name][] = [
+						'type' => $paramType,
+						'name' => $paramName,
+						'description' => trim($paramDesc)
+					];
+				} else {
+					$annotations[$name][] = $value;
+				}
+			}
+			// Annotation avec parenthèses
+			elseif (!empty($parenValue)) {
+				$annotations[$name][] = $parenValue;
+			}
+			// Annotation normale
+			else {
+				$annotations[$name][] = $value;
+			}
+		}
+
+		// Simplifie les annotations uniques
+		foreach ($annotations as $name => &$values) {
+			$values = array_map(function($value) {
+				return is_array($value) ? array_map('trim', $value) : trim($value);
+			}, $values);
+			$values = array_filter($values, fn($v) => $v !== '');
+
+			if (count($values) === 1 && $name !== 'param') {
+				$values = reset($values);
+			}
+		}
+
+		return $annotations;
+	}
+
+	/**
+	 * Extrait les annotations inline d'une chaîne de texte.
+	 *
+	 * Cette méthode analyse une chaîne de texte pour trouver et extraire
+	 * les annotations PHP qui sont présentes dans le texte. Elle supporte
+	 * deux formats d'annotations :
+	 * 1. Annotations simples : `@required`, `@deprecated`
+	 * 2. Annotations avec valeurs : `@min(18)`, `@max(100)`, `@length(min=2, max=50)`
+	 *
+	 * @param string $text Texte à analyser pour les annotations inline.
+	 *                     Peut contenir du texte libre avec des annotations
+	 *                     mélangées.
+	 *
+	 * @return array<string, string> Tableau associatif des annotations extraites.
+	 *                               Clé : nom de l'annotation (sans le @)
+	 *                               Valeur : contenu entre parenthèses ou chaîne vide
+	 *                                        pour les annotations sans valeur.
+	 *
+	 * @example
+	 * // Texte d'entrée
+	 * $text = "Le nom doit être @required et avoir entre @min(2) et @max(50) caractères";
+	 *
+	 * // Résultat
+	 * [
+	 *     'required' => '',      // Annotation sans valeur
+	 *     'min' => '2',          // Annotation avec valeur simple
+	 *     'max' => '50',         // Annotation avec valeur simple
+	 * ]
+	 *
+	 * @example
+	 * // Annotations avec valeurs complexes
+	 * $text = "Email @email @length(min=5, max=255)";
+	 * // Retourne:
+	 * [
+	 *     'email' => '',
+	 *     'length' => 'min=5, max=255'
+	 * ]
+	 *
+	 * @example
+	 * // Annotations multiples du même type
+	 * $text = "@deprecated depuis la version 2.0 @see NouvelleMethode";
+	 * // Retourne:
+	 * [
+	 *     'deprecated' => 'depuis la version 2.0',
+	 *     'see' => 'NouvelleMethode'
+	 * ]
+	 *
+	 * @note Cette méthode ne supporte PAS les annotations sur plusieurs lignes.
+	 *       Pour le parsing complet de docblocks multi-lignes, utilisez
+	 *       parseDocComment().
+	 *
+	 * @see parseDocComment() Pour le parsing complet des docblocks PHP
+	 * @since 1.0.0
+	 * @internal Méthode auxiliaire utilisée uniquement par parseDocComment()
+	 */
+	private function parseInlineAnnotations(string $text): array
+	{
+		$annotations = [];
+
+		// Cherche @nom ou @nom(valeur)
+		preg_match_all('/@([a-zA-Z_][a-zA-Z0-9_]*)(?:\(([^)]*)\))?/', $text, $matches, PREG_SET_ORDER);
+
+		foreach ($matches as $match) {
+			$name = $match[1];
+			$value = $match[2] ?? '';
+
+			$annotations[$name] = $value;
+		}
+
+		return $annotations;
+	}
 
     // =========================================================================
     // SECTION: ATTRIBUTS PHP 8+
@@ -909,11 +1072,8 @@ class ReflectionClass extends PhpReflectionClass
     {
         $properties = $this->getProperties(ReflectionProperty::IS_STATIC);
         foreach ($properties as $property) {
-            if ($property->hasDefaultValue()) {
-                $property->setValue($property->getDefaultValue());
-            } else {
-                $property->setValue(null);
-            }
+			$value = $property->hasDefaultValue() ? $property->getDefaultValue() : null;
+			$property->setValue(null, $value);
         }
     }
 }
