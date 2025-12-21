@@ -17,20 +17,29 @@ use Firebase\JWT\Key;
 use Throwable;
 
 /**
- * Utilitaires de manipulation de token
+ * Utilitaires de manipulation de token JWT (JSON Web Token)
  */
 class Jwt
 {
     /**
+     * Configuration JWT
+     *
      * @var array
      */
     private $config;
 
     /**
-     * @var self
+     * Instance singleton de la classe
+     *
+     * @var self|null
      */
     private static $_instance;
 
+    /**
+     * Constructeur
+     *
+     * @param array $config Configuration JWT
+     */
     public function __construct(array $config = [])
     {
         $this->config = array_merge([
@@ -45,7 +54,11 @@ class Jwt
     }
 
     /**
-     * Instance unique
+     * Récupère l'instance singleton
+     *
+     * @param array $config Configuration JWT (si création de nouvelle instance)
+     *
+     * @return self
      */
     public static function instance(array $config = []): self
     {
@@ -57,7 +70,11 @@ class Jwt
     }
 
     /**
-     * Renvoi les configurations jwt appropriees
+     * Retourne les configurations JWT appropriées
+     *
+     * @param array $config Configuration additionnelle
+     *
+     * @return object Configuration JWT sous forme d'objet
      */
     private static function config(array $config = []): object
     {
@@ -65,9 +82,14 @@ class Jwt
     }
 
     /**
-     * Genere un token d'authentification
+     * Génère un token JWT d'authentification
      *
-     * @throws Exception
+     * @param array $data   Données à inclure dans le token
+     * @param array $config Configuration spécifique pour cet encodage
+     *
+     * @return string Token JWT encodé
+     *
+     * @throws Exception Si l'encodage échoue
      */
     public static function encode(array $data = [], array $config = []): string
     {
@@ -93,11 +115,14 @@ class Jwt
     }
 
     /**
-     * Recupere le payload du token entrant
+     * Récupère le payload du token d'entrée
      *
-     * @return mixed
+     * @param bool  $full   Si true, retourne le payload complet avec les métadonnées
+     * @param array $config Configuration spécifique pour la décodage
      *
-     * @throws Exception
+     * @return mixed Données du payload
+     *
+     * @throws Exception Si le token n'est pas trouvé ou est invalide
      */
     public static function payload(bool $full = false, array $config = [])
     {
@@ -123,9 +148,14 @@ class Jwt
     }
 
     /**
-     * Decode un token d'authentification
+     * Décode un token JWT d'authentification
      *
-     * @throws Exception
+     * @param string $token  Token JWT à décoder
+     * @param array  $config Configuration spécifique pour le décodage
+     *
+     * @return object Payload décodé
+     *
+     * @throws Exception Si le décodage échoue
      */
     public static function decode(string $token, array $config = []): object
     {
@@ -142,7 +172,9 @@ class Jwt
     }
 
     /**
-     * Recupere le token d'acces à partir des headers
+     * Récupère le token d'accès à partir des headers HTTP
+     *
+     * @return string|null Token JWT ou null si non trouvé
      */
     public static function getToken(): ?string
     {
@@ -156,7 +188,9 @@ class Jwt
     }
 
     /**
-     * Recupere le header "Authorization"
+     * Récupère le header "Authorization" de la requête HTTP
+     *
+     * @return string|null Contenu du header Authorization ou null si non présent
      */
     public static function getAuthorization(): ?string
     {
@@ -165,7 +199,7 @@ class Jwt
         }
 
         if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
-            // Ngnix ou fast CGI
+            // Nginx ou fast CGI
             return trim($_SERVER['HTTP_AUTHORIZATION']);
         }
 
