@@ -14,7 +14,7 @@ namespace BlitzPHP\Utilities\Data;
 use BlitzPHP\Annotations\AnnotationReader;
 use BlitzPHP\Contracts\Support\Arrayable;
 use BlitzPHP\Contracts\Support\Jsonable;
-use BlitzPHP\Utilities\Date;
+use BlitzPHP\Utilities\DateTime\Date;
 use BlitzPHP\Utilities\Helpers;
 use BlitzPHP\Utilities\Iterable\Arr;
 use BlitzPHP\Utilities\Iterable\Collection;

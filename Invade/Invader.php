@@ -24,32 +24,55 @@ namespace BlitzPHP\Utilities\Invade;
 class Invader
 {
     /**
-     * @param T $obj
+     * Constructeur de l'envahisseur
+     *
+     * @param T $obj L'objet à envahir
      */
     public function __construct(public object $obj)
     {
     }
 
     /**
-     * @param T $obj
+     * Crée une nouvelle instance d'envahisseur
      *
-     * @return T
+     * @param T $obj L'objet à envahir
      */
-    public static function make(object $obj)
+    public static function make(object $obj): static
     {
-        return new self($obj);
+        return new static($obj);
     }
 
+    /**
+     * Récupère la valeur d'une propriété (publique ou privée) de l'objet
+     *
+     * @param string $name Le nom de la propriété
+     *
+     * @return mixed La valeur de la propriété
+     */
     public function __get(string $name): mixed
     {
         return (fn () => $this->{$name})->call($this->obj);
     }
 
+    /**
+     * Définit la valeur d'une propriété (publique ou privée) de l'objet
+     *
+     * @param string $name  Le nom de la propriété
+     * @param mixed  $value La valeur à définir
+     */
     public function __set(string $name, mixed $value): void
     {
         (fn () => $this->{$name} = $value)->call($this->obj);
     }
 
+    /**
+     * Appelle une méthode (publique ou privée) de l'objet
+     *
+     * @param string $name   Le nom de la méthode
+     * @param array  $params Les paramètres à passer à la méthode
+     *
+     * @return mixed Le résultat de l'appel de la méthode
+     */
     public function __call(string $name, array $params = []): mixed
     {
         return (fn () => $this->{$name}(...$params))->call($this->obj);

@@ -13,14 +13,26 @@ namespace BlitzPHP\Utilities\Iterable;
 
 use ArgumentCountError;
 use ArrayAccess;
+use BlitzPHP\Contracts\Support\Arrayable;
 use BlitzPHP\Contracts\Support\Enumerable;
+use BlitzPHP\Contracts\Support\Jsonable;
 use BlitzPHP\Traits\Macroable;
+use BlitzPHP\Utilities\Exceptions\ItemNotFoundException;
+use BlitzPHP\Utilities\Exceptions\MultipleItemsFoundException;
 use BlitzPHP\Utilities\Helpers;
 use BlitzPHP\Utilities\String\Text;
 use Closure;
 use Exception;
 use InvalidArgumentException;
+use JsonSerializable;
+use Traversable;
+use WeakMap;
 
+/**
+ * Classe utilitaire pour manipuler les tableaux
+ *
+ * Fournit des méthodes statiques pour travailler avec des tableaux de manière fluide et expressive.
+ */
 class Arr
 {
     use Macroable;
@@ -39,11 +51,23 @@ class Arr
     }
 
     /**
+     * Détermine si la valeur est un tableau convertible.
+     */
+    public static function arrayable(mixed $value): bool
+    {
+        return is_array($value)
+            || $value instanceof Arrayable
+            || $value instanceof Traversable
+            || $value instanceof Jsonable
+            || $value instanceof JsonSerializable;
+    }
+
+    /**
      * Ajoute un élément à un tableau en utilisant la notation "point" s'il n'existe pas.
      *
-     * @param mixed $value
+     * @param float|int|string $key
      */
-    public static function add(array $array, string $key, $value): array
+    public static function add(array $array, $key, mixed $value): array
     {
         if (null === static::get($array, $key)) {
             static::set($array, $key, $value);
@@ -53,14 +77,50 @@ class Arr
     }
 
     /**
-     * Teste si oui ou non un chemin donné existe dans $data.
+     * Obtient un élément de tableau à partir d'un tableau en utilisant la notation "point".
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function array(array|ArrayAccess $array, int|string|null $key, ?array $default = null): array
+    {
+        $value = self::get($array, $key, $default);
+
+        if (! is_array($value)) {
+            throw new InvalidArgumentException(
+                sprintf('La valeur du tableau pour la clé [%s] doit être un tableau, %s trouvé.', $key, gettype($value))
+            );
+        }
+
+        return $value;
+    }
+
+    /**
+     * Obtient un élément booléen à partir d'un tableau en utilisant la notation "point".
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function boolean(array|ArrayAccess $array, int|string|null $key, ?bool $default = null): bool
+    {
+        $value = Arr::get($array, $key, $default);
+
+        if (! is_bool($value)) {
+            throw new InvalidArgumentException(
+                sprintf('La valeur du tableau pour la clé [%s] doit être un booléen, %s trouvé.', $key, gettype($value))
+            );
+        }
+
+        return $value;
+    }
+
+    /**
+     * Teste si un chemin donné existe dans $data.
      * Cette méthode utilise la même syntaxe de chemin que Arr::extract()
      *
      * La vérification des chemins qui pourraient cibler plus d'un élément
-     * assurez-vous qu'au moins un élément correspondant existe.
+     * s'assure qu'au moins un élément correspondant existe.
      *
-     * @param array  $data La donnée à vérifier
-     * @param string $path Le chemin à vérifier.
+     * @param array  $data Les données à vérifier
+     * @param string $path Le chemin à vérifier
      *
      * @see self::extract()
      *
@@ -77,7 +137,7 @@ class Arr
     }
 
     /**
-     * Réduire un tableau de tableaux en un seul tableau.
+     * Réduit un tableau de tableaux en un seul tableau.
      */
     public static function collapse(iterable $array): array
     {
@@ -102,12 +162,12 @@ class Arr
      * à null (utile pour Arr::merge). Vous pouvez éventuellement regrouper les valeurs en fonction de ce qui est obtenu lorsque
      * le chemin est spécifié dans `$groupPath`.
      *
-     * @param array  $data      Array from where to extract keys and values
-     * @param string $keyPath   A dot-separated string.
-     * @param string $valuePath A dot-separated string.
-     * @param string $groupPath A dot-separated string.
+     * @param array  $data      Tableau depuis lequel extraire les clés et valeurs
+     * @param string $keyPath   Une chaîne séparée par des points
+     * @param string $valuePath Une chaîne séparée par des points
+     * @param string $groupPath Une chaîne séparée par des points
      *
-     * @return array Combined array
+     * @return array Tableau combiné
      *
      * @credit CakePHP - http://book.cakephp.org/2.0/en/core-utility-libraries/hash.html#Hash::combine
      */
@@ -138,7 +198,7 @@ class Arr
         }
 
         if (count($keys) !== count($vals)) {
-            throw new Exception('Arr::combine() needs an equal number of keys + values.');
+            throw new Exception('Arr::combine() a besoin d\'un nombre égal de clés et de valeurs.');
         }
 
         if ($groupPath !== null) {
@@ -167,12 +227,12 @@ class Arr
     }
 
     /**
-     * Determines if one array contains the exact keys and values of another.
+     * Détermine si un tableau contient exactement les clés et valeurs d'un autre.
      *
-     * @param array $data   The data to search through.
-     * @param array $needle The values to file in $data
+     * @param array $data   Les données dans lesquelles rechercher
+     * @param array $needle Les valeurs à trouver dans $data
      *
-     * @return bool true if $data contains $needle, false otherwise
+     * @return bool true si $data contient $needle, false sinon
      *
      * @credit CakePHP - http://book.cakephp.org/2.0/en/core-utility-libraries/hash.html#Hash::contains
      */
@@ -208,7 +268,7 @@ class Arr
     }
 
     /**
-     * Cross join the given arrays, returning all possible permutations.
+     * Effectue un produit cartésien des tableaux donnés, retournant toutes les permutations possibles.
      */
     public static function crossJoin(iterable ...$arrays): array
     {
@@ -236,7 +296,7 @@ class Arr
      *
      * @param array|int|string|null $key
      *
-     * @deprecated 1.9 use Helpers::dataGet instead
+     * @deprecated 1.9 utilisez Helpers::dataGet à la place
      */
     public static function dataGet(mixed $target, $key, mixed $default = null): mixed
     {
@@ -244,15 +304,15 @@ class Arr
     }
 
     /**
-     * Counts the dimensions of an array.
-     * Only considers the dimension of the first element in the array.
+     * Compte les dimensions d'un tableau.
+     * Ne considère que la dimension du premier élément du tableau.
      *
-     * If you have an un-even or heterogenous array, consider using Hash::maxDimensions()
-     * to get the dimensions of the array.
+     * Si vous avez un tableau hétérogène ou inégal, pensez à utiliser Hash::maxDimensions()
+     * pour obtenir les dimensions du tableau.
      *
-     * @param array $data Array to count dimensions on
+     * @param array $data Tableau sur lequel compter les dimensions
      *
-     * @return int The number of dimensions in $data
+     * @return int Le nombre de dimensions dans $data
      *
      * @credit CakePHP - http://book.cakephp.org/2.0/en/core-utility-libraries/hash.html#Hash::dimensions
      */
@@ -277,7 +337,7 @@ class Arr
     }
 
     /**
-     * Divide an array into two arrays. One with keys and the other with values.
+     * Divise un tableau en deux tableaux. Un avec les clés et l'autre avec les valeurs.
      */
     public static function divide(array $array): array
     {
@@ -285,25 +345,31 @@ class Arr
     }
 
     /**
-     * Flatten a multi-dimensional associative array with dots.
+     * Aplatit un tableau associatif multidimensionnel avec des points.
      */
     public static function dot(iterable $array, string $prepend = ''): array
     {
         $results = [];
 
-        foreach ($array as $key => $value) {
-            if (is_array($value) && ! empty($value)) {
-                $results = array_merge($results, static::dot($value, $prepend . $key . '.'));
-            } else {
-                $results[$prepend . $key] = $value;
+        $flatten = static function ($data, $prefix) use (&$results, &$flatten): void {
+            foreach ($data as $key => $value) {
+                $newKey = $prefix . $key;
+
+                if (is_array($value) && ! empty($value)) {
+                    $flatten($value, $newKey . '.');
+                } else {
+                    $results[$newKey] = $value;
+                }
             }
-        }
+        };
+
+        $flatten($array, $prepend);
 
         return $results;
     }
 
     /**
-     * Convert a flatten "dot" notation array into an expanded array.
+     * Convertit un tableau aplati en notation "point" en un tableau étendu.
      */
     public static function undot(iterable $array): array
     {
@@ -317,7 +383,7 @@ class Arr
     }
 
     /**
-     * Get all of the given array except for a specified array of keys.
+     * Obtient tous les éléments du tableau donné sauf un tableau spécifié de clés.
      *
      * @param array|float|int|string $keys
      */
@@ -329,9 +395,9 @@ class Arr
     }
 
     /**
-     * Determine if the given key exists in the provided array.
+     * Détermine si la clé donnée existe dans le tableau fourni.
      */
-    public static function exists(array|ArrayAccess|Enumerable $array, int|string $key): bool
+    public static function exists(array|ArrayAccess|Enumerable $array, float|int|string $key): bool
     {
         if ($array instanceof Enumerable) {
             return $array->has($key);
@@ -349,33 +415,33 @@ class Arr
     }
 
     /**
-     * Gets the values from an array matching the $path expression.
-     * The path expression is a dot separated expression, that can contain a set
-     * of patterns and expressions:
+     * Obtient les valeurs d'un tableau correspondant à l'expression $path.
+     * L'expression de chemin est une expression séparée par des points, qui peut contenir un ensemble
+     * de motifs et d'expressions :
      *
-     * - `{n}` Matches any numeric key, or integer.
-     * - `{s}` Matches any string key.
-     * - `Foo` Matches any key with the exact same value.
+     * - `{n}` Correspond à toute clé numérique ou entier.
+     * - `{s}` Correspond à toute clé de chaîne.
+     * - `Foo` Correspond à toute clé avec la valeur exacte.
      *
-     * There are a number of attribute operators:
+     * Il existe un certain nombre d'opérateurs d'attributs :
      *
-     *  - `=`, `!=` Equality.
-     *  - `>`, `<`, `>=`, `<=` Value comparison.
-     *  - `=/.../` Regular expression pattern match.
+     *  - `=`, `!=` Égalité.
+     *  - `>`, `<`, `>=`, `<=` Comparaison de valeurs.
+     *  - `=/.../` Correspondance de motif d'expression régulière.
      *
-     * Given a set of User array data, from a `$User->find('all')` call:
+     * Étant donné un ensemble de données de tableau User, à partir d'un appel `$User->find('all')` :
      *
-     * - `1.User.name` Get the name of the user at index 1.
-     * - `{n}.User.name` Get the name of every user in the set of users.
-     * - `{n}.User[id]` Get the name of every user with an id key.
-     * - `{n}.User[id>=2]` Get the name of every user with an id key greater than or equal to 2.
-     * - `{n}.User[username=/^paul/]` Get User elements with username matching `^paul`.
+     * - `1.User.name` Obtient le nom de l'utilisateur à l'index 1.
+     * - `{n}.User.name` Obtient le nom de chaque utilisateur dans l'ensemble d'utilisateurs.
+     * - `{n}.User[id]` Obtient le nom de chaque utilisateur avec une clé id.
+     * - `{n}.User[id>=2]` Obtient le nom de chaque utilisateur avec une clé id supérieure ou égale à 2.
+     * - `{n}.User[username=/^paul/]` Obtient les éléments User avec un nom d'utilisateur correspondant à `^paul`.
      *
-     * @param array  $data The data to extract from.
-     * @param string $path The path to extract.
+     * @param array  $data Les données à extraire
+     * @param string $path Le chemin à extraire
      *
-     * @return array An array of the extracted values. Returns an empty array
-     *               if there are no matches.
+     * @return array Un tableau des valeurs extraites. Retourne un tableau vide
+     *               s'il n'y a pas de correspondances.
      *
      * @credit CakePHP - http://book.cakephp.org/2.0/en/core-utility-libraries/hash.html#Hash::extract
      */
@@ -385,7 +451,7 @@ class Arr
             return $data;
         }
 
-        // Simple paths.
+        // Chemins simples.
         if (! preg_match('/[{\[]/', $path)) {
             return (array) self::get($data, $path);
         }
@@ -413,7 +479,7 @@ class Arr
                 }
             }
 
-            // Filter for attributes.
+            // Filtre pour les attributs.
             if ($conditions) {
                 $filter = [];
 
@@ -431,14 +497,14 @@ class Arr
     }
 
     /**
-     * Expands a flat array to a nested array.
+     * Développe un tableau plat en un tableau imbriqué.
      *
-     * For example, unflattens an array that was collapsed with `Hash::flatten()`
-     * into a multi-dimensional array. So, `array('0.Foo.Bar' => 'Far')` becomes
+     * Par exemple, développe un tableau qui a été aplati avec `Hash::flatten()`
+     * en un tableau multidimensionnel. Donc, `array('0.Foo.Bar' => 'Far')` devient
      * `array(array('Foo' => array('Bar' => 'Far')))`.
      *
-     * @param array  $data      Flattened array
-     * @param string $separator The delimiter used
+     * @param array  $data      Tableau aplati
+     * @param string $separator Le délimiteur utilisé
      *
      * @credit CakePHP - http://book.cakephp.org/2.0/en/core-utility-libraries/hash.html#Hash::expand
      */
@@ -462,17 +528,17 @@ class Arr
     }
 
     /**
-     * Recursively filters a data set.
+     * Filtre récursivement un ensemble de données.
      *
-     * @param array    $data     Either an array to filter, or value when in callback
-     * @param callable $callback A function to filter the data with. Defaults to
-     *                           `self::_filter()` Which strips out all non-zero empty values.
+     * @param array    $data     Soit un tableau à filtrer, soit une valeur lors de l'utilisation d'un callback
+     * @param callable $callback Une fonction pour filtrer les données. Par défaut
+     *                           `self::_filter()` qui supprime toutes les valeurs vides non nulles.
      *
-     * @return array Filtered array
+     * @return array Tableau filtré
      *
      * @credit CakePHP - http://book.cakephp.org/2.0/en/core-utility-libraries/hash.html#Hash::filter
      */
-    public static function filter(array $data, $callback = ['self', '_filter']): array
+    public static function filter(array $data, $callback = [self::class, '_filter']): array
     {
         foreach ($data as $k => $v) {
             if (is_array($v)) {
@@ -484,7 +550,17 @@ class Arr
     }
 
     /**
-     * Return the first element in an array passing a given truth test.
+     * Retourne le premier élément d'un tableau passant un test de vérité donné.
+     *
+     * @template TKey
+     * @template TValue
+     * @template TFirstDefault
+     *
+     * @param iterable<TKey, TValue>                   $array
+     * @param (callable(TValue, TKey): bool)|null      $callback
+     * @param (Closure(): TFirstDefault)|TFirstDefault $default
+     *
+     * @return TFirstDefault|TValue
      */
     public static function first(iterable $array, ?callable $callback = null, mixed $default = null): mixed
     {
@@ -496,6 +572,8 @@ class Arr
             foreach ($array as $item) {
                 return $item;
             }
+
+            return Helpers::value($default);
         }
 
         foreach ($array as $key => $value) {
@@ -508,7 +586,7 @@ class Arr
     }
 
     /**
-     * Flatten a multi-dimensional array into a single level.
+     * Aplatit un tableau multidimensionnel en un seul niveau.
      */
     public static function flatten(iterable $array, float|int $depth = INF): array
     {
@@ -534,12 +612,12 @@ class Arr
     }
 
     /**
-     * Collapses a multi-dimensional array into a single dimension, using a delimited array path for
-     * each array element's key, i.e. array(array('Foo' => array('Bar' => 'Far'))) becomes
+     * Réduit un tableau multidimensionnel en une seule dimension, en utilisant un chemin de tableau délimité pour
+     * la clé de chaque élément du tableau, c'est-à-dire array(array('Foo' => array('Bar' => 'Far'))) devient
      * array('0.Foo.Bar' => 'Far').)
      *
-     * @param array  $data      Array to flatten
-     * @param string $separator String used to separate array key elements in a path, defaults to '.'
+     * @param array  $data      Tableau à aplatir
+     * @param string $separator Chaîne utilisée pour séparer les éléments de clé de tableau dans un chemin, par défaut '.'
      *
      * @credit http://book.cakephp.org/2.0/en/core-utility-libraries/hash.html#Hash::flatten
      */
@@ -577,7 +655,23 @@ class Arr
     }
 
     /**
-     * Remove one or many array items from a given array using "dot" notation.
+     * Obtient un élément flottant à partir d'un tableau en utilisant la notation "point".
+     */
+    public static function float(array|ArrayAccess $array, int|string|null $key, ?float $default = null): float
+    {
+        $value = Arr::get($array, $key, $default);
+
+        if (! is_float($value)) {
+            throw new InvalidArgumentException(
+                sprintf('La valeur du tableau pour la clé [%s] doit être un flottant, %s trouvé.', $key, gettype($value))
+            );
+        }
+
+        return $value;
+    }
+
+    /**
+     * Supprime un ou plusieurs éléments de tableau d'un tableau donné en utilisant la notation "point".
      *
      * @param array                  $array
      * @param array|float|int|string $keys
@@ -593,7 +687,7 @@ class Arr
         }
 
         foreach ($keys as $key) {
-            // if the exact key exists in the top-level, remove it
+            // si la clé exacte existe au niveau supérieur, supprimez-la
             if (static::exists($array, $key)) {
                 unset($array[$key]);
 
@@ -602,7 +696,7 @@ class Arr
 
             $parts = explode('.', $key);
 
-            // clean up before each pass
+            // nettoyer avant chaque passe
             $array = &$original;
 
             while (count($parts) > 1) {
@@ -620,22 +714,22 @@ class Arr
     }
 
     /**
-     * Returns a formatted series of values extracted from `$data`, using
-     * `$format` as the format and `$paths` as the values to extract.
+     * Retourne une série formatée de valeurs extraites de `$data`, en utilisant
+     * `$format` comme format et `$paths` comme valeurs à extraire.
      *
-     * Usage:
+     * Usage :
      *
      * {{{
      * $result = Hash::format($users, array('{n}.User.id', '{n}.User.name'), '%s : %s');
      * }}}
      *
-     * The `$format` string can use any format options that `vsprintf()` and `sprintf()` do.
+     * La chaîne `$format` peut utiliser toutes les options de format que `vsprintf()` et `sprintf()` font.
      *
-     * @param array  $data   Source array from which to extract the data
-     * @param array  $paths  An array containing one or more Hash::extract()-style key paths
-     * @param string $format Format string into which values will be inserted, see sprintf()
+     * @param array  $data   Tableau source à partir duquel extraire les données
+     * @param array  $paths  Un tableau contenant un ou plusieurs chemins de clé de style Hash::extract()
+     * @param string $format Chaîne de format dans laquelle les valeurs seront insérées, voir sprintf()
      *
-     * @return array|null An array of strings extracted from `$path` and formatted with `$format`
+     * @return array|null Un tableau de chaînes extraites de `$path` et formatées avec `$format`
      *
      * @see http://book.cakephp.org/2.0/en/core-utility-libraries/hash.html#Hash::format
      * @see sprintf()
@@ -676,13 +770,40 @@ class Arr
     }
 
     /**
-     * Get an item from an array using "dot" notation.
+     * Obtient le tableau sous-jacent d'éléments à partir de l'argument donné.
      *
-     * @param array|ArrayAccess $array Array of data to operate on.
-     * @param array|int|string  $key   The path being searched for. Either a dot
-     *                                 separated string, or an array of path segments.
+     * @template TKey of array-key = array-key
+     * @template TValue = mixed
      *
-     * @return mixed The value fetched from the array, or null.
+     * @param array<TKey, TValue>|Arrayable<TKey, TValue>|Enumerable<TKey, TValue>|Jsonable|JsonSerializable|object|Traversable<TKey, TValue>|WeakMap<object, TValue> $items
+     *
+     * @return ($items is WeakMap ? list<TValue> : array<TKey, TValue>)
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function from($items)
+    {
+        return match (true) {
+            is_array($items)                   => $items,
+            $items instanceof Enumerable       => $items->all(),
+            $items instanceof Arrayable        => $items->toArray(),
+            $items instanceof WeakMap          => iterator_to_array($items, false),
+            $items instanceof Traversable      => iterator_to_array($items),
+            $items instanceof Jsonable         => json_decode($items->toJson(), true),
+            $items instanceof JsonSerializable => (array) $items->jsonSerialize(),
+            is_object($items)                  => (array) $items,
+            default                            => throw new InvalidArgumentException('Les éléments ne peuvent pas être représentés par une valeur scalaire.'),
+        };
+    }
+
+    /**
+     * Obtient un élément d'un tableau en utilisant la notation "point".
+     *
+     * @param array|ArrayAccess $array Tableau de données sur lequel opérer
+     * @param array|int|string  $key   Le chemin recherché. Soit une chaîne
+     *                                 séparée par des points, soit un tableau de segments de chemin.
+     *
+     * @return mixed La valeur récupérée du tableau, ou null.
      */
     public static function get($array, $key, mixed $default = null): mixed
     {
@@ -718,6 +839,8 @@ class Arr
     }
 
     /**
+     * Obtient une valeur récursivement d'un tableau en utilisant la notation "point".
+     *
      * @return mixed
      */
     public static function getRecursive(?array $data, ?string $key = null)
@@ -746,7 +869,7 @@ class Arr
     }
 
     /**
-     * Check if an item or items exist in an array using "dot" notation.
+     * Vérifie si un ou plusieurs éléments existent dans un tableau en utilisant la notation "point".
      */
     public static function has(array|ArrayAccess $array, array|string $keys): bool
     {
@@ -776,7 +899,27 @@ class Arr
     }
 
     /**
-     * Determine if any of the keys exist in an array using "dot" notation.
+     * Détermine si toutes les clés existent dans un tableau en utilisant la notation "point".
+     */
+    public static function hasAll(array|ArrayAccess $array, array|string $keys): bool
+    {
+        $keys = (array) $keys;
+
+        if (! $array || $keys === []) {
+            return false;
+        }
+
+        foreach ($keys as $key) {
+            if (! static::has($array, $key)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Détermine si l'une des clés existe dans un tableau en utilisant la notation "point".
      */
     public static function hasAny(array|ArrayAccess $array, array|string $keys): bool
     {
@@ -804,14 +947,30 @@ class Arr
     }
 
     /**
-     * Insert $values into an array with the given $path. You can use
-     * `{n}` and `{s}` elements to insert $data multiple times.
+     * Détermine si tous les éléments passent le test de vérité donné.
      *
-     * @param array  $data   The data to insert into.
-     * @param string $path   The path to insert at.
-     * @param array  $values The values to insert.
+     * @param (callable(mixed, array-key): bool) $callback
+     */
+    public static function every(iterable $array, callable $callback): bool
+    {
+        foreach ($array as $key => $value) {
+            if (! $callback($value, $key)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Insère $values dans un tableau avec le $path donné. Vous pouvez utiliser
+     * `{n}` et `{s}` pour insérer $data plusieurs fois.
      *
-     * @return array The data with $values inserted.
+     * @param array  $data   Les données dans lesquelles insérer
+     * @param string $path   Le chemin où insérer
+     * @param array  $values Les valeurs à insérer
+     *
+     * @return array Les données avec $values insérées
      *
      * @credit CakePHP - http://book.cakephp.org/2.0/en/core-utility-libraries/hash.html#Hash::insert
      */
@@ -848,9 +1007,27 @@ class Arr
     }
 
     /**
-     * Determines if an array is associative.
+     * Obtient un élément entier à partir d'un tableau en utilisant la notation "point".
      *
-     * An array is "associative" if it doesn't have sequential numerical keys beginning with zero.
+     * @throws InvalidArgumentException
+     */
+    public static function integer(array|ArrayAccess $array, int|string|null $key, ?int $default = null): int
+    {
+        $value = Arr::get($array, $key, $default);
+
+        if (! is_int($value)) {
+            throw new InvalidArgumentException(
+                sprintf('La valeur du tableau pour la clé [%s] doit être un entier, %s trouvé.', $key, gettype($value))
+            );
+        }
+
+        return $value;
+    }
+
+    /**
+     * Détermine si un tableau est associatif.
+     *
+     * Un tableau est "associatif" s'il n'a pas de clés numériques séquentielles commençant par zéro.
      */
     public static function isAssoc(array $array): bool
     {
@@ -858,9 +1035,10 @@ class Arr
     }
 
     /**
-     * Determines if an array is a list.
+     * Détermine si un tableau est une liste.
      *
-     * An array is a "list" if all array keys are sequential integers starting from 0 with no gaps in between.
+     * Un tableau est une "liste" si toutes les clés du tableau sont des entiers séquentiels
+     * commençant par 0 sans espace entre eux.
      */
     public static function isList(array $array): bool
     {
@@ -868,7 +1046,7 @@ class Arr
     }
 
     /**
-     * Join all items using a string. The final items can use a separate glue string.
+     * Joint tous les éléments en utilisant une chaîne. Les derniers éléments peuvent utiliser une colle séparée.
      */
     public static function join(array $array, string $glue, string $finalGlue = ''): string
     {
@@ -890,7 +1068,7 @@ class Arr
     }
 
     /**
-     * Key an associative array by a field or using a callback.
+     * Clé un tableau associatif par un champ ou en utilisant un callback.
      *
      * @param array|callable|string $keyBy
      */
@@ -900,7 +1078,7 @@ class Arr
     }
 
     /**
-     * Prepend the key names of an associative array.
+     * Préfixe les noms de clés d'un tableau associatif.
      */
     public static function prependKeysWith(array $array, string $prependWith): array
     {
@@ -908,7 +1086,17 @@ class Arr
     }
 
     /**
-     * Return the last element in an array passing a given truth test.
+     * Retourne le dernier élément d'un tableau passant un test de vérité donné.
+     *
+     * @template TKey
+     * @template TValue
+     * @template TLastDefault
+     *
+     * @param iterable<TKey, TValue>                 $array
+     * @param (callable(TValue, TKey): bool)|null    $callback
+     * @param (Closure(): TLastDefault)|TLastDefault $default
+     *
+     * @return TLastDefault|TValue
      */
     public static function last(iterable $array, ?callable $callback = null, mixed $default = null): mixed
     {
@@ -920,91 +1108,7 @@ class Arr
     }
 
     /**
-     * Counts the dimensions of *all* array elements. Useful for finding the maximum
-     * number of dimensions in a mixed array.
-     *
-     * @param array $data Array to count dimensions on
-     *
-     * @return int The maximum number of dimensions in $data
-     *
-     * @credit CakePHP - http://book.cakephp.org/2.0/en/core-utility-libraries/hash.html#Hash::maxDimensions
-     */
-    public static function maxDimensions(array $data): int
-    {
-        $depth = [];
-        if (is_array($data) && reset($data) !== false) {
-            foreach ($data as $value) {
-                $depth[] = self::dimensions((array) $value) + 1;
-            }
-        }
-
-        return max($depth);
-    }
-
-    /**
-     * This function can be thought of as a hybrid between PHP's `array_merge` and `array_merge_recursive`.
-     *
-     * The difference between this method and the built-in ones, is that if an array key contains another array, then
-     * Hash::merge() will behave in a recursive fashion (unlike `array_merge`). But it will not act recursively for
-     * keys that contain scalar values (unlike `array_merge_recursive`).
-     *
-     * Note: This function will work with an unlimited amount of arguments and typecasts non-array parameters into arrays.
-     *
-     * @param array $data  Array to be merged
-     * @param mixed $merge Array to merge with. The argument and all trailing arguments will be array cast when merged
-     *
-     * @return array Merged array
-     *
-     * @credit CakePHP - http://book.cakephp.org/2.0/en/core-utility-libraries/hash.html#Hash::merge
-     */
-    public static function merge(array $data, $merge)
-    {
-        $args   = func_get_args();
-        $return = current($args);
-
-        while (($arg = next($args)) !== false) {
-            foreach ((array) $arg as $key => $val) {
-                if (! empty($return[$key]) && is_array($return[$key]) && is_array($val)) {
-                    $return[$key] = self::merge($return[$key], $val);
-                } elseif (is_int($key) && isset($return[$key])) {
-                    $return[] = $val;
-                } else {
-                    $return[$key] = $val;
-                }
-            }
-        }
-
-        return $return;
-    }
-
-    /**
-     * Checks to see if all the values in the array are numeric
-     *
-     * @param array $data The array to check.
-     *
-     * @return bool true if values are numeric, false otherwise
-     *
-     * @credit CakePHP - http://book.cakephp.org/2.0/en/core-utility-libraries/hash.html#Hash::numeric
-     */
-    public static function numeric(array $data): bool
-    {
-        if (empty($data)) {
-            return false;
-        }
-
-        return $data === array_filter($data, 'is_numeric');
-    }
-
-    /**
-     * Get a subset of the items from the given array.
-     */
-    public static function only(array $array, array|string $keys): array
-    {
-        return array_intersect_key($array, array_flip((array) $keys));
-    }
-
-    /**
-     * Run a map over each of the items in the array.
+     * Exécute une fonction de mappage sur chacun des éléments du tableau.
      */
     public static function map(array $array, callable $callback): array
     {
@@ -1020,7 +1124,7 @@ class Arr
     }
 
     /**
-     * Run a map over each nested chunk of items.
+     * Exécute une fonction de mappage sur chaque groupe imbriqué d'éléments.
      *
      * @template TKey
      * @template TValue
@@ -1040,9 +1144,9 @@ class Arr
     }
 
     /**
-     * Run an associative map over each of the items.
+     * Exécute un mappage associatif sur chacun des éléments.
      *
-     * The callback should return an associative array with a single key/value pair.
+     * Le callback doit retourner un tableau associatif avec une seule paire clé/valeur.
      *
      * @template TKey
      * @template TValue
@@ -1068,7 +1172,91 @@ class Arr
     }
 
     /**
-     * Partition the array into two arrays using the given callback.
+     * Compte les dimensions de *tous* les éléments du tableau. Utile pour trouver le maximum
+     * nombre de dimensions dans un tableau mixte.
+     *
+     * @param array $data Tableau sur lequel compter les dimensions
+     *
+     * @return int Le nombre maximum de dimensions dans $data
+     *
+     * @credit CakePHP - http://book.cakephp.org/2.0/en/core-utility-libraries/hash.html#Hash::maxDimensions
+     */
+    public static function maxDimensions(array $data): int
+    {
+        $depth = [];
+        if (is_array($data) && reset($data) !== false) {
+            foreach ($data as $value) {
+                $depth[] = self::dimensions((array) $value) + 1;
+            }
+        }
+
+        return max($depth);
+    }
+
+    /**
+     * Cette fonction peut être considérée comme un hybride entre `array_merge` et `array_merge_recursive` de PHP.
+     *
+     * La différence entre cette méthode et les méthodes intégrées est que si une clé de tableau contient un autre tableau, alors
+     * Hash::merge() se comportera de manière récursive (contrairement à `array_merge`). Mais il n'agira pas récursivement pour
+     * les clés qui contiennent des valeurs scalaires (contrairement à `array_merge_recursive`).
+     *
+     * Note : Cette fonction fonctionnera avec un nombre illimité d'arguments et convertira les paramètres non-tableaux en tableaux.
+     *
+     * @param array $data  Tableau à fusionner
+     * @param mixed $merge Tableau à fusionner. L'argument et tous les arguments suivants seront convertis en tableau lors de la fusion
+     *
+     * @return array Tableau fusionné
+     *
+     * @credit CakePHP - http://book.cakephp.org/2.0/en/core-utility-libraries/hash.html#Hash::merge
+     */
+    public static function merge(array $data, $merge)
+    {
+        $args   = func_get_args();
+        $return = current($args);
+
+        while (($arg = next($args)) !== false) {
+            foreach ((array) $arg as $key => $val) {
+                if (! empty($return[$key]) && is_array($return[$key]) && is_array($val)) {
+                    $return[$key] = self::merge($return[$key], $val);
+                } elseif (is_int($key) && isset($return[$key])) {
+                    $return[] = $val;
+                } else {
+                    $return[$key] = $val;
+                }
+            }
+        }
+
+        return $return;
+    }
+
+    /**
+     * Vérifie si toutes les valeurs du tableau sont numériques
+     *
+     * @param array $data Le tableau à vérifier
+     *
+     * @return bool true si les valeurs sont numériques, false sinon
+     *
+     * @credit CakePHP - http://book.cakephp.org/2.0/en/core-utility-libraries/hash.html#Hash::numeric
+     */
+    public static function numeric(array $data): bool
+    {
+        if (empty($data)) {
+            return false;
+        }
+
+        return $data === array_filter($data, 'is_numeric');
+    }
+
+    /**
+     * Obtient un sous-ensemble des éléments du tableau donné.
+     */
+    public static function only(array $array, array|string $keys): array
+    {
+        return array_intersect_key($array, array_flip((array) $keys));
+    }
+
+    /**
+     * Partitionne le tableau en deux tableaux en utilisant le callback donné.
      *
      * @template TKey of array-key
      * @template TValue of mixed
@@ -1095,7 +1283,7 @@ class Arr
     }
 
     /**
-     * Pluck an array of values from an array.
+     * Extrait un tableau de valeurs d'un tableau.
      *
      * @param array|Closure|int|string|null $value
      * @param array|Closure|string|null     $key
@@ -1111,9 +1299,9 @@ class Arr
                 ? $value($item)
                 : Helpers::dataGet($item, $value);
 
-            // If the key is "null", we will just append the value to the array and keep
-            // looping. Otherwise we will key the array using the value of the key we
-            // received from the developer. Then we'll return the final array form.
+            // Si la clé est "null", nous ajouterons simplement la valeur au tableau et continuerons
+            // la boucle. Sinon, nous indexerons le tableau en utilisant la valeur de la clé que nous
+            // avons reçue du développeur. Ensuite, nous retournerons le tableau final.
             if (null === $key) {
                 $results[] = $itemValue;
             } else {
@@ -1133,7 +1321,7 @@ class Arr
     }
 
     /**
-     * Explode the "value" and "key" arguments passed to "pluck".
+     * Explose les arguments "value" et "key" passés à "pluck".
      *
      * @param array|Closure|string      $value
      * @param array|Closure|string|null $key
@@ -1148,11 +1336,11 @@ class Arr
     }
 
     /**
-     * Push an item onto the beginning of an array.
+     * Ajoute un élément au début d'un tableau.
      */
     public static function prepend(array $array, mixed $value, int|string|null $key = null): array
     {
-        if (null === $key) {
+        if (func_num_args() === 2) {
             array_unshift($array, $value);
         } else {
             $array = [$key => $value] + $array;
@@ -1162,7 +1350,7 @@ class Arr
     }
 
     /**
-     * Get a value from the array, and remove it.
+     * Obtient une valeur du tableau et la supprime.
      */
     public static function pull(array &$array, int|string $key, mixed $default = null): mixed
     {
@@ -1174,7 +1362,19 @@ class Arr
     }
 
     /**
-     * Convert the array into a query string.
+     * Ajoute un élément à un tableau en utilisant la notation "point".
+     */
+    public static function push(array|ArrayAccess &$array, int|string|null $key, mixed ...$values): array
+    {
+        $target = static::array($array, $key, []);
+
+        array_push($target, ...$values);
+
+        return static::set($array, $key, $target);
+    }
+
+    /**
+     * Convertit le tableau en une chaîne de requête.
      */
     public static function query(array $array): string
     {
@@ -1182,7 +1382,7 @@ class Arr
     }
 
     /**
-     * Get one or a specified number of random values from an array.
+     * Obtient une ou plusieurs valeurs aléatoires d'un tableau.
      *
      * @throws InvalidArgumentException
      */
@@ -1194,7 +1394,7 @@ class Arr
 
         if ($requested > $count) {
             throw new InvalidArgumentException(
-                "You requested {$requested} items, but there are only {$count} items available."
+                "Vous avez demandé {$requested} éléments, mais seulement {$count} éléments sont disponibles."
             );
         }
 
@@ -1202,7 +1402,7 @@ class Arr
             return null === $number ? null : [];
         }
 
-        $keys = (array) array_rand($array, $number);
+        $keys = (array) array_rand($array, $number ?? 1);
 
         if (null === $number) {
             return $array[$keys[0]];
@@ -1228,7 +1428,7 @@ class Arr
     }
 
     /**
-     * Filter the array using the negation of the given callback.
+     * Filtre le tableau en utilisant la négation du callback donné.
      */
     public static function reject(array $array, callable $callback): array
     {
@@ -1236,14 +1436,14 @@ class Arr
     }
 
     /**
-     * Remove data matching $path from the $data array.
-     * You can use `{n}` and `{s}` to remove multiple elements
-     * from $data.
+     * Supprime les données correspondant à $path du tableau $data.
+     * Vous pouvez utiliser `{n}` et `{s}` pour supprimer plusieurs éléments
+     * de $data.
      *
-     * @param array  $data The data to operate on
-     * @param string $path A path expression to use to remove.
+     * @param array  $data Les données sur lesquelles opérer
+     * @param string $path Une expression de chemin à utiliser pour supprimer
      *
-     * @return array The modified array.
+     * @return array Le tableau modifié
      *
      * @credit CakePHP - http://book.cakephp.org/2.0/en/core-utility-libraries/hash.html#Hash::remove
      */
@@ -1285,7 +1485,7 @@ class Arr
     }
 
     /**
-     * Select an array of values from an array.
+     * Sélectionne un tableau de valeurs d'un tableau.
      */
     public static function select(array $array, array|string $keys): array
     {
@@ -1307,9 +1507,9 @@ class Arr
     }
 
     /**
-     * Set an array item to a given value using "dot" notation.
+     * Définit un élément de tableau à une valeur donnée en utilisant la notation "point".
      *
-     * If no key is given to the method, the entire array will be replaced.
+     * Si aucune clé n'est donnée à la méthode, le tableau entier sera remplacé.
      */
     public static function set(array &$array, int|string|null $key, mixed $value): array
     {
@@ -1326,9 +1526,9 @@ class Arr
 
             unset($keys[$i]);
 
-            // If the key doesn't exist at this depth, we will just create an empty array
-            // to hold the next value, allowing us to create the arrays to hold final
-            // values at the correct depth. Then we'll keep digging into the array.
+            // Si la clé n'existe pas à cette profondeur, nous créerons simplement un tableau vide
+            // pour contenir la valeur suivante, nous permettant de créer les tableaux pour contenir les valeurs finales
+            // à la bonne profondeur. Ensuite, nous continuerons à creuser dans le tableau.
             if (! isset($array[$key]) || ! is_array($array[$key])) {
                 $array[$key] = [];
             }
@@ -1342,11 +1542,9 @@ class Arr
     }
 
     /**
-     * @param mixed $value
-     *
-     * @return void
+     * Définit une valeur récursivement dans un tableau en utilisant la notation "point".
      */
-    public static function setRecursive(array &$data, ?string $key = null, $value = null)
+    public static function setRecursive(array &$data, ?string $key = null, mixed $value = null): void
     {
         if (empty($data) && empty($key)) {
             return;
@@ -1375,7 +1573,7 @@ class Arr
     }
 
     /**
-     * Shuffle the given array and return the result.
+     * Mélange le tableau donné et retourne le résultat.
      */
     public static function shuffle(array $array, ?int $seed = null): array
     {
@@ -1391,33 +1589,76 @@ class Arr
     }
 
     /**
-     * Sort the array using the given callback or "dot" notation.
+     * Obtient le premier élément du tableau, mais seulement si exactement un élément existe. Sinon, lance une exception.
      *
-     * @param callable|string|null $callback
+     * @param (callable(mixed, array-key): array)|null $callback
+     *
+     * @throws ItemNotFoundException
+     * @throws MultipleItemsFoundException
      */
-    public static function sort(array $array, $callback = null): array
+    public static function sole(array $array, ?callable $callback = null)
+    {
+        if ($callback) {
+            $array = static::where($array, $callback);
+        }
+
+        $count = count($array);
+
+        if ($count === 0) {
+            throw new ItemNotFoundException('Aucun élément trouvé.');
+        }
+
+        if ($count > 1) {
+            throw new MultipleItemsFoundException($count, 'Plusieurs éléments trouvés.');
+        }
+
+        return static::first($array);
+    }
+
+    /**
+     * Détermine si certains éléments passent le test de vérité donné.
+     *
+     * @param (callable(mixed, array-key): bool) $callback
+     */
+    public static function some(iterable $array, callable $callback): bool
+    {
+        foreach ($array as $key => $value) {
+            if ($callback($value, $key)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Trie le tableau en utilisant le callback ou la notation "point" donnée.
+     *
+     * @param array|callable|string|null $callback
+     */
+    public static function sort(iterable $array, $callback = null): array
     {
         return Collection::make($array)->sortBy($callback)->all();
     }
 
     /**
-     * Sort the array in descending order using the given callback or "dot" notation.
+     * Trie le tableau en ordre décroissant en utilisant le callback ou la notation "point" donnée.
      *
      * @param array|callable|string|null $callback
      */
-    public static function sortDesc(array $array, $callback = null): array
+    public static function sortDesc(iterable $array, $callback = null): array
     {
         return Collection::make($array)->sortByDesc($callback)->all();
     }
 
     /**
-     * Sort an array in ASC/DESC order relativly to a specific position
+     * Trie un tableau dans l'ordre ASC/DESC relativement à une position spécifique
      *
-     * @param array  $data      Array to sort
-     * @param string $field     String to describe field position
-     * @param int    $direction Direction of sort based on class constants
+     * @param array  $data      Tableau à trier
+     * @param string $field     Chaîne décrivant la position du champ
+     * @param int    $direction Direction du tri basée sur les constantes de classe
      *
-     * @return array Sorted array
+     * @return array Tableau trié
      */
     public static function sortField(array $data, string $field, int $direction = self::SORT_ASC): array
     {
@@ -1438,6 +1679,14 @@ class Arr
         return $data;
     }
 
+    /**
+     * Méthode interne pour obtenir la valeur d'un champ pour le tri
+     *
+     * @param mixed  $element L'élément à traiter
+     * @param string $field   Le chemin du champ
+     *
+     * @return mixed
+     */
     private static function _getSortField_($element, $field)
     {
         $field = explode('.', $field);
@@ -1456,7 +1705,7 @@ class Arr
     }
 
     /**
-     * Recursively sort an array by keys and values.
+     * Trie récursivement un tableau par clés et valeurs.
      */
     public static function sortRecursive(array $array, int $options = SORT_REGULAR, bool $descending = false): array
     {
@@ -1480,7 +1729,7 @@ class Arr
     }
 
     /**
-     * Recursively sort an array by keys and values in descending order.
+     * Trie récursivement un tableau par clés et valeurs en ordre décroissant.
      */
     public static function sortRecursiveDesc(array $array, int $options = SORT_REGULAR): array
     {
@@ -1488,7 +1737,25 @@ class Arr
     }
 
     /**
-     * Take the first or last {$limit} items from an array.
+     * Obtient un élément chaîne à partir d'un tableau en utilisant la notation "point".
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function string(array|ArrayAccess $array, int|string|null $key, ?string $default = null): string
+    {
+        $value = Arr::get($array, $key, $default);
+
+        if (! is_string($value)) {
+            throw new InvalidArgumentException(
+                sprintf('La valeur du tableau pour la clé [%s] doit être une chaîne, %s trouvé.', $key, gettype($value))
+            );
+        }
+
+        return $value;
+    }
+
+    /**
+     * Prend les premiers ou derniers {$limit} éléments d'un tableau.
      */
     public static function take(array $array, int $limit): array
     {
@@ -1500,7 +1767,7 @@ class Arr
     }
 
     /**
-     * Compare récursivement deux tableaux associatifs et renvoie la différence sous la forme d'un nouveau tableau.
+     * Compare récursivement deux tableaux associatifs et retourne la différence sous forme de nouveau tableau.
      * Retourne les clés qui existent dans `$original` mais pas dans `$compareWith`.
      */
     public static function diffRecursive(array $original, array $compareWith): array
@@ -1557,7 +1824,7 @@ class Arr
     }
 
     /**
-     * Conditionally compile classes from an array into a CSS class list.
+     * Compile conditionnellement les classes d'un tableau en une liste de classes CSS.
      */
     public static function toCssClasses(array $array): string
     {
@@ -1577,7 +1844,7 @@ class Arr
     }
 
     /**
-     * Conditionally compile styles from an array into a style list.
+     * Compile conditionnellement les styles d'un tableau en une liste de styles.
      */
     public static function toCssStyles(array $array): string
     {
@@ -1602,7 +1869,7 @@ class Arr
      * La clé et la valeur de chaque entrée sont jointes par "=", et toutes les entrées sont jointes par le séparateur spécifié et un espace supplémentaire (pour la lisibilité).
      * Les valeurs sont citées si nécessaire.
      *
-     * Exemple:
+     * Exemple :
      *
      *     Arr::toString(["foo" => "abc", "bar" => true, "baz" => "a b c"], ",")
      *     // => 'foo=abc, bar, baz="a b c"'
@@ -1625,7 +1892,7 @@ class Arr
     }
 
     /**
-     * Filter the array using the given callback.
+     * Filtre le tableau en utilisant le callback donné.
      */
     public static function where(array $array, callable $callback): array
     {
@@ -1633,7 +1900,7 @@ class Arr
     }
 
     /**
-     * Filter items where the value is not null.
+     * Filtre les éléments où la valeur n'est pas null.
      */
     public static function whereNotNull(array $array): array
     {
@@ -1641,11 +1908,9 @@ class Arr
     }
 
     /**
-     * If the given value is not an array and not null, wrap it in one.
-     *
-     * @param mixed $value
+     * Si la valeur donnée n'est pas un tableau et n'est pas null, l'enveloppe dans un.
      */
-    public static function wrap($value): array
+    public static function wrap(mixed $value): array
     {
         if (null === $value) {
             return [];
@@ -1655,9 +1920,9 @@ class Arr
     }
 
     /**
-     * Callback function for filtering.
+     * Fonction de callback pour le filtrage.
      *
-     * @param mixed $var Array to filter.
+     * @param mixed $var Tableau à filtrer
      */
     protected static function _filter($var): bool
     {
@@ -1665,11 +1930,11 @@ class Arr
     }
 
     /**
-     * Split token conditions
+     * Divise les conditions de token
      *
-     * @param string $token the token being splitted.
+     * @param string $token Le token à diviser
      *
-     * @return array array(token, conditions) with token splitted
+     * @return array array(token, conditions) avec le token divisé
      */
     protected static function _splitConditions(string $token): array
     {
@@ -1684,10 +1949,10 @@ class Arr
     }
 
     /**
-     * Check a key against a token.
+     * Vérifie une clé contre un token.
      *
-     * @param string $key   The key in the array being searched.
-     * @param string $token The token being matched.
+     * @param string $key   La clé dans le tableau recherché
+     * @param string $token Le token à comparer
      */
     protected static function _matchToken(string $key, string $token): bool
     {
@@ -1705,12 +1970,12 @@ class Arr
     }
 
     /**
-     * Checks whether or not $data matches the attribute patterns
+     * Vérifie si $data correspond aux modèles d'attributs
      *
-     * @param array  $data     Array of data to match.
-     * @param string $selector The patterns to match.
+     * @param array  $data     Tableau de données à comparer
+     * @param string $selector Les modèles à comparer
      *
-     * @return bool Fitness of expression.
+     * @return bool Adéquation de l'expression
      */
     protected static function _matches(array $data, string $selector): bool
     {
@@ -1726,11 +1991,11 @@ class Arr
             $op   = $cond['op'] ?? null;
             $val  = $cond['val'] ?? null;
 
-            // Presence test.
+            // Test de présence.
             if (empty($op) && empty($val) && ! isset($data[$attr])) {
                 return false;
             }
-            // Empty attribute = fail.
+            // Attribut vide = échec.
             if (! (isset($data[$attr]) || array_key_exists($attr, $data))) {
                 return false;
             }
@@ -1744,7 +2009,7 @@ class Arr
             } elseif ($isBool) {
                 $prop = $prop ? 'true' : 'false';
             }
-            // Pattern matches and other operators.
+            // Correspondances de motifs et autres opérateurs.
             if ($op === '=' && $val && $val[0] === '/') {
                 if (! preg_match($val, $prop)) {
                     return false;
@@ -1765,14 +2030,14 @@ class Arr
     }
 
     /**
-     * Perform a simple insert/remove operation.
+     * Effectue une opération d'insertion/suppression simple.
      *
-     * @param string $op     The operation to do.
-     * @param array  $data   The data to operate on.
-     * @param array  $path   The path to work on.
-     * @param mixed  $values The values to insert when doing inserts.
+     * @param string $op     L'opération à effectuer
+     * @param array  $data   Les données sur lesquelles opérer
+     * @param array  $path   Le chemin sur lequel travailler
+     * @param mixed  $values Les valeurs à insérer lors des insertions
      *
-     * @return array|void data.
+     * @return array|void données
      */
     protected static function _simpleOp(string $op, array $data, array $path, $values = null)
     {

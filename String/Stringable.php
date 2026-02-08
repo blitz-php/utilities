@@ -11,184 +11,292 @@
 
 namespace BlitzPHP\Utilities\String;
 
-use BlitzPHP\Utilities\Date;
+use ArrayAccess;
+use BlitzPHP\Traits\Conditionable;
+use BlitzPHP\Traits\Macroable;
+use BlitzPHP\Traits\Support\Tappable;
+use BlitzPHP\Utilities\DateTime\Date;
+use BlitzPHP\Utilities\Helpers;
 use BlitzPHP\Utilities\Iterable\Collection;
 use Closure;
 use Countable;
 use Exception;
 use JsonSerializable;
+use Normalizer;
+use RuntimeException;
+use Stringable as NativeStringable;
 
-class Stringable implements JsonSerializable
+/**
+ * Wrapper orienté objet pour les opérations sur les chaînes de caractères
+ *
+ * Fournit une API fluide et expressive pour manipuler les chaînes,
+ * inspirée de l'interface Stringable de Laravel.
+ *
+ * @implements JsonSerializable<string>
+ */
+class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
 {
+    use Conditionable;
+    use Macroable;
+    use Tappable;
+
     /**
-     * The underlying string value.
+     * La valeur de chaîne sous-jacente.
      */
     protected string $value;
 
     /**
-     * Create a new instance of the class.
+     * Crée une nouvelle instance de la classe.
      *
-     * @param string $value
-     *
-     * @return void
+     * @param string $value Valeur initiale
      */
-    public function __construct($value = '')
+    public function __construct(string $value = '')
     {
-        $this->value = (string) $value;
+        $this->value = $value;
     }
 
     /**
-     * Return the remainder of a string after the first occurrence of a given value.
+     * Retourne le reste d'une chaîne après la première occurrence d'une valeur donnée.
      *
-     * @return static
+     * @param string $search Valeur à rechercher
      */
-    public function after(string $search)
+    public function after(string $search): static
     {
         return new static(Text::after($this->value, $search));
     }
 
     /**
-     * Return the remainder of a string after the last occurrence of a given value.
+     * Retourne le reste d'une chaîne après la dernière occurrence d'une valeur donnée.
      *
-     * @return static
+     * @param string $search Valeur à rechercher
      */
-    public function afterLast(string $search)
+    public function afterLast(string $search): static
     {
         return new static(Text::afterLast($this->value, $search));
     }
 
     /**
-     * Append the given values to the string.
+     * Ajoute les valeurs données à la chaîne.
      *
-     * @param array ...$values
-     *
-     * @return static
+     * @param string ...$values Valeurs à ajouter
      */
-    public function append(...$values)
+    public function append(string ...$values): static
     {
         return new static($this->value . implode('', $values));
     }
 
     /**
-     * Append a new line to the string.
+     * Ajoute une nouvelle ligne à la chaîne.
+     *
+     * @param int $count Nombre de nouvelles lignes (par défaut: 1)
      */
-    public function newLine(int $count = 1): self
+    public function newLine(int $count = 1): static
     {
         return $this->append(str_repeat(PHP_EOL, $count));
     }
 
     /**
-     * Transliterate a UTF-8 value to ASCII.
+     * Translittère une valeur UTF-8 en ASCII.
      *
-     * @return static
+     * @param string $language Langue pour les caractères spécifiques (par défaut: 'en')
      */
-    public function ascii(string $language = 'en')
+    public function ascii(string $language = 'en'): static
     {
         return new static(Text::ascii($this->value, $language));
     }
 
     /**
-     * Get the trailing name component of the path.
+     * Récupère le composant de fin du chemin.
      *
-     * @return static
+     * @param string $suffix Suffixe à retirer
      */
-    public function basename(string $suffix = '')
+    public function basename(string $suffix = ''): static
     {
         return new static(basename($this->value, $suffix));
     }
 
     /**
-     * Get the portion of a string before the first occurrence of a given value.
+     * Récupère la partie d'une chaîne avant la première occurrence d'une valeur donnée.
      *
-     * @return static
+     * @param string $search Valeur à rechercher
      */
-    public function before(string $search)
+    public function before(string $search): static
     {
         return new static(Text::before($this->value, $search));
     }
 
     /**
-     * Get the portion of a string before the last occurrence of a given value.
+     * Récupère la partie d'une chaîne avant la dernière occurrence d'une valeur donnée.
      *
-     * @return static
+     * @param string $search Valeur à rechercher
      */
-    public function beforeLast(string $search)
+    public function beforeLast(string $search): static
     {
         return new static(Text::beforeLast($this->value, $search));
     }
 
     /**
-     * Get the portion of a string between two given values.
+     * Récupère la partie d'une chaîne entre deux valeurs données.
      *
-     * @return static
+     * @param string $from Début de la sélection
+     * @param string $to   Fin de la sélection
      */
-    public function between(string $from, string $to)
+    public function between(string $from, string $to): static
     {
         return new static(Text::between($this->value, $from, $to));
     }
 
     /**
-     * Get the smallest possible portion of a string between two given values.
+     * Récupère la plus petite partie possible d'une chaîne entre deux valeurs données.
      *
-     * @return static
+     * @param string $from Début de la sélection
+     * @param string $to   Fin de la sélection
      */
-    public function betweenFirst(string $from, string $to)
+    public function betweenFirst(string $from, string $to): static
     {
         return new static(Text::betweenFirst($this->value, $from, $to));
     }
 
     /**
-     * Convert a value to camel case.
-     *
-     * @return static
+     * Convertit une valeur en camelCase.
      */
-    public function camel()
+    public function camel(): static
     {
         return new static(Text::camel($this->value));
     }
 
     /**
-     * Determine if a given string contains a given substring.
+     * Récupère le caractère à l'index spécifié.
      *
-     * @param iterable<string>|string $needles
+     * @param int $index Position du caractère
      */
-    public function contains($needles, bool $ignoreCase = false): bool
+    public function charAt(int $index): mixed
+    {
+        return Text::charAt($this->value, $index);
+    }
+
+    /**
+     * Supprime la chaîne donnée si elle existe au début de la chaîne courante.
+     *
+     * @param array|string $needle Chaîne(s) à supprimer
+     */
+    public function chopStart(array|string $needle): static
+    {
+        return new static(Text::chopStart($this->value, $needle));
+    }
+
+    /**
+     * Supprime la chaîne donnée si elle existe à la fin de la chaîne courante.
+     *
+     * @param array|string $needle Chaîne(s) à supprimer
+     */
+    public function chopEnd(array|string $needle): static
+    {
+        return new static(Text::chopEnd($this->value, $needle));
+    }
+
+    /**
+     * Récupère le basename du chemin de classe.
+     */
+    public function classBasename(): static
+    {
+        return new static(Helpers::classBasename($this->value));
+    }
+
+    /**
+     * Détermine si la chaîne contient une sous-chaîne donnée.
+     *
+     * @param iterable<string>|string $needles    Sous-chaîne(s) à rechercher
+     * @param bool                    $ignoreCase Ignorer la casse (par défaut: false)
+     */
+    public function contains(iterable|string $needles, bool $ignoreCase = false): bool
     {
         return Text::contains($this->value, $needles, $ignoreCase);
     }
 
     /**
-     * Determine if a given string contains all array values.
+     * Détermine si la chaîne contient toutes les valeurs d'un tableau.
      *
-     * @param iterable<string> $needles
+     * @param iterable<string> $needles    Sous-chaînes à rechercher
+     * @param bool             $ignoreCase Ignorer la casse (par défaut: false)
      */
-    public function containsAll($needles, bool $ignoreCase = false): bool
+    public function containsAll(iterable $needles, bool $ignoreCase = false): bool
     {
         return Text::containsAll($this->value, $needles, $ignoreCase);
     }
 
     /**
-     * Get the parent directory's path.
+     * Convertit la casse d'une chaîne.
      *
-     * @return static
+     * @param int         $mode     Mode de conversion (par défaut: MB_CASE_FOLD)
+     * @param string|null $encoding Encodage (par défaut: 'UTF-8')
      */
-    public function dirname(int $levels = 1)
+    public function convertCase(int $mode = MB_CASE_FOLD, ?string $encoding = 'UTF-8'): static
+    {
+        return new static(Text::convertCase($this->value, $mode, $encoding));
+    }
+
+    /**
+     * Remplace les instances consécutives d'un caractère donné par un seul caractère.
+     *
+     * @param string $character Caractère à dédupliquer (par défaut: espace)
+     */
+    public function deduplicate(string $character = ' ')
+    {
+        return new static(value: Text::deduplicate($this->value, $character));
+    }
+
+    /**
+     * Récupère le chemin du répertoire parent.
+     *
+     * @param int $levels Nombre de niveaux à remonter (par défaut: 1)
+     */
+    public function dirname(int $levels = 1): static
     {
         return new static(dirname($this->value, $levels));
     }
 
     /**
-     * Determine if a given string ends with a given substring.
+     * Détermine si la chaîne ne contient pas une sous-chaîne donnée.
      *
-     * @param iterable<string>|string $needles
+     * @param iterable<string>|string $needles    Sous-chaîne(s) à rechercher
+     * @param bool                    $ignoreCase Ignorer la casse (par défaut: false)
      */
-    public function endsWith($needles): bool
+    public function doesntContain($needles, $ignoreCase = false)
+    {
+        return Text::doesntContain($this->value, $needles, $ignoreCase);
+    }
+
+    /**
+     * Détermine si la chaîne ne se termine pas par une sous-chaîne donnée.
+     *
+     * @param iterable<string>|string $needles Sous-chaîne(s) à rechercher
+     *
+     * @return bool true si la chaîne ne se termine pas par l'une des sous-chaînes
+     */
+    public function doesntEndWith($needles): bool
+    {
+        return Text::doesntEndWith($this->value, $needles);
+    }
+
+    /**
+     * Détermine si la chaîne se termine par une sous-chaîne donnée.
+     *
+     * @param iterable<string>|string $needles Sous-chaîne(s) à rechercher
+     *
+     * @return bool true si la chaîne se termine par l'une des sous-chaînes
+     */
+    public function endsWith(iterable|string $needles): bool
     {
         return Text::endsWith($this->value, $needles);
     }
 
     /**
-     * Determine if the string is an exact match with the given value.
+     * Détermine si la chaîne correspond exactement à la valeur donnée.
+     *
+     * @param string|Stringable $value Valeur à comparer
+     *
+     * @return bool true si les chaînes sont identiques
      */
     public function exactly(string|Stringable $value): bool
     {
@@ -200,7 +308,12 @@ class Stringable implements JsonSerializable
     }
 
     /**
-     * Extracts an excerpt from text that matches the first instance of a phrase.
+     * Extrait un extrait de texte qui correspond à la première instance d'une phrase.
+     *
+     * @param string               $phrase  Phrase à rechercher (vide pour tronquer)
+     * @param array<string, mixed> $options Options d'extrait
+     *
+     * @return string|null L'extrait ou null si non trouvé
      */
     public function excerpt(string $phrase = '', array $options = []): ?string
     {
@@ -208,7 +321,12 @@ class Stringable implements JsonSerializable
     }
 
     /**
-     * Explode the string into an array.
+     * Explode la chaîne en tableau.
+     *
+     * @param string $delimiter Délimateur
+     * @param int    $limit     Limite d'éléments (par défaut: PHP_INT_MAX)
+     *
+     * @return Collection Collection des éléments
      */
     public function explode(string $delimiter, int $limit = PHP_INT_MAX): Collection
     {
@@ -216,12 +334,29 @@ class Stringable implements JsonSerializable
     }
 
     /**
-     * Split a string using a regular expression or by length.
+     * Divise une chaîne en utilisant une expression régulière ou par longueur.
+     *
+     * @param int|string $pattern Pattern regex ou longueur de morceaux
+     * @param int        $limit   Limite d'éléments (par défaut: -1)
+     * @param int        $flags   Flags preg_split (par défaut: 0)
+     *
+     * @return Collection<int, string> Collection des segments
      */
     public function split(int|string $pattern, int $limit = -1, int $flags = 0): Collection
     {
-        if (filter_var($pattern, FILTER_VALIDATE_INT) !== false) {
-            return new Collection(mb_str_split($this->value, $pattern));
+        if (is_int($pattern) || ctype_digit((string) $pattern)) {
+            return new Collection(mb_str_split($this->value, (int) $pattern));
+        }
+
+        // Si ce n'est pas une regex valide, on l'échappe pour en faire un pattern littéral
+        if (! Text::isRegex($pattern)) {
+            $delimiter = array_filter(
+                ['/', '#', '~', '%', '|', '!', '@', '_'],
+                static fn (string $del) => ! str_contains($pattern, $del)
+            )[0] ?? '/';
+
+            // Échapper le pattern et construire la regex
+            $pattern = $delimiter . preg_quote($pattern, $delimiter) . $delimiter;
         }
 
         $segments = preg_split($pattern, $this->value, $limit, $flags);
@@ -230,27 +365,31 @@ class Stringable implements JsonSerializable
     }
 
     /**
-     * Cap a string with a single instance of a given value.
+     * Termine une chaîne avec une seule instance d'une valeur donnée.
      *
-     * @return static
+     * @param string $cap Valeur à ajouter à la fin
      */
-    public function finish(string $cap)
+    public function finish(string $cap): static
     {
         return new static(Text::finish($this->value, $cap));
     }
 
     /**
-     * Determine if a given string matches a given pattern.
+     * Détermine si la chaîne correspond à un motif donné.
      *
-     * @param iterable<string>|string $pattern
+     * @param iterable<string>|string $pattern Motif(s) à comparer
+     *
+     * @return bool true si la chaîne correspond à l'un des motifs
      */
-    public function is($pattern): bool
+    public function is(iterable|string $pattern): bool
     {
         return Text::is($pattern, $this->value);
     }
 
     /**
-     * Determine if a given string is 7 bit ASCII.
+     * Détermine si la chaîne est en ASCII 7 bits.
+     *
+     * @return bool true si la chaîne est en ASCII
      */
     public function isAscii(): bool
     {
@@ -258,7 +397,9 @@ class Stringable implements JsonSerializable
     }
 
     /**
-     * Determine if a given string is valid JSON.
+     * Détermine si la chaîne est un JSON valide.
+     *
+     * @return bool true si la chaîne est un JSON valide
      */
     public function isJson(): bool
     {
@@ -266,15 +407,33 @@ class Stringable implements JsonSerializable
     }
 
     /**
-     * Determine if a given string is a valid UUID.
+     * Détermine si la chaîne est une URL valide.
+     *
+     * @param array $protocols Protocoles autorisés
+     *
+     * @return bool true si la chaîne est une URL valide
      */
-    public function isUuid(): bool
+    public function isUrl(array $protocols = [])
     {
-        return Text::isUuid($this->value);
+        return Text::isUrl($this->value, $protocols);
     }
 
     /**
-     * Determine if a given string is a valid ULID.
+     * Détermine si la chaîne est un UUID valide.
+     *
+     * @param 'max'|int<0, 8>|null $version Version de l'UUID
+     *
+     * @return bool true si la chaîne est un UUID valide
+     */
+    public function isUuid($version = null): bool
+    {
+        return Text::isUuid($this->value, $version);
+    }
+
+    /**
+     * Détermine si la chaîne est un ULID valide.
+     *
+     * @return bool true si la chaîne est un ULID valide
      */
     public function isUlid(): bool
     {
@@ -282,7 +441,9 @@ class Stringable implements JsonSerializable
     }
 
     /**
-     * Determine if the given string is empty.
+     * Détermine si la chaîne est vide.
+     *
+     * @return bool true si la chaîne est vide
      */
     public function isEmpty(): bool
     {
@@ -290,7 +451,9 @@ class Stringable implements JsonSerializable
     }
 
     /**
-     * Determine if the given string is not empty.
+     * Détermine si la chaîne n'est pas vide.
+     *
+     * @return bool true si la chaîne n'est pas vide
      */
     public function isNotEmpty(): bool
     {
@@ -298,17 +461,21 @@ class Stringable implements JsonSerializable
     }
 
     /**
-     * Convert a string to kebab case.
+     * Convertit une chaîne en kebab-case.
      *
-     * @return static
+     * @return static Nouvelle instance avec le résultat
      */
-    public function kebab()
+    public function kebab(): static
     {
         return new static(Text::kebab($this->value));
     }
 
     /**
-     * Return the length of the given string.
+     * Retourne la longueur de la chaîne.
+     *
+     * @param string|null $encoding Encodage à utiliser
+     *
+     * @return int Longueur de la chaîne
      */
     public function length(?string $encoding = null): int
     {
@@ -316,67 +483,85 @@ class Stringable implements JsonSerializable
     }
 
     /**
-     * Limit the number of characters in a string.
+     * Limite le nombre de caractères dans la chaîne.
      *
-     * @return static
+     * @param int    $limit Limite de caractères (par défaut: 100)
+     * @param string $end   Suffixe si tronqué (par défaut: '...')
      */
-    public function limit(int $limit = 100, string $end = '...')
+    public function limit(int $limit = 100, string $end = '...'): static
     {
         return new static(Text::limit($this->value, $limit, $end));
     }
 
     /**
-     * Convert the given string to lower-case.
-     *
-     * @return static
+     * Convertit la chaîne en minuscules.
      */
-    public function lower()
+    public function lower(): static
     {
         return new static(Text::lower($this->value));
     }
 
     /**
-     * Convert GitHub flavored Markdown into HTML.
+     * Convertit le Markdown GitHub en HTML.
      *
-     * @return static
+     * @param array<string, mixed> $options Options de conversion
      */
-    public function markdown(array $options = [])
+    public function markdown(array $options = []): static
     {
         return new static(Text::markdown($this->value, $options));
     }
 
     /**
-     * Convert inline Markdown into HTML.
+     * Convertit le Markdown inline en HTML.
      *
-     * @return static
+     * @param array<string, mixed> $options Options de conversion
      */
-    public function inlineMarkdown(array $options = [])
+    public function inlineMarkdown(array $options = []): static
     {
         return new static(Text::inlineMarkdown($this->value, $options));
     }
 
     /**
-     * Masks a portion of a string with a repeated character.
+     * Masque une portion d'une chaîne avec un caractère répété.
      *
-     * @return static
+     * @param string   $character Caractère de masquage
+     * @param int      $index     Position de départ du masquage
+     * @param int|null $length    Longueur à masquer (null = jusqu'à la fin)
+     * @param string   $encoding  Encodage (par défaut: 'UTF-8')
      */
-    public function mask(string $character, int $index, ?int $length = null, string $encoding = 'UTF-8')
+    public function mask(string $character, int $index, ?int $length = null, string $encoding = 'UTF-8'): static
     {
         return new static(Text::mask($this->value, $character, $index, $length, $encoding));
     }
 
     /**
-     * Get the string matching the given pattern.
+     * Récupère la chaîne correspondant au motif donné.
      *
-     * @return static
+     * @param string $pattern Pattern regex
      */
-    public function match(string $pattern)
+    public function match(string $pattern): static
     {
         return new static(Text::match($pattern, $this->value));
     }
 
     /**
-     * Get the string matching the given pattern.
+     * Détermine si une chaîne donnée correspond à un pattern donné.
+     *
+     * @param iterable<string>|string $pattern Pattern(s) à comparer
+     *
+     * @return bool true si la chaîne correspond à l'un des patterns
+     */
+    public function isMatch(iterable|string $pattern): bool
+    {
+        return Text::isMatch($pattern, $this->value);
+    }
+
+    /**
+     * Récupère toutes les chaînes correspondant au motif donné.
+     *
+     * @param string $pattern Pattern regex
+     *
+     * @return Collection Collection des correspondances
      */
     public function matchAll(string $pattern): Collection
     {
@@ -384,446 +569,508 @@ class Stringable implements JsonSerializable
     }
 
     /**
-     * Determine if the string matches the given pattern.
+     * Détermine si la chaîne correspond au motif donné.
+     *
+     * @param string $pattern Pattern regex
+     *
+     * @return bool true si une correspondance est trouvée
      */
     public function test(string $pattern): bool
     {
-        return $this->match($pattern)->isNotEmpty();
+        return $this->isMatch($pattern);
     }
 
     /**
-     * Pad both sides of the string with another.
-     *
-     * @return static
+     * Supprime tous les caractères non numériques d'une chaîne.
      */
-    public function padBoth(int $length, string $pad = ' ')
+    public function numbers(): static
+    {
+        return new static(Text::numbers($this->value));
+    }
+
+    /**
+     * Remplit les deux côtés de la chaîne avec un autre caractère.
+     *
+     * @param int    $length Longueur totale souhaitée
+     * @param string $pad    Caractère de remplissage (par défaut: espace)
+     */
+    public function padBoth(int $length, string $pad = ' '): static
     {
         return new static(Text::padBoth($this->value, $length, $pad));
     }
 
     /**
-     * Pad the left side of the string with another.
+     * Remplit le côté gauche de la chaîne avec un autre caractère.
      *
-     * @param int    $length
-     * @param string $pad
-     *
-     * @return static
+     * @param int    $length Longueur totale souhaitée
+     * @param string $pad    Caractère de remplissage (par défaut: espace)
      */
-    public function padLeft($length, $pad = ' ')
+    public function padLeft(int $length, string $pad = ' '): static
     {
         return new static(Text::padLeft($this->value, $length, $pad));
     }
 
     /**
-     * Pad the right side of the string with another.
+     * Remplit le côté droit de la chaîne avec un autre caractère.
      *
-     * @param int    $length
-     * @param string $pad
-     *
-     * @return static
+     * @param int    $length Longueur totale souhaitée
+     * @param string $pad    Caractère de remplissage (par défaut: espace)
      */
-    public function padRight($length, $pad = ' ')
+    public function padRight(int $length, string $pad = ' '): static
     {
         return new static(Text::padRight($this->value, $length, $pad));
     }
 
     /**
-     * Parse a Class@method style callback into class and method.
+     * Parse un callback de style Class@method en classe et méthode.
      *
-     * @param string|null $default
+     * @param string|null $default Valeur par défaut pour la méthode
      *
-     * @return array<int, string|null>
+     * @return array<int, string|null> [classe, méthode]
      */
-    public function parseCallback($default = null)
+    public function parseCallback(?string $default = null): array
     {
         return Text::parseCallback($this->value, $default);
     }
 
     /**
-     * Call the given callback and return a new string.
+     * Passe la chaîne au callback donné et retourne une nouvelle chaîne.
      *
-     * @return static
+     * @param callable $callback Callback à appliquer
      */
-    public function pipe(callable $callback)
+    public function pipe(callable $callback): static
     {
         return new static($callback($this));
     }
 
     /**
-     * Get the plural form of an English word.
+     * Récupère la forme plurielle d'un mot anglais.
      *
-     * @param array|Countable|int $count
-     *
-     * @return static
+     * @param array|Countable|int $count Nombre pour décider du pluriel (par défaut: 2)
      */
-    public function plural($count = 2)
+    public function plural(array|Countable|int $count = 2): static
     {
         return new static(Text::plural($this->value, $count));
     }
 
     /**
-     * Pluralize the last word of an English, studly caps case string.
+     * Met au pluriel le dernier mot d'une chaîne en StudlyCaps.
      *
-     * @param array|Countable|int $count
-     *
-     * @return static
+     * @param array|Countable|int $count Nombre pour décider du pluriel (par défaut: 2)
      */
-    public function pluralStudly($count = 2)
+    public function pluralStudly(array|Countable|int $count = 2): static
     {
         return new static(Text::pluralStudly($this->value, $count));
     }
 
     /**
-     * Prepend the given values to the string.
+     * Met au pluriel le dernier mot d'une chaîne en PascalCaps.
      *
-     * @param array ...$values
-     *
-     * @return static
+     * @param array|Countable|int $count Nombre pour décider du pluriel (par défaut: 2)
      */
-    public function prepend(...$values)
+    public function pluralPascal(array|Countable|int $count = 2): static
+    {
+        return $this->pluralStudly($count);
+    }
+
+    /**
+     * Ajoute les valeurs données au début de la chaîne.
+     *
+     * @param string ...$values Valeurs à ajouter
+     */
+    public function prepend(string ...$values): static
     {
         return new static(implode('', $values) . $this->value);
     }
 
     /**
-     * Remove any occurrence of the given string in the subject.
+     * Supprime toute occurrence de la chaîne donnée dans le sujet.
      *
-     * @param iterable<string>|string $search
-     * @param bool                    $caseSensitive
-     *
-     * @return static
+     * @param iterable<string>|string $search        Valeur(s) à supprimer
+     * @param bool                    $caseSensitive Sensible à la casse (par défaut: true)
      */
-    public function remove($search, $caseSensitive = true)
+    public function remove(iterable|string $search, bool $caseSensitive = true): static
     {
         return new static(Text::remove($search, $this->value, $caseSensitive));
     }
 
     /**
-     * Reverse the string.
-     *
-     * @return static
+     * Inverse la chaîne.
      */
-    public function reverse()
+    public function reverse(): static
     {
         return new static(Text::reverse($this->value));
     }
 
     /**
-     * Repeat the string.
+     * Répète la chaîne.
      *
-     * @return static
+     * @param int $times Nombre de répétitions
      */
-    public function repeat(int $times)
+    public function repeat(int $times): static
     {
         return new static(str_repeat($this->value, $times));
     }
 
     /**
-     * Replace the given value in the given string.
+     * Remplace la valeur donnée dans la chaîne.
      *
-     * @param iterable<string>|string $search
-     * @param iterable<string>|string $replace
-     *
-     * @return static
+     * @param iterable<string>|string $search  Valeur(s) à rechercher
+     * @param iterable<string>|string $replace Valeur(s) de remplacement
      */
-    public function replace($search, $replace)
+    public function replace(iterable|string $search, iterable|string $replace): static
     {
         return new static(Text::replace($search, $replace, $this->value));
     }
 
     /**
-     * Replace a given value in the string sequentially with an array.
+     * Remplace une valeur donnée dans la chaîne séquentiellement avec un tableau.
      *
-     * @param string           $search
-     * @param iterable<string> $replace
-     *
-     * @return static
+     * @param string           $search  Valeur à rechercher
+     * @param iterable<string> $replace Valeurs de remplacement
      */
-    public function replaceArray($search, $replace)
+    public function replaceArray(string $search, iterable $replace): static
     {
         return new static(Text::replaceArray($search, $replace, $this->value));
     }
 
     /**
-     * Replace the first occurrence of a given value in the string.
+     * Remplace la première occurrence d'une valeur donnée dans la chaîne.
      *
-     * @param string $search
-     * @param string $replace
-     *
-     * @return static
+     * @param string $search  Valeur à rechercher
+     * @param string $replace Valeur de remplacement
      */
-    public function replaceFirst($search, $replace)
+    public function replaceFirst(string $search, string $replace): static
     {
         return new static(Text::replaceFirst($search, $replace, $this->value));
     }
 
     /**
-     * Replace the last occurrence of a given value in the string.
+     * Remplace la première occurrence de la valeur donnée si elle apparaît au début de la chaîne.
      *
-     * @param string $search
-     * @param string $replace
-     *
-     * @return static
+     * @param string $search  Valeur à rechercher
+     * @param string $replace Valeur de remplacement
      */
-    public function replaceLast($search, $replace)
+    public function replaceStart(string $search, string $replace): static
+    {
+        return new static(Text::replaceStart($search, $replace, $this->value));
+    }
+
+    /**
+     * Remplace la dernière occurrence d'une valeur donnée dans la chaîne.
+     *
+     * @param string $search  Valeur à rechercher
+     * @param string $replace Valeur de remplacement
+     */
+    public function replaceLast(string $search, string $replace): static
     {
         return new static(Text::replaceLast($search, $replace, $this->value));
     }
 
     /**
-     * Replace the patterns matching the given regular expression.
+     * Remplace la dernière occurrence d'une valeur donnée si elle apparaît à la fin de la chaîne.
      *
-     * @param string         $pattern
-     * @param Closure|string $replace
-     * @param int            $limit
-     *
-     * @return static
+     * @param string $search  Valeur à rechercher
+     * @param string $replace Valeur de remplacement
      */
-    public function replaceMatches($pattern, $replace, $limit = -1)
+    public function replaceEnd($search, $replace)
     {
-        if ($replace instanceof Closure) {
-            return new static(preg_replace_callback($pattern, $replace, $this->value, $limit));
-        }
-
-        return new static(preg_replace($pattern, $replace, $this->value, $limit));
+        return new static(Text::replaceEnd($search, $replace, $this->value));
     }
 
     /**
-     * Parse input from a string to a collection, according to a format.
+     * Remplace les motifs correspondant à l'expression régulière donnée.
+     *
+     * @param string         $pattern Pattern regex
+     * @param Closure|string $replace Callback ou chaîne de remplacement
+     * @param int            $limit   Limite de remplacements (par défaut: -1)
+     */
+    public function replaceMatches(string $pattern, Closure|string $replace, int $limit = -1): static
+    {
+        if ($replace instanceof Closure) {
+            return new static(preg_replace_callback($pattern, $replace, $this->value, $limit) ?? $this->value);
+        }
+
+        return new static(preg_replace($pattern, $replace, $this->value, $limit) ?? $this->value);
+    }
+
+    /**
+     * Parse l'entrée d'une chaîne vers une collection, selon un format.
+     *
+     * @param string $format Format à utiliser (comme sscanf)
+     *
+     * @return Collection Collection des valeurs parsées
      */
     public function scan(string $format): Collection
     {
-        return new Collection(sscanf($this->value, $format));
+        $result = sscanf($this->value, $format);
+
+        return new Collection($result !== false ? $result : []);
     }
 
     /**
-     * Remove all "extra" blank space from the given string.
-     *
-     * @return static
+     * Supprime tous les espaces "extra" de la chaîne.
      */
-    public function squish()
+    public function squish(): static
     {
         return new static(Text::squish($this->value));
     }
 
     /**
-     * Begin a string with a single instance of a given value.
+     * Commence une chaîne avec une seule instance d'une valeur donnée.
      *
-     * @param string $prefix
-     *
-     * @return static
+     * @param string $prefix Préfixe à ajouter
      */
-    public function start($prefix)
+    public function start(string $prefix): static
     {
         return new static(Text::start($this->value, $prefix));
     }
 
     /**
-     * Strip HTML and PHP tags from the given string.
+     * Supprime les balises HTML et PHP de la chaîne.
      *
-     * @param string $allowedTags
-     *
-     * @return static
+     * @param string|null $allowedTags Balises autorisées
      */
-    public function stripTags($allowedTags = null)
+    public function stripTags(?string $allowedTags = null): static
     {
         return new static(strip_tags($this->value, $allowedTags));
     }
 
     /**
-     * Convert the given string to upper-case.
-     *
-     * @return static
+     * Convertit la chaîne en majuscules.
      */
-    public function upper()
+    public function upper(): static
     {
         return new static(Text::upper($this->value));
     }
 
     /**
-     * Convert the given string to title case.
-     *
-     * @return static
+     * Convertit la chaîne en title case.
      */
-    public function title()
+    public function title(): static
     {
         return new static(Text::title($this->value));
     }
 
     /**
-     * Convert the given string to title case for each word.
-     *
-     * @return static
+     * Convertit la chaîne en title case pour chaque mot (format titre).
      */
-    public function headline()
+    public function headline(): static
     {
         return new static(Text::headline($this->value));
     }
 
     /**
-     * Get the singular form of an English word.
-     *
-     * @return static
+     * Convertit la chaîne donnée en casse de titre style APA.
      */
-    public function singular()
+    public function apa(): static
+    {
+        return new static(Text::apa($this->value));
+    }
+
+    /**
+     * Translittère une chaîne vers sa représentation ASCII la plus proche.
+     *
+     * @param string|null $unknown Caractère de remplacement pour caractères inconnus
+     * @param bool|null   $strict  Mode strict
+     */
+    public function transliterate(?string $unknown = '?', ?bool $strict = false): static
+    {
+        return new static(Text::transliterate($this->value, $unknown, $strict));
+    }
+
+    /**
+     * Récupère la forme singulière d'un mot anglais.
+     */
+    public function singular(): static
     {
         return new static(Text::singular($this->value));
     }
 
     /**
-     * Generate a URL friendly "slug" from a given string.
+     * Génère un "slug" convivial pour les URL.
      *
-     * @param string                $separator
-     * @param string|null           $language
-     * @param array<string, string> $dictionary
-     *
-     * @return static
+     * @param string                $separator  Séparateur (par défaut: '-')
+     * @param string|null           $language   Langue pour la translittération
+     * @param array<string, string> $dictionary Dictionnaire de remplacements
      */
-    public function slug($separator = '-', $language = 'en', $dictionary = ['@' => 'at'])
+    public function slug(string $separator = '-', ?string $language = 'en', array $dictionary = ['@' => 'at']): static
     {
         return new static(Text::slug($this->value, $separator, $language, $dictionary));
     }
 
     /**
-     * Convert a string to snake case.
+     * Convertit une chaîne en snake_case.
      *
-     * @param string $delimiter
-     *
-     * @return static
+     * @param string $delimiter Délimateur (par défaut: '_')
      */
-    public function snake($delimiter = '_')
+    public function snake(string $delimiter = '_'): static
     {
         return new static(Text::snake($this->value, $delimiter));
     }
 
     /**
-     * Determine if a given string starts with a given substring.
+     * Détermine si la chaîne commence par une sous-chaîne donnée.
      *
-     * @param iterable<string>|string $needles
+     * @param iterable<string>|string $needles Sous-chaîne(s) à rechercher
      *
-     * @return bool
+     * @return bool true si la chaîne commence par l'une des sous-chaînes
      */
-    public function startsWith($needles)
+    public function startsWith(iterable|string $needles): bool
     {
         return Text::startsWith($this->value, $needles);
     }
 
     /**
-     * Convert a value to studly caps case.
+     * Détermine si la chaîne ne commence pas par une sous-chaîne donnée.
      *
-     * @return static
+     * @param iterable<string>|string $needles Sous-chaîne(s) à rechercher
+     *
+     * @return bool true si la chaîne ne commence pas par l'une des sous-chaînes
      */
-    public function studly()
+    public function doesntStartWith(iterable|string $needles)
+    {
+        return Text::doesntStartWith($this->value, $needles);
+    }
+
+    /**
+     * Convertit une valeur en StudlyCaps.
+     *
+     * @return static Nouvelle instance avec le résultat
+     */
+    public function studly(): static
     {
         return new static(Text::studly($this->value));
     }
 
     /**
-     * Returns the portion of the string specified by the start and length parameters.
-     *
-     * @return static
+     * Convertit la chaîne en Pascal case.
      */
-    public function substr(int $start, ?int $length = null, string $encoding = 'UTF-8')
+    public function pascal(): static
     {
-        return new static(Text::substr($this->value, $start, $length, ['encoding' => $encoding]));
+        return new static(Text::pascal($this->value));
     }
 
     /**
-     * Returns the number of substring occurrences.
+     * Retourne la partie de chaîne spécifiée par les paramètres start et length.
      *
-     * @param string   $needle
-     * @param int      $offset
-     * @param int|null $length
-     *
-     * @return int
+     * @param int      $start    Position de départ
+     * @param int|null $length   Longueur à extraire (null = jusqu'à la fin)
+     * @param string   $encoding Encodage (par défaut: 'UTF-8')
      */
-    public function substrCount($needle, $offset = 0, $length = null)
+    public function substr(int $start, ?int $length = null, string $encoding = 'UTF-8'): static
+    {
+        return new static(Text::substr($this->value, $start, $length, $encoding));
+    }
+
+    /**
+     * Retourne le nombre d'occurrences d'une sous-chaîne.
+     *
+     * @param string   $needle Sous-chaîne à compter
+     * @param int      $offset Position de départ
+     * @param int|null $length Longueur à parcourir
+     */
+    public function substrCount(string $needle, int $offset = 0, ?int $length = null): int
     {
         return Text::substrCount($this->value, $needle, $offset, $length);
     }
 
     /**
-     * Replace text within a portion of a string.
+     * Remplace du texte dans une partie d'une chaîne.
      *
-     * @param list<string>|string $replace
-     * @param int|list<int>       $offset
-     * @param int|list<int>|null  $length
-     *
-     * @return static
+     * @param list<string>|string $replace Texte de remplacement
+     * @param int|list<int>       $offset  Position de départ
+     * @param int|list<int>|null  $length  Longueur à remplacer
      */
-    public function substrReplace($replace, $offset = 0, $length = null)
+    public function substrReplace(array|string $replace, array|int $offset = 0, array|int|null $length = null): static
     {
         return new static(Text::substrReplace($this->value, $replace, $offset, $length));
     }
 
     /**
-     * Swap multiple keywords in a string with other keywords.
+     * Échange plusieurs mots-clés dans la chaîne avec d'autres mots-clés.
      *
-     * @return static
+     * @param array<string, string> $map Tableau de correspondances
      */
-    public function swap(array $map)
+    public function swap(array $map): static
     {
-        return new static(strtr($this->value, $map));
+        return new static(Text::swap($map, $this->value));
     }
 
     /**
-     * Trim the string of the given characters.
+     * Prend les premiers ou derniers caractères.
      *
-     * @param string $characters
-     *
-     * @return static
+     * @param int $limit Nombre de caractères (positif pour le début, négatif pour la fin)
      */
-    public function trim($characters = null)
+    public function take(int $limit)
     {
-        return new static(trim(...array_merge([$this->value], func_get_args())));
+        if ($limit < 0) {
+            return $this->substr($limit);
+        }
+
+        return $this->substr(0, $limit);
     }
 
     /**
-     * Left trim the string of the given characters.
+     * Trim la chaîne des caractères donnés.
      *
-     * @param string $characters
-     *
-     * @return static
+     * @param string|null $characters Caractères à retirer
      */
-    public function ltrim($characters = null)
+    public function trim(?string $characters = null): static
     {
-        return new static(ltrim(...array_merge([$this->value], func_get_args())));
+        return new static(Text::trim(...array_merge([$this->value], func_get_args())));
     }
 
     /**
-     * Right trim the string of the given characters.
+     * Trim gauche de la chaîne des caractères donnés.
      *
-     * @param string $characters
-     *
-     * @return static
+     * @param string|null $characters Caractères à retirer
      */
-    public function rtrim($characters = null)
+    public function ltrim(?string $characters = null): static
     {
-        return new static(rtrim(...array_merge([$this->value], func_get_args())));
+        return new static(Text::ltrim(...array_merge([$this->value], func_get_args())));
     }
 
     /**
-     * Make a string's first character lowercase.
+     * Trim droit de la chaîne des caractères donnés.
      *
-     * @return static
+     * @param string|null $characters Caractères à retirer
      */
-    public function lcfirst()
+    public function rtrim(?string $characters = null): static
+    {
+        return new static(Text::rtrim(...array_merge([$this->value], func_get_args())));
+    }
+
+    /**
+     * Met le premier caractère de la chaîne en minuscule.
+     */
+    public function lcfirst(): static
     {
         return new static(Text::lcfirst($this->value));
     }
 
     /**
-     * Make a string's first character uppercase.
-     *
-     * @return static
+     * Met le premier caractère de la chaîne en majuscule.
      */
-    public function ucfirst()
+    public function ucfirst(): static
     {
         return new static(Text::ucfirst($this->value));
     }
 
     /**
-     * Split a string by uppercase characters.
+     * Met en majuscule le premier caractère de chaque mot dans une chaîne.
+     *
+     * @param string $separators Séparateurs de mots (par défaut: " \t\r\n\f\v")
+     */
+    public function ucwords(string $separators = " \t\r\n\f\v")
+    {
+        return new static(Text::ucwords($this->value, $separators));
+    }
+
+    /**
+     * Divise une chaîne par caractères majuscules.
+     *
+     * @return Collection<int, string> Collection des morceaux
      */
     public function ucsplit(): Collection
     {
@@ -831,17 +1078,197 @@ class Stringable implements JsonSerializable
     }
 
     /**
-     * Limit the number of words in a string.
+     * Exécute le callback donné si la chaîne contient une sous-chaîne donnée.
      *
-     * @return static
+     * @param iterable<string>|string $needles  Sous-chaîne(s) à rechercher
+     * @param callable                $callback Callback à exécuter
+     * @param callable|null           $default  Callback par défaut (optionnel)
      */
-    public function words(int $words = 100, string $end = '...')
+    public function whenContains(iterable|string $needles, callable $callback, ?callable $default = null): static
+    {
+        return $this->when($this->contains($needles), $callback, $default);
+    }
+
+    /**
+     * Exécute le callback donné si la chaîne contient toutes les valeurs du tableau.
+     *
+     * @param iterable<string> $needles  Sous-chaînes à rechercher
+     * @param callable         $callback Callback à exécuter
+     * @param callable|null    $default  Callback par défaut (optionnel)
+     */
+    public function whenContainsAll(array $needles, callable $callback, ?callable $default = null): static
+    {
+        return $this->when($this->containsAll($needles), $callback, $default);
+    }
+
+    /**
+     * Exécute le callback donné si la chaîne est vide.
+     *
+     * @param callable      $callback Callback à exécuter
+     * @param callable|null $default  Callback par défaut (optionnel)
+     */
+    public function whenEmpty(callable $callback, ?callable $default = null): static
+    {
+        return $this->when($this->isEmpty(), $callback, $default);
+    }
+
+    /**
+     * Exécute le callback donné si la chaîne n'est pas vide.
+     *
+     * @param callable      $callback Callback à exécuter
+     * @param callable|null $default  Callback par défaut (optionnel)
+     */
+    public function whenNotEmpty(callable $callback, ?callable $default = null): static
+    {
+        return $this->when($this->isNotEmpty(), $callback, $default);
+    }
+
+    /**
+     * Exécute le callback donné si la chaîne se termine par une sous-chaîne donnée.
+     *
+     * @param iterable<string>|string $needles  Sous-chaîne(s) à rechercher
+     * @param callable                $callback Callback à exécuter
+     * @param callable|null           $default  Callback par défaut (optionnel)
+     */
+    public function whenEndsWith(iterable|string $needles, callable $callback, ?callable $default = null): static
+    {
+        return $this->when($this->endsWith($needles), $callback, $default);
+    }
+
+    /**
+     * Exécute le callback donné si la chaîne ne se termine pas par une sous-chaîne donnée.
+     *
+     * @param iterable<string>|string $needles  Sous-chaîne(s) à rechercher
+     * @param callable                $callback Callback à exécuter
+     * @param callable|null           $default  Callback par défaut (optionnel)
+     */
+    public function whenDoesntEndWith(iterable|string $needles, callable $callback, ?callable $default = null): static
+    {
+        return $this->when($this->doesntEndWith($needles), $callback, $default);
+    }
+
+    /**
+     * Exécute le callback donné si la chaîne correspond exactement à la valeur donnée.
+     *
+     * @param string        $value    Valeur à comparer
+     * @param callable      $callback Callback à exécuter
+     * @param callable|null $default  Callback par défaut (optionnel)
+     */
+    public function whenExactly(string $value, callable $callback, ?callable $default = null): static
+    {
+        return $this->when($this->exactly($value), $callback, $default);
+    }
+
+    /**
+     * Exécute le callback donné si la chaîne ne correspond pas exactement à la valeur donnée.
+     *
+     * @param string        $value    Valeur à comparer
+     * @param callable      $callback Callback à exécuter
+     * @param callable|null $default  Callback par défaut (optionnel)
+     */
+    public function whenNotExactly(string $value, callable $callback, ?callable $default = null): static
+    {
+        return $this->when(! $this->exactly($value), $callback, $default);
+    }
+
+    /**
+     * Exécute le callback donné si la chaîne correspond à un pattern donné.
+     *
+     * @param iterable<string>|string $pattern  Pattern(s) à comparer
+     * @param callable                $callback Callback à exécuter
+     * @param callable|null           $default  Callback par défaut (optionnel)
+     */
+    public function whenIs(iterable|string $pattern, callable $callback, ?callable $default = null): static
+    {
+        return $this->when($this->is($pattern), $callback, $default);
+    }
+
+    /**
+     * Exécute le callback donné si la chaîne est en ASCII 7 bits.
+     *
+     * @param callable      $callback Callback à exécuter
+     * @param callable|null $default  Callback par défaut (optionnel)
+     */
+    public function whenIsAscii(callable $callback, ?callable $default = null): static
+    {
+        return $this->when($this->isAscii(), $callback, $default);
+    }
+
+    /**
+     * Exécute le callback donné si la chaîne est un UUID valide.
+     *
+     * @param callable      $callback Callback à exécuter
+     * @param callable|null $default  Callback par défaut (optionnel)
+     */
+    public function whenIsUuid(callable $callback, ?callable $default = null): static
+    {
+        return $this->when($this->isUuid(), $callback, $default);
+    }
+
+    /**
+     * Exécute le callback donné si la chaîne est un ULID valide.
+     *
+     * @param callable      $callback Callback à exécuter
+     * @param callable|null $default  Callback par défaut (optionnel)
+     */
+    public function whenIsUlid(callable $callback, ?callable $default = null): static
+    {
+        return $this->when($this->isUlid(), $callback, $default);
+    }
+
+    /**
+     * Exécute le callback donné si la chaîne commence par une sous-chaîne donnée.
+     *
+     * @param iterable<string>|string $needles  Sous-chaîne(s) à rechercher
+     * @param callable                $callback Callback à exécuter
+     * @param callable|null           $default  Callback par défaut (optionnel)
+     */
+    public function whenStartsWith(iterable|string $needles, callable $callback, ?callable $default = null): static
+    {
+        return $this->when($this->startsWith($needles), $callback, $default);
+    }
+
+    /**
+     * Exécute le callback donné si la chaîne ne commence pas par une sous-chaîne donnée.
+     *
+     * @param iterable<string>|string $needles  Sous-chaîne(s) à rechercher
+     * @param callable                $callback Callback à exécuter
+     * @param callable|null           $default  Callback par défaut (optionnel)
+     */
+    public function whenDoesntStartWith(iterable|string $needles, callable $callback, ?callable $default = null): static
+    {
+        return $this->when($this->doesntStartWith($needles), $callback, $default);
+    }
+
+    /**
+     * Exécute le callback donné si la chaîne correspond au pattern donné.
+     *
+     * @param string        $pattern  Pattern regex
+     * @param callable      $callback Callback à exécuter
+     * @param callable|null $default  Callback par défaut (optionnel)
+     */
+    public function whenTest(string $pattern, callable $callback, ?callable $default = null): static
+    {
+        return $this->when($this->test($pattern), $callback, $default);
+    }
+
+    /**
+     * Limite le nombre de mots dans la chaîne.
+     *
+     * @param int    $words Nombre maximum de mots (par défaut: 100)
+     * @param string $end   Suffixe si tronqué (par défaut: '...')
+     */
+    public function words(int $words = 100, string $end = '...'): static
     {
         return new static(Text::words($this->value, $words, $end));
     }
 
     /**
-     * Get the number of words a string contains.
+     * Récupère le nombre de mots dans la chaîne.
+     *
+     * @param string|null $characters Caractères supplémentaires considérés comme faisant partie des mots
+     *
+     * @return int Nombre de mots
      */
     public function wordCount(?string $characters = null): int
     {
@@ -849,17 +1276,101 @@ class Stringable implements JsonSerializable
     }
 
     /**
-     * Wrap the string with the given strings.
+     * Wrap une chaîne sur un nombre donné de caractères.
      *
-     * @return static
+     * @param int    $characters   Nombre de caractères par ligne (par défaut: 75)
+     * @param string $break        Caractère de rupture de ligne (par défaut: "\n")
+     * @param bool   $cutLongWords Couper les mots longs (par défaut: false)
      */
-    public function wrap(string $before, ?string $after = null)
+    public function wordWrap(int $characters = 75, string $break = "\n", bool $cutLongWords = false): static
+    {
+        return new static(Text::wordWrap($this->value, $characters, $break, $cutLongWords));
+    }
+
+    /**
+     * Encapsule la chaîne avec les chaînes données.
+     *
+     * @param string      $before Chaîne à placer avant
+     * @param string|null $after  Chaîne à placer après (null = utilise $before)
+     */
+    public function wrap(string $before, ?string $after = null): static
     {
         return new static(Text::wrap($this->value, $before, $after));
     }
 
     /**
-     * Get the underlying string value.
+     * Désencapsule la chaîne avec les chaînes données.
+     *
+     * @param string      $before Chaîne à retirer devant
+     * @param string|null $after  Chaîne à retirer derrière (null = utilise $before)
+     */
+    public function unwrap(string $before, ?string $after = null): static
+    {
+        return new static(Text::unwrap($this->value, $before, $after));
+    }
+
+    /**
+     * Convertit la chaîne en encodage Base64.
+     */
+    public function toBase64(): static
+    {
+        return new static(base64_encode($this->value));
+    }
+
+    /**
+     * Décode la chaîne encodée en Base64.
+     *
+     * @param bool $strict Mode strict
+     */
+    public function fromBase64(bool $strict = false): static
+    {
+        return new static(base64_decode($this->value, $strict));
+    }
+
+    /**
+     * Hache la chaîne en utilisant l'algorithme donné.
+     *
+     * @param string $algorithm Algorithme de hachage
+     */
+    public function hash(string $algorithm): static
+    {
+        return new static(hash($algorithm, $this->value));
+    }
+
+    /**
+     * Crypte la chaîne.
+     *
+     * @param bool $serialize Sérialiser les données (par défaut: false)
+     *
+     * @return static
+     */
+    public function encrypt(bool $serialize = false)
+    {
+        if (function_exists('service')) {
+            return new static(service('encrypter')->encrypt($this->value));
+        }
+
+        throw new RuntimeException();
+    }
+
+    /**
+     * Décrypte la chaîne.
+     *
+     * @param bool $serialize Sérialiser les données (par défaut: false)
+     */
+    public function decrypt(bool $serialize = false): static
+    {
+        if (function_exists('service')) {
+            return new static(service('encrypter')->decrypt($this->value));
+        }
+
+        throw new RuntimeException();
+    }
+
+    /**
+     * Récupère la valeur de chaîne sous-jacente.
+     *
+     * @return string Valeur de la chaîne
      */
     public function value(): string
     {
@@ -867,7 +1378,9 @@ class Stringable implements JsonSerializable
     }
 
     /**
-     * Get the underlying string value.
+     * Récupère la valeur de chaîne sous-jacente.
+     *
+     * @return string Valeur de la chaîne
      */
     public function toString(): string
     {
@@ -875,25 +1388,34 @@ class Stringable implements JsonSerializable
     }
 
     /**
-     * Get the underlying string value as an integer.
+     * Récupère la valeur de chaîne sous-jacente sous forme d'entier.
+     *
+     * @param int $base Base numérique (par défaut: 10)
+     *
+     * @return int Valeur entière
      */
-    public function toInteger(): int
+    public function toInteger(int $base = 10): int
     {
-        return (int) ($this->value);
+        return intval($this->value, $base);
     }
 
     /**
-     * Get the underlying string value as a float.
+     * Récupère la valeur de chaîne sous-jacente sous forme de flottant.
+     *
+     * @return float Valeur flottante
      */
     public function toFloat(): float
     {
-        return (float) ($this->value);
+        return (float) $this->value;
     }
 
     /**
-     * Get the underlying string value as a boolean.
+     * Récupère la valeur de chaîne sous-jacente sous forme de booléen.
      *
-     * Returns true when value is "1", "true", "on", and "yes". Otherwise, returns false.
+     * Retourne true quand la valeur est "1", "true", "on", ou "yes".
+     * Sinon, retourne false.
+     *
+     * @return bool Valeur booléenne
      */
     public function toBoolean(): bool
     {
@@ -901,9 +1423,14 @@ class Stringable implements JsonSerializable
     }
 
     /**
-     * Get the underlying string value as a Carbon instance.
+     * Récupère la valeur de chaîne sous-jacente sous forme d'instance Date.
      *
-     * @throws Exception for invalid format
+     * @param string|null $format Format de date spécifique
+     * @param string|null $tz     Fuseau horaire
+     *
+     * @return Date Instance Date
+     *
+     * @throws Exception Si le format est invalide
      */
     public function toDate(?string $format = null, ?string $tz = null): Date
     {
@@ -915,7 +1442,9 @@ class Stringable implements JsonSerializable
     }
 
     /**
-     * Convert the object to a string when JSON encoded.
+     * Convertit l'objet en chaîne lorsqu'encodé en JSON.
+     *
+     * @return string Chaîne JSON encodée
      */
     public function jsonSerialize(): string
     {
@@ -923,20 +1452,226 @@ class Stringable implements JsonSerializable
     }
 
     /**
-     * Proxy dynamic properties onto methods.
+     * Détermine si l'offset donné existe.
      *
-     * @return mixed
+     * @param mixed $offset Offset à vérifier
      */
-    public function __get(string $key)
+    public function offsetExists(mixed $offset): bool
     {
-        return $this->{$key}();
+        return isset($this->value[$offset]);
     }
 
     /**
-     * Get the raw string value.
+     * Récupère la valeur à l'offset donné.
+     *
+     * @param mixed $offset Offset à récupérer
+     */
+    public function offsetGet(mixed $offset): string
+    {
+        return $this->value[$offset];
+    }
+
+    /**
+     * Définit la valeur à l'offset donné.
+     *
+     * @param mixed $offset Offset à définir
+     * @param mixed $value  Valeur à assigner
+     */
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
+        $this->value[$offset] = $value;
+    }
+
+    /**
+     * Supprime la valeur à l'offset donné.
+     *
+     * @param mixed $offset Offset à supprimer
+     */
+    public function offsetUnset(mixed $offset): void
+    {
+        unset($this->value[$offset]);
+    }
+
+    /**
+     * Proxy des propriétés dynamiques vers les méthodes.
+     *
+     * @param string $key Nom de la propriété
+     *
+     * @return mixed Résultat de la méthode correspondante
+     */
+    public function __get(string $key): mixed
+    {
+        $value = $this->{$key}();
+
+        if ($value instanceof self) {
+            return $value->toString();
+        }
+
+        return $value;
+    }
+
+    /**
+     * Récupère la valeur brute de la chaîne.
+     *
+     * @return string Valeur de la chaîne
      */
     public function __toString(): string
     {
-        return (string) $this->value;
+        return $this->value;
+    }
+
+    /**
+     * Transforme la chaîne en utilisant un callback et retourne le résultat.
+     *
+     * @param callable $callback Callback de transformation
+     *
+     * @return mixed Résultat de la transformation
+     */
+    public function transform(callable $callback): mixed
+    {
+        return $callback($this);
+    }
+
+    /**
+     * Compare la chaîne avec une autre (insensible à la casse par défaut).
+     *
+     * @param string|Stringable $value         Valeur à comparer
+     * @param bool              $caseSensitive Sensible à la casse (par défaut: false)
+     *
+     * @return int -1 si inférieur, 0 si égal, 1 si supérieur
+     */
+    public function compare(string|Stringable $value, bool $caseSensitive = false): int
+    {
+        if ($value instanceof Stringable) {
+            $value = $value->toString();
+        }
+
+        if ($caseSensitive) {
+            return strcmp($this->value, $value);
+        }
+
+        return strcasecmp($this->value, $value);
+    }
+
+    /**
+     * Vérifie si la chaîne est égale à une autre (insensible à la casse par défaut).
+     *
+     * @param string|Stringable $value         Valeur à comparer
+     * @param bool              $caseSensitive Sensible à la casse (par défaut: false)
+     *
+     * @return bool true si les chaînes sont égales
+     */
+    public function equals(string|Stringable $value, bool $caseSensitive = false): bool
+    {
+        if ($value instanceof Stringable) {
+            $value = $value->toString();
+        }
+
+        if ($caseSensitive) {
+            return $this->value === $value;
+        }
+
+        return strcasecmp($this->value, $value) === 0;
+    }
+
+    /**
+     * Récupère la position de la première occurrence d'une sous-chaîne.
+     *
+     * @param string      $needle   Sous-chaîne à rechercher
+     * @param int         $offset   Position de départ
+     * @param string|null $encoding Encodage utilisé
+     *
+     * @return false|int Position ou false si non trouvé
+     */
+    public function position(string $needle, int $offset = 0, ?string $encoding = null): false|int
+    {
+        return Text::position($this->value, $needle, $offset, $encoding);
+    }
+
+    /**
+     * Récupère la position de la dernière occurrence d'une sous-chaîne.
+     *
+     * @param string $needle        Sous-chaîne à rechercher
+     * @param int    $offset        Position de départ
+     * @param bool   $caseSensitive Sensible à la casse (par défaut: true)
+     *
+     * @return false|int Position ou false si non trouvé
+     */
+    public function lastPosition(string $needle, int $offset = 0, bool $caseSensitive = true): false|int
+    {
+        if ($caseSensitive) {
+            return strrpos($this->value, $needle, $offset);
+        }
+
+        return strripos($this->value, $needle, $offset);
+    }
+
+    /**
+     * Vérifie si la chaîne est composée uniquement de caractères alphabétiques.
+     *
+     * @return bool true si la chaîne est alphabétique
+     */
+    public function isAlpha(): bool
+    {
+        return ctype_alpha($this->value);
+    }
+
+    /**
+     * Vérifie si la chaîne est composée uniquement de chiffres.
+     *
+     * @return bool true si la chaîne est numérique
+     */
+    public function isNumeric(): bool
+    {
+        return ctype_digit($this->value);
+    }
+
+    /**
+     * Vérifie si la chaîne est composée uniquement de caractères alphanumériques.
+     *
+     * @return bool true si la chaîne est alphanumérique
+     */
+    public function isAlnum(): bool
+    {
+        return ctype_alnum($this->value);
+    }
+
+    /**
+     * Vérifie si la chaîne est composée uniquement de caractères imprimables.
+     *
+     * @return bool true si tous les caractères sont imprimables
+     */
+    public function isPrintable(): bool
+    {
+        return ctype_print($this->value);
+    }
+
+    /**
+     * Convertit la chaîne en encodage spécifié.
+     *
+     * @param string $toEncoding   Encodage de destination
+     * @param string $fromEncoding Encodage source (par défaut: détection automatique)
+     *
+     * @return static Nouvelle instance avec le résultat
+     */
+    public function convertEncoding(string $toEncoding, string $fromEncoding = 'UTF-8'): static
+    {
+        return new static(mb_convert_encoding($this->value, $toEncoding, $fromEncoding));
+    }
+
+    /**
+     * Normalise la chaîne selon la forme Unicode spécifiée.
+     *
+     * @param int $form Forme de normalisation (par défaut: Normalizer::FORM_C)
+     *
+     * @return static Nouvelle instance avec le résultat
+     */
+    public function normalize(int $form = Normalizer::FORM_C): static
+    {
+        if (class_exists('Normalizer') && Normalizer::isNormalized($this->value, $form)) {
+            return new static(Normalizer::normalize($this->value, $form));
+        }
+
+        return $this;
     }
 }

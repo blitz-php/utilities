@@ -28,7 +28,12 @@ use Traversable;
 use UnitEnum;
 
 /**
- * @template TKey of array-key
+ * Collection d'éléments
+ *
+ * Cette classe fournit une interface fluide pour manipuler des tableaux de données.
+ * Elle implémente plusieurs interfaces pour un maximum de compatibilité.
+ *
+ * @template TKey de array-key
  *
  * @template-covariant TValue
  *
@@ -38,6 +43,8 @@ use UnitEnum;
 class Collection implements ArrayAccess, Enumerable
 {
     /**
+     * Utilise le trait EnumeratesValues
+     *
      * @use \BlitzPHP\Traits\EnumeratesValues<TKey, TValue>
      */
     use EnumeratesValues;
@@ -52,9 +59,9 @@ class Collection implements ArrayAccess, Enumerable
     protected array $items = [];
 
     /**
-     * Création d'une nouvelle collection.
+     * Crée une nouvelle collection.
      *
-     * @param \Illuminate\Contracts\Support\Arrayable<TKey, TValue>|iterable<TKey, TValue>|null $items
+     * @param Arrayable<TKey, TValue>|iterable<TKey, TValue>|null $items
      */
     public function __construct($items = [])
     {
@@ -80,7 +87,7 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Obtenez une collection paresseuse pour les articles de cette collection.
+     * Obtient une collection paresseuse pour les éléments de cette collection.
      *
      * @return LazyCollection<TKey, TValue>
      */
@@ -142,7 +149,7 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Collapse the collection of items into a single array while preserving its keys.
+     * Réduit la collection d'éléments en un seul tableau tout en préservant ses clés.
      *
      * @return static<mixed, mixed>
      */
@@ -214,7 +221,7 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Determine if an item is not contained in the enumerable, using strict comparison.
+     * Détermine si un élément n'est pas contenu dans l'énumérable, en utilisant une comparaison stricte.
      */
     public function doesntContainStrict(mixed $key, mixed $operator = null, mixed $value = null): bool
     {
@@ -313,7 +320,9 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Obtenez la fonction de comparaison pour détecter les doublons.
+     * Obtient la fonction de comparaison pour détecter les doublons.
+     *
+     * @param bool $strict Indique si la comparaison doit être stricte
      *
      * @return callable(TValue, TValue): bool
      */
@@ -383,9 +392,11 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Supprimer un élément de la collection par clé.
+     * Supprime un élément de la collection par clé.
+     *
+     * @param Arrayable<array-key, TValue>|iterable<array-key, TKey>|TKey $keys Les clés à supprimer
      */
-    public function forget(array|string $keys): self
+    public function forget($keys): self
     {
         foreach ($this->getArrayableItems($keys) as $key) {
             $this->offsetUnset($key);
@@ -397,9 +408,9 @@ class Collection implements ArrayAccess, Enumerable
     /**
      * {@inheritDoc}
      */
-    public function get(int|string $key, mixed $default = null): mixed
+    public function get(int|string|null $key, mixed $default = null): mixed
     {
-        if (array_key_exists($key, $this->items)) {
+        if (array_key_exists($key ?? '', $this->items)) {
             return $this->items[$key];
         }
 
@@ -407,11 +418,12 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Obtenez un élément de la collection par clé ou ajoutez-le à la collection s'il n'existe pas.
+     * Obtient un élément de la collection par clé ou l'ajoute à la collection s'il n'existe pas.
      *
      * @template TGetOrPutValue
      *
-     * @param (Closure(): TGetOrPutValue)|TGetOrPutValue $value
+     * @param mixed                                      $key   La clé de l'élément
+     * @param (Closure(): TGetOrPutValue)|TGetOrPutValue $value La valeur ou le callback pour la valeur
      *
      * @return TGetOrPutValue|TValue
      */
@@ -453,6 +465,7 @@ class Collection implements ArrayAccess, Enumerable
                     is_bool($groupKey)              => (int) $groupKey,
                     $groupKey instanceof UnitEnum   => Helpers::enumValue($groupKey),
                     $groupKey instanceof Stringable => (string) $groupKey,
+                    $groupKey === null              => (string) $groupKey,
                     default                         => $groupKey,
                 };
 
@@ -562,7 +575,7 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Intersecter la collection avec les éléments donnés, en utilisant le callback.
+     * Intersecte la collection avec les éléments donnés, en utilisant un callback.
      *
      * @param Arrayable<array-key, TValue>|iterable<array-key, TValue> $items
      * @param callable(TValue, TValue): int                            $callback
@@ -573,7 +586,7 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Croisez la collection avec les éléments donnés avec une vérification d'index supplémentaire.
+     * Croise la collection avec les éléments donnés avec une vérification d'index supplémentaire.
      *
      * @param Arrayable<TKey, TValue>|iterable<TKey, TValue> $items
      */
@@ -583,10 +596,10 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Intersect the collection with the given items with additional index check, using the callback.
+     * Intersecte la collection avec les éléments donnés avec une vérification d'index supplémentaire, en utilisant un callback.
      *
      * @param Arrayable<array-key, TValue>|iterable<array-key, TValue> $items
-     * @param callable(TValue, TValue): int
+     * @param callable(TValue, TValue): int                            $callback
      */
     public function intersectAssocUsing($items, callable $callback): static
     {
@@ -731,7 +744,9 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Multiply the items in the collection by the multiplier.
+     * Multiplie les éléments de la collection par le multiplicateur.
+     *
+     * @param int $multiplier Le multiplicateur
      */
     public function multiply(int $multiplier): static
     {
@@ -799,7 +814,7 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Select specific values from the items within the collection.
+     * Sélectionne des valeurs spécifiques des éléments dans la collection.
      *
      * @param array<array-key, TKey>|Enumerable<array-key, TKey>|string|null $keys
      */
@@ -819,7 +834,9 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Obtenez et supprimez les N derniers éléments de la collection.
+     * Obtient et supprime les N derniers éléments de la collection.
+     *
+     * @param int $count Le nombre d'éléments à dépiler
      *
      * @return ($count is 1 ? TValue|null : static<int, TValue>)
      */
@@ -849,7 +866,10 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Poussez un élément au début de la collection.
+     * Ajoute un élément au début de la collection.
+     *
+     * @param mixed $value La valeur à ajouter
+     * @param mixed $key   La clé optionnelle
      */
     public function prepend(mixed $value, mixed $key = null): self
     {
@@ -859,7 +879,9 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Poussez un élément à la fin de la collection.
+     * Ajoute un élément à la fin de la collection.
+     *
+     * @param mixed ...$values Les valeurs à ajouter
      */
     public function push(...$values): self
     {
@@ -871,7 +893,9 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Prepend one or more items to the beginning of the collection.
+     * Ajoute un ou plusieurs éléments au début de la collection.
+     *
+     * @param mixed ...$values Les valeurs à ajouter
      */
     public function unshift(...$values): self
     {
@@ -895,12 +919,12 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Obtenir et supprimer un élément de la collection.
+     * Obtient et supprime un élément de la collection.
      *
      * @template TPullDefault
-     *=
      *
-     * @param (Closure(): TPullDefault)|TPullDefault $default
+     * @param string                                 $key     La clé de l'élément
+     * @param (Closure(): TPullDefault)|TPullDefault $default La valeur par défaut
      *
      * @return TPullDefault|TValue
      */
@@ -910,7 +934,10 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Mettre un élément dans la collection par clé.
+     * Place un élément dans la collection par clé.
+     *
+     * @param int|string $key   La clé
+     * @param mixed      $value La valeur
      */
     public function put(int|string $key, mixed $value): self
     {
@@ -978,7 +1005,7 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Get the item before the given item.
+     * Obtient l'élément précédant l'élément donné.
      *
      * @param (callable(TValue,TKey): bool)|TValue $value
      *
@@ -1002,7 +1029,7 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Get the item after the given item.
+     * Obtient l'élément suivant l'élément donné.
      *
      * @param (callable(TValue,TKey): bool)|TValue $value
      *
@@ -1026,7 +1053,9 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Obtenez et supprimez les N premiers éléments de la collection.
+     * Obtient et supprime les N premiers éléments de la collection.
+     *
+     * @param int $count Le nombre d'éléments à décaler
      *
      * @return static<int, TValue>|TValue|null
      *
@@ -1035,7 +1064,7 @@ class Collection implements ArrayAccess, Enumerable
     public function shift(int $count = 1)
     {
         if ($count < 0) {
-            throw new InvalidArgumentException('Number of shifted items may not be less than zero.');
+            throw new InvalidArgumentException('Le nombre d\'éléments décalés ne peut pas être inférieur à zéro.');
         }
 
         if ($this->isEmpty()) {
@@ -1170,11 +1199,11 @@ class Collection implements ArrayAccess, Enumerable
         $count = $items->count();
 
         if ($count === 0) {
-            throw new ItemNotFoundException();
+            throw new ItemNotFoundException('Aucun élément trouvé.');
         }
 
         if ($count > 1) {
-            throw new MultipleItemsFoundException($count);
+            throw new MultipleItemsFoundException($count, 'Plusieurs éléments trouvés.');
         }
 
         return $items->first();
@@ -1196,7 +1225,7 @@ class Collection implements ArrayAccess, Enumerable
         $item = $this->first($filter, $placeholder);
 
         if ($item === $placeholder) {
-            throw new ItemNotFoundException();
+            throw new ItemNotFoundException('Aucun élément trouvé.');
         }
 
         return $item;
@@ -1232,8 +1261,10 @@ class Collection implements ArrayAccess, Enumerable
 
     /**
      * {@inheritDoc}
+     *
+     * @param (callable(TValue, TValue): int)|int|null $callback
      */
-    public function sort(?callable $callback = null): static
+    public function sort($callback = null): static
     {
         $items = $this->items;
 
@@ -1288,9 +1319,10 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Triez la collection à l'aide de plusieurs comparaisons.
+     * Trie la collection à l'aide de plusieurs comparaisons.
      *
      * @param array<array-key, array{string, string}|(callable(TValue, TKey): mixed)|(callable(TValue, TValue): mixed)|string> $comparisons
+     * @param int                                                                                                              $options     Options de tri
      */
     protected function sortByMany(array $comparisons = [], int $options = SORT_REGULAR): static
     {
@@ -1393,9 +1425,11 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Extraire une portion du tableau de collection sous-jacent.
+     * Extrait une portion du tableau de collection sous-jacent.
      *
-     * @param array<array-key, TValue> $replacement
+     * @param int                      $offset      Début de l'extraction
+     * @param int|null                 $length      Longueur de l'extraction
+     * @param array<array-key, TValue> $replacement Éléments de remplacement
      */
     public function splice(int $offset, ?int $length = null, array $replacement = []): static
     {
@@ -1435,7 +1469,7 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Transformez chaque élément de la collection à l'aide d'un callback.
+     * Transforme chaque élément de la collection à l'aide d'un callback.
      *
      * @param callable(TValue, TKey): TValue $callback
      */
@@ -1457,7 +1491,7 @@ class Collection implements ArrayAccess, Enumerable
     /**
      * {@inheritDoc}
      */
-    public function undot()
+    public function undot(): static
     {
         return new static(Arr::undot($this->all()));
     }
@@ -1513,7 +1547,7 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Obtenez un itérateur pour les éléments.
+     * Obtient un itérateur pour les éléments.
      *
      * @return ArrayIterator<TKey, TValue>
      */
@@ -1551,7 +1585,7 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Obtenez une instance de collection Support de base à partir de cette collection.
+     * Obtient une instance de collection Support de base à partir de cette collection.
      *
      * @return Collection<TKey, TValue>
      */
@@ -1561,7 +1595,7 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Détermine si un élément existe à une position donnee.
+     * Détermine si un élément existe à une position donnée.
      *
      * @param TKey $key
      */
@@ -1571,7 +1605,7 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Obtenir un élément se trouvant à une position donnée.
+     * Obtient un élément se trouvant à une position donnée.
      *
      * @param TKey $key
      *
@@ -1583,7 +1617,7 @@ class Collection implements ArrayAccess, Enumerable
     }
 
     /**
-     * Définir l'élément à une position donnée.
+     * Définit l'élément à une position donnée.
      *
      * @param ?TKey  $key
      * @param TValue $value

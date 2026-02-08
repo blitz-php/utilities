@@ -27,10 +27,51 @@ use RuntimeException;
 use Throwable;
 use UnitEnum;
 
+/**
+ * Classe utilitaire fournissant des fonctions d'aide courantes
+ *
+ * Cette classe contient une variété de méthodes statiques pour manipuler des données,
+ * gérer les environnements, effectuer des validations et d'autres opérations courantes.
+ */
 class Helpers
 {
     /**
+     * Configurations prédéfinies pour HTMLPurifier
+     *
+     * @var array<string, array>
+     */
+    private static array $purifierConfigs = [
+        'comment' => [
+            'HTML.Allowed'             => 'p,a[href|title],abbr[title],acronym[title],b,strong,blockquote[cite],code,em,i,strike',
+            'AutoFormat.AutoParagraph' => true,
+            'AutoFormat.Linkify'       => true,
+            'AutoFormat.RemoveEmpty'   => true,
+        ],
+        'default' => [
+            // Configuration par défaut vide
+        ],
+    ];
+
+    /**
+     * Cache des versions PHP vérifiées
+     *
+     * @var array<string, bool>
+     */
+    private static array $phpVersionCache = [];
+
+    /**
+     * Instance du escaper Laminas pour éviter les instanciations multiples
+     *
+     * @var \Laminas\Escaper\Escaper|null
+     */
+    private static $escaper;
+
+    /**
      * Récupère la classe "basename" de l'objet/classe donné.
+     *
+     * @param object|string $class L'objet ou le nom de classe
+     *
+     * @return string Le nom court de la classe (sans le namespace)
      *
      * @see https://github.com/laravel/framework/blob/8.x/src/Illuminate/Support/helpers.php
      */
@@ -43,6 +84,10 @@ class Helpers
 
     /**
      * Renvoie tous les traits utilisés par une classe, ses classes parentes et le trait de leurs traits.
+     *
+     * @param object|string $class L'objet ou le nom de classe
+     *
+     * @return array Liste de tous les traits utilisés récursivement
      */
     public static function classUsesRecursive(object|string $class): array
     {
@@ -59,42 +104,71 @@ class Helpers
         return array_unique($results);
     }
 
+    /**
+     * Nettoie une URL en supprimant les références aux répertoires parents et en normalisant le format
+     *
+     * @param string $url L'URL à nettoyer
+     *
+     * @return string L'URL nettoyée
+     */
     public static function cleanUrl(string $url): string
     {
-        $path  = parse_url($url);
-        $query = '';
-
-        if (! empty($path['host'])) {
-            $r = $path['scheme'] . '://';
-            if (! empty($path['user'])) {
-                $r .= $path['user'];
-                if (! empty($path['pass'])) {
-                    $r .= ':' . $path['pass'] . '@';
-                }
-                $r .= '@';
-            }
-            if (! empty($path['host'])) {
-                $r .= $path['host'];
-            }
-            if (! empty($path['port'])) {
-                $r .= ':' . $path['port'];
-            }
-            $url = $r . $path['path'];
-            if (! empty($path['query'])) {
-                $query = '?' . $path['query'];
-            }
-        }
-        $url = str_replace('/./', '/', $url);
-
-        while (substr_count($url, '../')) {
-            $url = preg_replace('!/([\\w\\d]+/\\.\\.)!', '', $url);
+        $urlParts = parse_url($url);
+        if ($urlParts === false) {
+            return $url;
         }
 
-        return $url . $query;
+        $result = '';
+
+        if (! empty($urlParts['scheme'])) {
+            $result .= $urlParts['scheme'] . '://';
+        }
+
+        if (! empty($urlParts['user'])) {
+            $result .= $urlParts['user'];
+            if (! empty($urlParts['pass'])) {
+                $result .= ':' . $urlParts['pass'];
+            }
+            $result .= '@';
+        }
+
+        if (! empty($urlParts['host'])) {
+            $result .= $urlParts['host'];
+        }
+
+        if (! empty($urlParts['port'])) {
+            $result .= ':' . $urlParts['port'];
+        }
+
+        if (! empty($urlParts['path'])) {
+            $path = $urlParts['path'];
+
+            $path = str_replace('/./', '/', $path);
+
+            while (substr_count($path, '../')) {
+                $path = preg_replace('!/([\\w\\d]+/\\.\\.)!', '', $path);
+            }
+
+            $result .= $path;
+        }
+
+        if (! empty($urlParts['query'])) {
+            $result .= '?' . $urlParts['query'];
+        }
+
+        if (! empty($urlParts['fragment'])) {
+            $result .= '#' . $urlParts['fragment'];
+        }
+
+        return $result;
     }
 
     /**
      * Créez une collection à partir de la valeur donnée.
+     *
+     * @param mixed $value La valeur à transformer en collection
+     *
+     * @return Collection Une nouvelle instance de Collection
      */
     public static function collect(mixed $value = null): Collection
     {
@@ -102,7 +176,13 @@ class Helpers
     }
 
     /**
-     * Fill in data where it's missing.
+     * Remplit les données manquantes dans un tableau ou un objet en utilisant la notation "point".
+     *
+     * @param mixed        &$target La cible à remplir (par référence)
+     * @param array|string $key     La clé sous forme de tableau ou de chaîne avec notation point
+     * @param mixed        $value   La valeur à définir
+     *
+     * @return mixed La cible modifiée
      */
     public static function dataFill(mixed &$target, array|string $key, mixed $value): mixed
     {
@@ -110,7 +190,12 @@ class Helpers
     }
 
     /**
-     * Remove / unset an item from an array or object using "dot" notation.
+     * Supprime un élément d'un tableau ou d'un objet en utilisant la notation "point".
+     *
+     * @param mixed                 &$target La cible à modifier (par référence)
+     * @param array|int|string|null $key     La clé à supprimer
+     *
+     * @return mixed La cible modifiée
      */
     public static function dataForget(mixed &$target, array|int|string|null $key): mixed
     {
@@ -140,9 +225,12 @@ class Helpers
     }
 
     /**
-     * Determine if a key / property exists on an array or object using "dot" notation.
+     * Détermine si une clé/propriété existe sur un tableau ou un objet en utilisant la notation "point".
      *
-     * @param array|int|string|null $key
+     * @param mixed                 $target La cible à vérifier
+     * @param array|int|string|null $key    La clé à vérifier
+     *
+     * @return bool True si la clé existe, false sinon
      */
     public static function dataHas(mixed $target, $key): bool
     {
@@ -167,6 +255,12 @@ class Helpers
 
     /**
      * Récupère un élément d'un tableau ou d'un objet en utilisant la notation "point".
+     *
+     * @param mixed                 $target  La cible à partir de laquelle récupérer
+     * @param array|int|string|null $key     La clé à récupérer
+     * @param mixed                 $default La valeur par défaut si la clé n'existe pas
+     *
+     * @return mixed La valeur récupérée
      */
     public static function dataGet(mixed $target, array|int|string|null $key, mixed $default = null): mixed
     {
@@ -221,7 +315,14 @@ class Helpers
     }
 
     /**
-     * Set an item on an array or object using dot notation.
+     * Définit un élément sur un tableau ou un objet en utilisant la notation point.
+     *
+     * @param mixed        &$target   La cible à modifier (par référence)
+     * @param array|string $key       La clé sous forme de tableau ou de chaîne avec notation point
+     * @param mixed        $value     La valeur à définir
+     * @param bool         $overwrite Si true, écrase les valeurs existantes
+     *
+     * @return mixed La cible modifiée
      */
     public static function dataSet(mixed &$target, array|string $key, mixed $value, bool $overwrite = true): mixed
     {
@@ -309,6 +410,11 @@ class Helpers
 
     /**
      * Garantit qu'une extension se trouve à la fin d'un nom de fichier
+     *
+     * @param string $path Le chemin du fichier
+     * @param string $ext  L'extension à garantir
+     *
+     * @return string Le chemin avec l'extension garantie
      */
     public static function ensureExt(string $path, string $ext = 'php'): string
     {
@@ -324,15 +430,15 @@ class Helpers
     }
 
     /**
-     * Return a scalar value for the given value that might be an enum.
+     * Renvoie une valeur scalaire pour la valeur donnée qui pourrait être une énumération.
      *
      * @template TValue
      * @template TDefault
      *
-     * @param TValue                              $value
-     * @param callable(TValue): TDefault|TDefault $default
+     * @param TValue                              $value   La valeur à convertir
+     * @param callable(TValue): TDefault|TDefault $default Valeur par défaut ou callback
      *
-     * @return ($value is empty ? TDefault : mixed)
+     * @return ($value is empty ? TDefault : mixed) La valeur scalaire ou la valeur par défaut
      */
     public static function enumValue($value, $default = null)
     {
@@ -418,11 +524,13 @@ class Helpers
      *
      * Valeurs de contexte valides : html, js, css, url, attr, raw, null
      *
-     * @param array|string $data
+     * @param array|string $data     Les données à échapper
+     * @param string|null  $context  Le contexte d'échappement
+     * @param string|null  $encoding L'encodage à utiliser
      *
-     * @return array|string
+     * @return array|string Les données échappées
      *
-     * @throws InvalidArgumentException
+     * @throws InvalidArgumentException Si le contexte n'est pas valide
      */
     public static function esc($data, ?string $context = 'html', ?string $encoding = null)
     {
@@ -436,14 +544,13 @@ class Helpers
             $context = strtolower($context);
 
             // Fournit un moyen de NE PAS échapper aux données depuis
-            // cela pourrait être appelé automatiquement par
-            // la bibliothèque View.
+            // cela pourrait être appelé automatiquement par la bibliothèque View.
             if (empty($context) || $context === 'raw') {
                 return $data;
             }
 
             if (! in_array($context, ['html', 'js', 'css', 'url', 'attr'], true)) {
-                throw new InvalidArgumentException('Invalid escape context provided.');
+                throw new InvalidArgumentException("Contexte d'échappement invalide fourni.");
             }
 
             if ($context === 'attr') {
@@ -452,23 +559,22 @@ class Helpers
                 $method = 'escape' . ucfirst($context);
             }
 
-            static $escaper;
-            if (! $escaper) {
-                $escaper = new \Laminas\Escaper\Escaper($encoding);
+            if (self::$escaper === null) {
+                self::$escaper = new \Laminas\Escaper\Escaper($encoding);
+            } elseif ($encoding && self::$escaper->getEncoding() !== $encoding) {
+                self::$escaper = new \Laminas\Escaper\Escaper($encoding);
             }
 
-            if ($encoding && $escaper->getEncoding() !== $encoding) {
-                $escaper = new \Laminas\Escaper\Escaper($encoding);
-            }
-
-            $data = $escaper->{$method}($data);
+            $data = self::$escaper->{$method}($data);
         }
 
         return $data;
     }
 
     /**
-     * Recherche l'URL de base de l'application independamment de la configuration de l'utilisateur
+     * Recherche l'URL de base de l'application indépendamment de la configuration de l'utilisateur
+     *
+     * @return string L'URL de base de l'application
      */
     public static function findBaseUrl(): string
     {
@@ -487,7 +593,7 @@ class Helpers
             $scheme = 'https';
         }
 
-        return $scheme . '://' . $server_addr . dirname(substr($_SERVER['SCRIPT_NAME'], 0, strpos($_SERVER['SCRIPT_NAME'], basename($_SERVER['SCRIPT_FILENAME']))));
+        return trim($scheme . '://' . $server_addr . dirname(substr($_SERVER['SCRIPT_NAME'], 0, strpos($_SERVER['SCRIPT_NAME'], basename($_SERVER['SCRIPT_FILENAME'])))), '/\\') ?: '/';
     }
 
     /**
@@ -546,7 +652,11 @@ class Helpers
     }
 
     /**
-     * Get the first element of an array. Useful for method chaining.
+     * Récupère le premier élément d'un tableau. Utile pour l'enchaînement de méthodes.
+     *
+     * @param array $array Le tableau à traiter
+     *
+     * @return mixed Le premier élément du tableau
      */
     public static function head(array $array): mixed
     {
@@ -554,11 +664,13 @@ class Helpers
     }
 
     /**
+     * Crée un envahisseur pour accéder aux propriétés et méthodes privées
+     *
      * @template T of object
      *
-     * @param class-string|T $object
+     * @param class-string|T $object L'objet ou le nom de classe à envahir
      *
-     * @return Invader<T>|StaticInvader
+     * @return Invader<T>|StaticInvader L'instance d'envahisseur
      */
     public static function invade(object|string $object): Invader|StaticInvader
     {
@@ -571,6 +683,8 @@ class Helpers
 
     /**
      * Obtenez l'adresse IP que le client utilise ou dit qu'il utilise.
+     *
+     * @return string L'adresse IP du client
      */
     public static function ipAddress(): string
     {
@@ -606,7 +720,14 @@ class Helpers
     }
 
     /**
-     * Verifies si un chemin donnée est un chemin absolu ou relatif
+     * Vérifie si un chemin donné est un chemin absolu ou relatif
+     *
+     * @param string $path    Le chemin à vérifier
+     * @param bool   $verbose Si true, lance une exception en cas d'erreur
+     *
+     * @return bool True si le chemin est absolu, false sinon
+     *
+     * @throws DomainException Si le chemin contient des caractères non imprimables ou n'est pas valide
      */
     public static function isAbsolutePath(string $path, bool $verbose = false): bool
     {
@@ -638,7 +759,11 @@ class Helpers
     }
 
     /**
-     * Verifies si un chemin donnée est une url absolue ou relative
+     * Vérifie si un chemin donné est une URL absolue ou relative
+     *
+     * @param string $path Le chemin à vérifier
+     *
+     * @return bool True si le chemin est une URL absolue, false sinon
      */
     public static function isAbsoluteUrl(string $path): bool
     {
@@ -646,7 +771,9 @@ class Helpers
     }
 
     /**
-     * Verifie si la requete est executee en ajax
+     * Vérifie si la requête est exécutée en AJAX
+     *
+     * @return bool True si la requête est AJAX, false sinon
      */
     public static function isAjaxRequest(): bool
     {
@@ -655,18 +782,26 @@ class Helpers
 
     /**
      * Vérifiez si une chaîne est encodée en Base64.
+     *
+     * @param string $input La chaîne à vérifier
+     *
+     * @return bool True si la chaîne est encodée en Base64, false sinon
      */
-    public static function isBase64Encoded(string $input)
+    public static function isBase64Encoded(string $input): bool
     {
-        if (false === $str = base64_decode($input, false)) {
+        if (! preg_match('/^[a-zA-Z0-9\/+]*={0,2}$/', $input)) {
             return false;
         }
 
-        return $input === base64_encode($str);
+        $decoded = base64_decode($input, true);
+
+        return $decoded !== false && base64_encode($decoded) === $input;
     }
 
     /**
      * Testez pour voir si une demande a été faite à partir de la ligne de commande.
+     *
+     * @return bool True si l'exécution est en CLI, false sinon
      */
     public static function isCli(): bool
     {
@@ -674,15 +809,23 @@ class Helpers
     }
 
     /**
-     * Verifie si l'utilisateur a une connexion internet active.
+     * Vérifie si l'utilisateur a une connexion internet active.
+     *
+     * @param array $endpoints Liste des endpoints à vérifier (host:port)
+     * @param int   $timeout   Timeout en secondes pour chaque connexion
+     *
+     * @return bool True si connecté à Internet, false sinon
      */
-    public static function isConnected(): bool
+    public static function isConnected(array $endpoints = ['www.google.com:80', '8.8.8.8:53', '1.1.1.1:53'], int $timeout = 2): bool
     {
-        $connected = @fsockopen('www.google.com', 80);
-        if ($connected) {
-            fclose($connected);
+        foreach ($endpoints as $endpoint) {
+            [$host, $port] = explode(':', $endpoint . ':80'); // Port par défaut 80
+            $connected     = @fsockopen($host, (int) $port, $errno, $errstr, $timeout);
+            if ($connected) {
+                fclose($connected);
 
-            return true;
+                return true;
+            }
         }
 
         return false;
@@ -690,34 +833,48 @@ class Helpers
 
     /**
      * Tester si une application s'exécute en local ou en ligne
+     *
+     * @return bool True si en ligne, false si en local
      */
     public static function isOnline(): bool
     {
         $host = explode(':', $_SERVER['HTTP_HOST'] ?? '')[0];
 
-        return
-            ! empty($host) // Si c'est vide, ca veut certainement dire qu'on est en CLI, or le CLI << n'est pas >> utilisé en ligne
-            && ! in_array($host, ['localhost', '127.0.0.1'], true)
-            && ! preg_match('#\.dev$#', $host)
-            && ! preg_match('#\.test$#', $host)
-            && ! preg_match('#\.lab$#', $host)
-            && ! preg_match('#\.loc(al)?$#', $host)
-            && ! preg_match('#\.localhost$#', $host)
-            && ! preg_match('#^192\.168#', $host);
+        if (empty($host)) {
+            return false;
+        }
+        $localPatterns = [
+            '/\.dev$/i',
+            '/\.test$/i',
+            '/\.lab$/i',
+            '/\.loc(al)?$/i',
+            '/\.localhost$/i',
+        ];
+
+        foreach ($localPatterns as $pattern) {
+            if (preg_match($pattern, $host)) {
+                return false;
+            }
+        }
+
+        return ! in_array($host, ['localhost', '127.0.0.1'], true)
+            && ! preg_match('/^192\.168/', $host);
     }
 
     /**
      * Détermine si la version actuelle de PHP est égale ou supérieure à la valeur fournie
+     *
+     * @param string $version La version PHP à vérifier
+     *
+     * @return bool True si la version PHP est suffisante, false sinon
      */
     public static function isPhp(string $version): bool
     {
-        static $_is_php;
-
-        if (! isset($_is_php[$version])) {
-            $_is_php[$version] = version_compare(PHP_VERSION, $version, '>=');
+        if (! isset(self::$phpVersionCache[$version])) {
+            self::$phpVersionCache[$version] = version_compare(PHP_VERSION, $version, '>=');
         }
 
-        return $_is_php[$version];
+        return self::$phpVersionCache[$version];
     }
 
     /**
@@ -727,11 +884,13 @@ class Helpers
      * le fichier, basé sur l'attribut en lecture seule. is_writable() n'est pas non plus fiable
      * sur les serveurs Unix si safe_mode est activé.
      *
-     * @see https://bugs.php.net/bug.php?id=54709
+     * @param string $file Le chemin du fichier à vérifier
+     *
+     * @return bool True si le fichier est réellement accessible en écriture, false sinon
      *
      * @throws Exception
      *
-     * @codeCoverageIgnore Pas pratique à tester, car travis fonctionne sous linux
+     * @see https://bugs.php.net/bug.php?id=54709
      */
     public static function isReallyWritable(string $file): bool
     {
@@ -765,7 +924,11 @@ class Helpers
     }
 
     /**
-     * Get the last element from an array.
+     * Récupère le dernier élément d'un tableau.
+     *
+     * @param array $array Le tableau à traiter
+     *
+     * @return mixed Le dernier élément du tableau
      */
     public static function last(array $array): mixed
     {
@@ -814,81 +977,61 @@ class Helpers
     }
 
     /**
-     * Divise un nom de plugin de syntaxe à points en son plugin et son nom de classe.
-     * Si $name n'a pas de point, alors l'index 0 sera nul.
+     * Enregistre une nouvelle configuration pour HTMLPurifier
      *
-     * Couramment utilisé comme
-     * ```
-     * list($plugin, $name) = Helpers::pluginSplit($name);
-     * ```
-     *
-     * @param string      $name      Le nom que vous voulez diviser en plugin.
-     * @param bool        $dotAppend Définir sur true si vous voulez que le plugin ait un '.' qui y est annexé.
-     * @param string|null $plugin    Plugin optionnel par défaut à utiliser si aucun plugin n'est trouvé. La valeur par défaut est nulle.
-     *
-     * @return array Tableau avec 2 index. 0 => nom du plugin, 1 => nom de la classe.
-     *
-     * @credit <a href="https://book.cakephp.org/4/en/core-libraries/global-constants-and-functions.html#pluginSplit">CakePHP</a>
-     *
-     * @psalm-return array{string|null, string}
+     * @param string $name   Le nom de la configuration
+     * @param array  $config La configuration
      */
-    public static function pluginSplit(string $name, bool $dotAppend = false, ?string $plugin = null): array
+    public static function registerPurifierConfig(string $name, array $config): void
     {
-        if (str_contains($name, '.')) {
-            $parts = explode('.', $name, 2);
-            if ($dotAppend) {
-                $parts[0] .= '.';
-            }
-
-            /** @psalm-var array{string, string}*/
-            return $parts;
-        }
-
-        return [$plugin, $name];
+        self::$purifierConfigs[$name] = $config;
     }
 
     /**
      * Purifiez l'entrée à l'aide de la classe autonome HTMLPurifier.
      * Utilisez facilement plusieurs configurations de purificateur.
      *
-     * @param list<string>|string $dirty_html
-     * @param false|string        $config
+     * @param list<string>|string $dirty_html Le HTML à purifier
+     * @param false|string        $config     La configuration à utiliser
+     * @param string              $charset    Le charset à utiliser
      *
-     * @return list<string>|string
+     * @return list<string>|string Le HTML purifié
+     *
+     * @throws InvalidArgumentException Si la configuration n'est pas trouvée
      */
     public static function purify($dirty_html, $config = false, string $charset = 'UTF-8')
     {
         if (is_array($dirty_html)) {
+            $clean_html = [];
+
             foreach ($dirty_html as $key => $val) {
                 $clean_html[$key] = self::purify($val, $config);
             }
-        } else {
-            switch ($config) {
-                case 'comment':
-                    $config = HTMLPurifier_Config::createDefault();
-                    $config->set('Core.Encoding', $charset);
-                    $config->set('HTML.Doctype', 'XHTML 1.0 Strict');
-                    $config->set('HTML.Allowed', 'p,a[href|title],abbr[title],acronym[title],b,strong,blockquote[cite],code,em,i,strike');
-                    $config->set('AutoFormat.AutoParagraph', true);
-                    $config->set('AutoFormat.Linkify', true);
-                    $config->set('AutoFormat.RemoveEmpty', true);
-                    break;
 
-                case false:
-                    $config = HTMLPurifier_Config::createDefault();
-                    $config->set('Core.Encoding', $charset);
-                    $config->set('HTML.Doctype', 'XHTML 1.0 Strict');
-                    break;
-
-                default:
-                    throw new InvalidArgumentException('The HTMLPurifier configuration labeled "' . htmlspecialchars($config, ENT_QUOTES, $charset) . '" could not be found.');
-            }
-
-            $purifier   = new HTMLPurifier($config);
-            $clean_html = $purifier->purify($dirty_html);
+            return $clean_html;
         }
 
-        return $clean_html;
+        $purifierConfig = HTMLPurifier_Config::createDefault();
+        $purifierConfig->set('Core.Encoding', $charset);
+        $purifierConfig->set('HTML.Doctype', 'XHTML 1.0 Strict');
+
+        if ($config !== false) {
+            if (isset(self::$purifierConfigs[$config])) {
+                foreach (self::$purifierConfigs[$config] as $key => $value) {
+                    $purifierConfig->set($key, $value);
+                }
+            } else {
+                throw new InvalidArgumentException(
+                    'La configuration HTMLPurifier intitulée "' .
+                    htmlspecialchars((string) $config, ENT_QUOTES, $charset) .
+                    '" est introuvable.'
+                );
+            }
+        }
+
+        $purifier = new HTMLPurifier($purifierConfig);
+
+        return $purifier->purify($dirty_html);
     }
 
     /**
@@ -896,18 +1039,23 @@ class Helpers
      *
      * Cela empêche de prendre en sandwich des caractères nuls
      * entre les caractères ascii, comme Java\0script.
+     *
+     * @param string $str         La chaîne à nettoyer
+     * @param bool   $url_encoded Si true, nettoie également les caractères encodés dans l'URL
+     *
+     * @return string La chaîne nettoyée
      */
     public static function removeInvisibleCharacters(string $str, bool $url_encoded = true): string
     {
         $non_displayables = [];
 
         if ($url_encoded) {
-            $non_displayables[] = '/%0[0-8bcef]/i';	// url encoded 00-08, 11, 12, 14, 15
-            $non_displayables[] = '/%1[0-9a-f]/i';	// url encoded 16-31
-            $non_displayables[] = '/%7f/i';	// url encoded 127
+            $non_displayables[] = '/%0[0-8bcef]/i';    // url encoded 00-08, 11, 12, 14, 15
+            $non_displayables[] = '/%1[0-9a-f]/i';    // url encoded 16-31
+            $non_displayables[] = '/%7f/i';    // url encoded 127
         }
 
-        $non_displayables[] = '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]+/S';	// 00-08, 11, 12, 14-31, 127
+        $non_displayables[] = '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]+/S';    // 00-08, 11, 12, 14-31, 127
 
         do {
             $str = preg_replace($non_displayables, '', $str, -1, $count);
@@ -919,41 +1067,39 @@ class Helpers
     /**
      * Réessayez une opération un certain nombre de fois.
      *
-     * @throws Exception
+     * @param array|int     $times             Le nombre de tentatives ou un tableau de délais d'attente
+     * @param callable      $callback          La fonction à réessayer
+     * @param Closure|int   $sleepMilliseconds Le temps d'attente entre les tentatives
+     * @param callable|null $when              Condition pour continuer à réessayer
+     *
+     * @return mixed Le résultat de la fonction callback
+     *
+     * @throws RuntimeException Si toutes les tentatives échouent
      *
      * @credit <a href="http://laravel.com/">Laravel</a>
      */
     public static function retry(array|int $times, callable $callback, Closure|int $sleepMilliseconds = 0, ?callable $when = null): mixed
     {
-        $attempts = 0;
+        $maxAttempts = is_array($times) ? count($times) + 1 : $times;
+        $backoff     = is_array($times) ? $times : [];
 
-        $backoff = [];
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                return $callback($attempt);
+            } catch (Exception $e) {
+                if ($attempt === $maxAttempts || ($when && ! $when($e))) {
+                    throw $e;
+                }
 
-        if (is_array($times)) {
-            $backoff = $times;
-
-            $times = count($times) + 1;
+                $sleep = $backoff[$attempt - 1] ?? $sleepMilliseconds;
+                if ($sleep) {
+                    $sleepValue = static::value($sleep, $attempt, $e);
+                    usleep($sleepValue * 1000);
+                }
+            }
         }
 
-        beginning:
-        $attempts++;
-        $times--;
-
-        try {
-            return $callback($attempts);
-        } catch (Exception $e) {
-            if ($times < 1 || ($when && ! $when($e))) {
-                throw $e;
-            }
-
-            $sleepMilliseconds = $backoff[$attempts - 1] ?? $sleepMilliseconds;
-
-            if ($sleepMilliseconds) {
-                usleep(static::value($sleepMilliseconds, $attempts, $e) * 1000);
-            }
-
-            goto beginning;
-        }
+        throw new RuntimeException("La boucle de réessai s'est terminée de manière inattendue.");
     }
 
     /**
@@ -962,7 +1108,10 @@ class Helpers
      * Fonction d'assistance utilisée pour convertir une chaîne, un tableau ou un objet
      * d'attributs à une chaîne.
      *
-     * @param array|object|string $attributes
+     * @param array|object|string $attributes Les attributs à transformer
+     * @param bool                $js         Si true, formatte pour JavaScript
+     *
+     * @return string Les attributs sous forme de chaîne
      */
     public static function stringifyAttributes($attributes, bool $js = false): string
     {
@@ -1009,6 +1158,11 @@ class Helpers
 
     /**
      * Appelez la Closure donnée avec cette instance puis renvoyez l'instance.
+     *
+     * @param mixed         $value    La valeur à passer au callback
+     * @param callable|null $callback Le callback à exécuter
+     *
+     * @return mixed La valeur originale ou une instance de HigherOrderTapProxy
      */
     public static function tap(mixed $value, ?callable $callback = null): mixed
     {
@@ -1024,7 +1178,13 @@ class Helpers
     /**
      * Lève l'exception donnée si la condition donnée est vraie.
      *
-     * @throws Throwable
+     * @param mixed            $condition     La condition à vérifier
+     * @param string|Throwable $exception     L'exception à lever ou son nom de classe
+     * @param mixed            ...$parameters Les paramètres pour l'exception
+     *
+     * @return mixed La condition
+     *
+     * @throws Throwable Si la condition est vraie
      *
      * @credit <a href="http://laravel.com/">Laravel</a>
      */
@@ -1044,7 +1204,9 @@ class Helpers
     /**
      * Renvoie tous les traits utilisés par un trait et ses traits.
      *
-     * @codeCoverageIgnore
+     * @param string $trait Le trait à analyser
+     *
+     * @return array Les traits utilisés récursivement
      */
     public static function traitUsesRecursive(string $trait): array
     {
@@ -1059,8 +1221,10 @@ class Helpers
 
     /**
      * Déclenche un E_USER_WARNING.
+     *
+     * @param string $message Le message d'avertissement
      */
-    public static function triggerWarning(string $message)
+    public static function triggerWarning(string $message): void
     {
         $stackFrame = 1;
         $trace      = debug_backtrace();
@@ -1078,7 +1242,7 @@ class Helpers
     }
 
     /**
-     * Renvoie la classe d'objets ou le type var de ce n'est pas un objet
+     * Renvoie la classe d'objets ou le type var si ce n'est pas un objet
      *
      * @param mixed $var Variable à vérifier
      *
@@ -1091,6 +1255,11 @@ class Helpers
 
     /**
      * Renvoie la valeur par défaut de la valeur donnée.
+     *
+     * @param mixed $value   La valeur à évaluer
+     * @param mixed ...$args Arguments additionnels pour les closures
+     *
+     * @return mixed La valeur résolue
      */
     public static function value(mixed $value, ...$args): mixed
     {
@@ -1098,10 +1267,13 @@ class Helpers
     }
 
     /**
-     * Return a value if the given condition is true.
+     * Renvoie une valeur si la condition donnée est vraie.
      *
-     * @param Closure|mixed $value
-     * @param Closure|mixed $default
+     * @param mixed         $condition La condition à vérifier
+     * @param Closure|mixed $value     La valeur à retourner si la condition est vraie
+     * @param Closure|mixed $default   La valeur à retourner si la condition est fausse
+     *
+     * @return mixed La valeur appropriée selon la condition
      */
     public static function when(mixed $condition, $value, $default = null): mixed
     {
@@ -1116,6 +1288,11 @@ class Helpers
 
     /**
      * Renvoie la valeur donnée, éventuellement transmise via le rappel donné.
+     *
+     * @param mixed         $value    La valeur à traiter
+     * @param callable|null $callback Le callback à appliquer
+     *
+     * @return mixed La valeur originale ou le résultat du callback
      */
     public static function with(mixed $value, ?callable $callback = null): mixed
     {
