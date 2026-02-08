@@ -10,8 +10,8 @@
         }
     ],
     "require": {
-        "php": "^8.1",
-	    "blitz-php/contracts": "^1"
+        "php": "^8.2",
+	    "blitz-php/contracts": "^1.14"
     },
     "autoload": {
         "psr-4": {
