@@ -288,18 +288,18 @@ class Holiday
         // Définitions par défaut
         return match (strtoupper($countryCode)) {
             'FR' => [
-				'new_year'       => '01-01',         // Jour de l'An
-				'easter'         => 'easter',        // Pâques
-				'easter_monday'  => 'easter + 1',    // Lundi de Pâques
-				'labour_day'     => '05-01',         // Fête du Travail
-				'victory_day'    => '05-08',         // Victoire 1945
-				'ascension_day'  => 'easter + 39',   // Ascension
-				'whit_monday'    => 'easter + 50',   // Lundi de Pentecôte
-				'national_day'   => '07-14',         // Fête Nationale
-				'assumption_day' => '08-15',         // Assomption
-				'all_saints_day' => '11-01',         // Toussaint
-				'armistice_day'  => '11-11',         // Armistice 1918
-				'christmas_day'  => '12-25',         // Noël
+                'new_year'       => '01-01',         // Jour de l'An
+                'easter'         => 'easter',        // Pâques
+                'easter_monday'  => 'easter + 1',    // Lundi de Pâques
+                'labour_day'     => '05-01',         // Fête du Travail
+                'victory_day'    => '05-08',         // Victoire 1945
+                'ascension_day'  => 'easter + 39',   // Ascension
+                'whit_monday'    => 'easter + 50',   // Lundi de Pentecôte
+                'national_day'   => '07-14',         // Fête Nationale
+                'assumption_day' => '08-15',         // Assomption
+                'all_saints_day' => '11-01',         // Toussaint
+                'armistice_day'  => '11-11',         // Armistice 1918
+                'christmas_day'  => '12-25',         // Noël
             ],
             'CM' => [
                 'new_year'       => '01-01',       // Jour de l'An

@@ -34,6 +34,7 @@ use UnitEnum;
  * Elle implémente plusieurs interfaces pour un maximum de compatibilité.
  *
  * @template TKey de array-key
+ *
  * @template-covariant TValue
  *
  * @implements \ArrayAccess<TKey, TValue>
@@ -43,6 +44,7 @@ class Collection implements ArrayAccess, Enumerable
 {
     /**
      * Utilise le trait EnumeratesValues
+     *
      * @use \BlitzPHP\Traits\EnumeratesValues<TKey, TValue>
      */
     use EnumeratesValues;
@@ -59,7 +61,7 @@ class Collection implements ArrayAccess, Enumerable
     /**
      * Crée une nouvelle collection.
      *
-     * @param \BlitzPHP\Contracts\Support\Arrayable<TKey, TValue>|iterable<TKey, TValue>|null $items
+     * @param Arrayable<TKey, TValue>|iterable<TKey, TValue>|null $items
      */
     public function __construct($items = [])
     {
@@ -321,6 +323,7 @@ class Collection implements ArrayAccess, Enumerable
      * Obtient la fonction de comparaison pour détecter les doublons.
      *
      * @param bool $strict Indique si la comparaison doit être stricte
+     *
      * @return callable(TValue, TValue): bool
      */
     protected function duplicateComparator(bool $strict): Closure
@@ -329,7 +332,7 @@ class Collection implements ArrayAccess, Enumerable
             return static fn ($a, $b) => $a === $b;
         }
 
-        return static fn ($a, $b) => $a == $b;
+        return static fn ($a, $b) => $a === $b;
     }
 
     /**
@@ -391,7 +394,7 @@ class Collection implements ArrayAccess, Enumerable
     /**
      * Supprime un élément de la collection par clé.
      *
-     * @param Arrayable<array-key, TValue>|iterable<array-key, TKey>|TKey  $keys Les clés à supprimer
+     * @param Arrayable<array-key, TValue>|iterable<array-key, TKey>|TKey $keys Les clés à supprimer
      */
     public function forget($keys): self
     {
@@ -405,7 +408,7 @@ class Collection implements ArrayAccess, Enumerable
     /**
      * {@inheritDoc}
      */
-    public function get(null|int|string $key, mixed $default = null): mixed
+    public function get(int|string|null $key, mixed $default = null): mixed
     {
         if (array_key_exists($key ?? '', $this->items)) {
             return $this->items[$key];
@@ -419,7 +422,7 @@ class Collection implements ArrayAccess, Enumerable
      *
      * @template TGetOrPutValue
      *
-     * @param mixed $key La clé de l'élément
+     * @param mixed                                      $key   La clé de l'élément
      * @param (Closure(): TGetOrPutValue)|TGetOrPutValue $value La valeur ou le callback pour la valeur
      *
      * @return TGetOrPutValue|TValue
@@ -459,7 +462,7 @@ class Collection implements ArrayAccess, Enumerable
 
             foreach ($groupKeys as $groupKey) {
                 $groupKey = match (true) {
-                    is_bool($groupKey)       => (int) $groupKey,
+                    is_bool($groupKey)              => (int) $groupKey,
                     $groupKey instanceof UnitEnum   => Helpers::enumValue($groupKey),
                     $groupKey instanceof Stringable => (string) $groupKey,
                     $groupKey === null              => (string) $groupKey,
@@ -575,7 +578,7 @@ class Collection implements ArrayAccess, Enumerable
      * Intersecte la collection avec les éléments donnés, en utilisant un callback.
      *
      * @param Arrayable<array-key, TValue>|iterable<array-key, TValue> $items
-     * @param callable(TValue, TValue): int $callback
+     * @param callable(TValue, TValue): int                            $callback
      */
     public function intersectUsing($items, callable $callback): static
     {
@@ -596,7 +599,7 @@ class Collection implements ArrayAccess, Enumerable
      * Intersecte la collection avec les éléments donnés avec une vérification d'index supplémentaire, en utilisant un callback.
      *
      * @param Arrayable<array-key, TValue>|iterable<array-key, TValue> $items
-     * @param callable(TValue, TValue): int $callback
+     * @param callable(TValue, TValue): int                            $callback
      */
     public function intersectAssocUsing($items, callable $callback): static
     {
@@ -834,7 +837,7 @@ class Collection implements ArrayAccess, Enumerable
      * Obtient et supprime les N derniers éléments de la collection.
      *
      * @param int $count Le nombre d'éléments à dépiler
-	 *
+     *
      * @return ($count is 1 ? TValue|null : static<int, TValue>)
      */
     public function pop(int $count = 1)
@@ -866,7 +869,7 @@ class Collection implements ArrayAccess, Enumerable
      * Ajoute un élément au début de la collection.
      *
      * @param mixed $value La valeur à ajouter
-     * @param mixed $key La clé optionnelle
+     * @param mixed $key   La clé optionnelle
      */
     public function prepend(mixed $value, mixed $key = null): self
     {
@@ -920,7 +923,7 @@ class Collection implements ArrayAccess, Enumerable
      *
      * @template TPullDefault
      *
-     * @param string $key La clé de l'élément
+     * @param string                                 $key     La clé de l'élément
      * @param (Closure(): TPullDefault)|TPullDefault $default La valeur par défaut
      *
      * @return TPullDefault|TValue
@@ -933,8 +936,8 @@ class Collection implements ArrayAccess, Enumerable
     /**
      * Place un élément dans la collection par clé.
      *
-     * @param int|string $key La clé
-     * @param mixed $value La valeur
+     * @param int|string $key   La clé
+     * @param mixed      $value La valeur
      */
     public function put(int|string $key, mixed $value): self
     {
@@ -1053,7 +1056,7 @@ class Collection implements ArrayAccess, Enumerable
      * Obtient et supprime les N premiers éléments de la collection.
      *
      * @param int $count Le nombre d'éléments à décaler
-	 *
+     *
      * @return static<int, TValue>|TValue|null
      *
      * @throws InvalidArgumentException
@@ -1258,8 +1261,8 @@ class Collection implements ArrayAccess, Enumerable
 
     /**
      * {@inheritDoc}
-	 *
-	 * @param  (callable(TValue, TValue): int)|null|int  $callback
+     *
+     * @param (callable(TValue, TValue): int)|int|null $callback
      */
     public function sort($callback = null): static
     {
@@ -1319,7 +1322,7 @@ class Collection implements ArrayAccess, Enumerable
      * Trie la collection à l'aide de plusieurs comparaisons.
      *
      * @param array<array-key, array{string, string}|(callable(TValue, TKey): mixed)|(callable(TValue, TValue): mixed)|string> $comparisons
-     * @param int $options Options de tri
+     * @param int                                                                                                              $options     Options de tri
      */
     protected function sortByMany(array $comparisons = [], int $options = SORT_REGULAR): static
     {
@@ -1424,8 +1427,8 @@ class Collection implements ArrayAccess, Enumerable
     /**
      * Extrait une portion du tableau de collection sous-jacent.
      *
-     * @param int $offset Début de l'extraction
-     * @param int|null $length Longueur de l'extraction
+     * @param int                      $offset      Début de l'extraction
+     * @param int|null                 $length      Longueur de l'extraction
      * @param array<array-key, TValue> $replacement Éléments de remplacement
      */
     public function splice(int $offset, ?int $length = null, array $replacement = []): static

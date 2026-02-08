@@ -50,14 +50,14 @@ if (! defined('ICONV_ENABLED')) {
  */
 class Text
 {
-	use Macroable;
+    use Macroable;
 
     /**
      * Caractères invisibles dans les chaînes.
      *
      * @var string
      */
-    const INVISIBLE_CHARACTERS = '\x{0009}\x{0020}\x{00A0}\x{00AD}\x{034F}\x{061C}\x{115F}\x{1160}\x{17B4}\x{17B5}\x{180E}\x{2000}\x{2001}\x{2002}\x{2003}\x{2004}\x{2005}\x{2006}\x{2007}\x{2008}\x{2009}\x{200A}\x{200B}\x{200C}\x{200D}\x{200E}\x{200F}\x{202F}\x{205F}\x{2060}\x{2061}\x{2062}\x{2063}\x{2064}\x{2065}\x{206A}\x{206B}\x{206C}\x{206D}\x{206E}\x{206F}\x{3000}\x{2800}\x{3164}\x{FEFF}\x{FFA0}\x{1D159}\x{1D173}\x{1D174}\x{1D175}\x{1D176}\x{1D177}\x{1D178}\x{1D179}\x{1D17A}\x{E0020}';
+    public const INVISIBLE_CHARACTERS = '\x{0009}\x{0020}\x{00A0}\x{00AD}\x{034F}\x{061C}\x{115F}\x{1160}\x{17B4}\x{17B5}\x{180E}\x{2000}\x{2001}\x{2002}\x{2003}\x{2004}\x{2005}\x{2006}\x{2007}\x{2008}\x{2009}\x{200A}\x{200B}\x{200C}\x{200D}\x{200E}\x{200F}\x{202F}\x{205F}\x{2060}\x{2061}\x{2062}\x{2063}\x{2064}\x{2065}\x{206A}\x{206B}\x{206C}\x{206D}\x{206E}\x{206F}\x{3000}\x{2800}\x{3164}\x{FEFF}\x{FFA0}\x{1D159}\x{1D173}\x{1D174}\x{1D175}\x{1D176}\x{1D177}\x{1D178}\x{1D179}\x{1D17A}\x{E0020}';
 
     /**
      * Identifiant de transliterator par défaut.
@@ -125,28 +125,30 @@ class Text
      *
      * @var callable|null
      */
-    protected static $randomStringFactory = null;
+    protected static $randomStringFactory;
 
     /**
      * Callback utilisé pour générer des UUIDs.
      *
      * @var callable|null
      */
-    protected static $uuidFactory = null;
+    protected static $uuidFactory;
 
     /**
      * Callback utilisé pour générer des ULIDs.
      *
      * @var callable|null
      */
-    protected static $ulidFactory = null;
+    protected static $ulidFactory;
 
     /**
      * Gestion des appels statiques dynamiques pour les conversions de casse
      *
-     * @param string $name Nom de la méthode appelée
+     * @param string            $name      Nom de la méthode appelée
      * @param array<int, mixed> $arguments Arguments passés à la méthode
+     *
      * @return string Chaîne convertie
+     *
      * @throws InvalidArgumentException Si la méthode n'existe pas
      */
     public static function __callStatic(string $name, array $arguments): string
@@ -158,6 +160,7 @@ class Text
             if (empty($arguments)) {
                 throw new InvalidArgumentException('La méthode ' . $name . ' nécessite une chaîne en paramètre');
             }
+
             return static::convertTo((string) $arguments[0], $name);
         }
 
@@ -169,8 +172,9 @@ class Text
      * - Snake case, Camel case, Kebab case, Pascal case, Ada case, Train case, Cobol case, Macro case,
      * - majuscules, minuscules, Title case, Sentence Case et notation par points.
      *
-     * @param string $str Chaîne à convertir
+     * @param string $str       Chaîne à convertir
      * @param string $converter Type de convertisseur (ex: 'toCamel', 'toSnakeCase')
+     *
      * @return string Chaîne convertie
      *
      * @throws InvalidArgumentException Si le type de convertisseur est invalide
@@ -187,46 +191,46 @@ class Text
             return call_user_func([static::class, $converter], $str);
         }
 
-		return static::jawiraConvert($str, $converter);
+        return static::jawiraConvert($str, $converter);
     }
 
-	private static function jawiraConvert(string $value, string $converter): string
-	{
-		if (isset(static::$converterCache[$converter][$value])) {
-			return static::$converterCache[$converter][$value];
-		}
+    private static function jawiraConvert(string $value, string $converter): string
+    {
+        if (isset(static::$converterCache[$converter][$value])) {
+            return static::$converterCache[$converter][$value];
+        }
 
-		$availableCase = [
+        $availableCase = [
             'ada', 'camel', 'cobol', 'dot', 'kebab',
-			'lower', 'macro', 'pascal', 'snake', 'sentence',
+            'lower', 'macro', 'pascal', 'snake', 'sentence',
             'train', 'title', 'upper',
         ];
 
         if (! in_array($converter, $availableCase, true)) {
             throw new InvalidArgumentException(
                 "Type de convertisseur invalide : `{$converter}`. " .
-                "Types disponibles : " . implode(', ', $availableCase)
+                'Types disponibles : ' . implode(', ', $availableCase)
             );
         }
 
-		if (! class_exists(Convert::class)) {
-			throw new InvalidArgumentException(
-				'La classe Jawira\CaseConverter\Convert est requise pour cette conversion. ' .
-				'Installez-la avec : composer require jawira/case-converter'
-			);
-		}
+        if (! class_exists(Convert::class)) {
+            throw new InvalidArgumentException(
+                'La classe Jawira\CaseConverter\Convert est requise pour cette conversion. ' .
+                'Installez-la avec : composer require jawira/case-converter'
+            );
+        }
 
-		$processor = new Convert($value);
-		$method    = 'to' . ucfirst($converter);
+        $processor = new Convert($value);
+        $method    = 'to' . ucfirst($converter);
 
-		return static::$converterCache[$converter][$value] = $processor->$method();
-	}
+        return static::$converterCache[$converter][$value] = $processor->{$method}();
+    }
 
     /**
      * Crée un nouvel objet Stringable à partir de la chaîne donnée.
      *
      * @param string $string Chaîne source
-	 *
+     *
      * @return Stringable Instance Stringable
      */
     public static function of(string $string): Stringable
@@ -238,8 +242,8 @@ class Text
      * Retourne le reste d'une chaîne après la première occurrence d'une valeur donnée.
      *
      * @param string $subject Chaîne source
-     * @param string $search Valeur à rechercher
-	 *
+     * @param string $search  Valeur à rechercher
+     *
      * @return string Reste de la chaîne
      */
     public static function after(string $subject, string $search): string
@@ -251,8 +255,8 @@ class Text
      * Retourne le reste d'une chaîne après la dernière occurrence d'une valeur donnée.
      *
      * @param string $subject Chaîne source
-     * @param string $search Valeur à rechercher
-	 *
+     * @param string $search  Valeur à rechercher
+     *
      * @return string Reste de la chaîne
      */
     public static function afterLast(string $subject, string $search): string
@@ -273,16 +277,16 @@ class Text
     /**
      * Translittère une valeur UTF-8 en ASCII.
      *
-     * @param string $value Valeur à translittérer
+     * @param string $value    Valeur à translittérer
      * @param string $language Langue (par défaut: 'en')
-	 *
+     *
      * @return string Valeur translittérée
      */
     public static function ascii(string $value, string $language = 'en'): string
     {
-		if (class_exists('\voku\helper\ASCII')) {
-			return \voku\helper\ASCII::to_ascii((string) $value, $language, replace_single_chars_only: false);
-		}
+        if (class_exists('\voku\helper\ASCII')) {
+            return \voku\helper\ASCII::to_ascii((string) $value, $language, replace_single_chars_only: false);
+        }
 
         $languageSpecific = static::languageSpecificCharsArray($language);
 
@@ -300,22 +304,22 @@ class Text
     /**
      * Translittère une chaîne vers sa représentation ASCII la plus proche.
      *
-     * @param string $string Chaîne à translittérer
+     * @param string      $string  Chaîne à translittérer
      * @param string|null $unknown Caractère de remplacement pour les caractères inconnus
-     * @param bool|null $strict Mode strict
-	 *
+     * @param bool|null   $strict  Mode strict
+     *
      * @return string Chaîne translittérée
      */
     public static function transliterate(string $string, ?string $unknown = '?', ?bool $strict = false): string
     {
-		if (class_exists('\voku\helper\ASCII')) {
-			return \voku\helper\ASCII::to_transliterate($string, $unknown, $strict);
-		}
+        if (class_exists('\voku\helper\ASCII')) {
+            return \voku\helper\ASCII::to_transliterate($string, $unknown, $strict);
+        }
 
         if (function_exists('transliterator_transliterate')) {
             $result = transliterator_transliterate(static::$_defaultTransliteratorId, $string);
 
-			return $result !== false ? $result : $string;
+            return $result !== false ? $result : $string;
         }
 
         return static::ascii($string, 'en');
@@ -325,8 +329,8 @@ class Text
      * Récupère la partie d'une chaîne avant la première occurrence d'une valeur donnée.
      *
      * @param string $subject Chaîne source
-     * @param string $search Valeur à rechercher
-	 *
+     * @param string $search  Valeur à rechercher
+     *
      * @return string Partie avant la première occurrence
      */
     public static function before(string $subject, string $search): string
@@ -344,8 +348,8 @@ class Text
      * Récupère la partie d'une chaîne avant la dernière occurrence d'une valeur donnée.
      *
      * @param string $subject Chaîne source
-     * @param string $search Valeur à rechercher
-	 *
+     * @param string $search  Valeur à rechercher
+     *
      * @return string Partie avant la dernière occurrence
      */
     public static function beforeLast(string $subject, string $search): string
@@ -367,9 +371,9 @@ class Text
      * Récupère la partie d'une chaîne entre deux valeurs données.
      *
      * @param string $subject Chaîne source
-     * @param string $from Valeur de début
-     * @param string $to Valeur de fin
-	 *
+     * @param string $from    Valeur de début
+     * @param string $to      Valeur de fin
+     *
      * @return string Partie entre les deux valeurs
      */
     public static function between(string $subject, string $from, string $to): string
@@ -385,9 +389,9 @@ class Text
      * Récupère la plus petite partie possible d'une chaîne entre deux valeurs données.
      *
      * @param string $subject Chaîne source
-     * @param string $from Valeur de début
-     * @param string $to Valeur de fin
-	 *
+     * @param string $from    Valeur de début
+     * @param string $to      Valeur de fin
+     *
      * @return string Plus petite partie entre les deux valeurs
      */
     public static function betweenFirst(string $subject, string $from, string $to): string
@@ -403,7 +407,7 @@ class Text
      * Convertit une valeur en camelCase.
      *
      * @param string $value Valeur à convertir
-	 *
+     *
      * @return string Valeur en camelCase
      */
     public static function camel(string $value): string
@@ -419,11 +423,11 @@ class Text
      * Récupère le caractère à l'index spécifié.
      *
      * @param string $subject Chaîne source
-     * @param int $index Index du caractère
-	 *
-     * @return string|false Caractère à l'index ou false si hors limites
+     * @param int    $index   Index du caractère
+     *
+     * @return false|string Caractère à l'index ou false si hors limites
      */
-    public static function charAt(string $subject, int $index): string|false
+    public static function charAt(string $subject, int $index): false|string
     {
         $length = mb_strlen($subject);
 
@@ -437,12 +441,12 @@ class Text
     /**
      * Supprime la chaîne donnée si elle existe au début de la chaîne source.
      *
-     * @param string $subject Chaîne source
-     * @param string|array $needle Chaîne(s) à supprimer
-	 *
+     * @param string       $subject Chaîne source
+     * @param array|string $needle  Chaîne(s) à supprimer
+     *
      * @return string Chaîne modifiée
      */
-    public static function chopStart(string $subject, string|array $needle): string
+    public static function chopStart(string $subject, array|string $needle): string
     {
         foreach ((array) $needle as $n) {
             if (str_starts_with($subject, $n)) {
@@ -456,12 +460,12 @@ class Text
     /**
      * Supprime la chaîne donnée si elle existe à la fin de la chaîne source.
      *
-     * @param string $subject Chaîne source
-     * @param string|array $needle Chaîne(s) à supprimer
-	 *
+     * @param string       $subject Chaîne source
+     * @param array|string $needle  Chaîne(s) à supprimer
+     *
      * @return string Chaîne modifiée
      */
-    public static function chopEnd(string $subject, string|array $needle): string
+    public static function chopEnd(string $subject, array|string $needle): string
     {
         foreach ((array) $needle as $n) {
             if (str_ends_with($subject, $n)) {
@@ -476,7 +480,7 @@ class Text
      * Nettoie les chaînes UTF-8.
      *
      * @param string $str Chaîne à nettoyer
-	 *
+     *
      * @return string Chaîne nettoyée
      */
     public static function clean(string $str): string
@@ -498,9 +502,9 @@ class Text
      * Le but de cette fonction est de remplacer tous les espaces blancs et balises
      * inutiles autour des placeholders qui n'ont pas été remplacés par static::insert().
      *
-     * @param string $str Chaîne à nettoyer
+     * @param string               $str     Chaîne à nettoyer
      * @param array<string, mixed> $options Options de nettoyage
-	 *
+     *
      * @return string Chaîne nettoyée
      */
     public static function cleanInsert(string $str, array $options): string
@@ -564,10 +568,10 @@ class Text
     /**
      * Détermine si une chaîne donnée contient une sous-chaîne donnée.
      *
-     * @param string $haystack Chaîne dans laquelle chercher
-     * @param iterable<string>|string $needles Sous-chaîne(s) à rechercher
-     * @param bool $ignoreCase Ignorer la casse (par défaut: false)
-	 *
+     * @param string                  $haystack   Chaîne dans laquelle chercher
+     * @param iterable<string>|string $needles    Sous-chaîne(s) à rechercher
+     * @param bool                    $ignoreCase Ignorer la casse (par défaut: false)
+     *
      * @return bool true si la sous-chaîne est trouvée, false sinon
      */
     public static function contains(string $haystack, iterable|string $needles, bool $ignoreCase = false): bool
@@ -596,10 +600,10 @@ class Text
     /**
      * Détermine si une chaîne donnée contient toutes les valeurs d'un tableau.
      *
-     * @param string $haystack Chaîne dans laquelle chercher
-     * @param iterable<string> $needles Sous-chaînes à rechercher
-     * @param bool $ignoreCase Ignorer la casse (par défaut: false)
-	 *
+     * @param string           $haystack   Chaîne dans laquelle chercher
+     * @param iterable<string> $needles    Sous-chaînes à rechercher
+     * @param bool             $ignoreCase Ignorer la casse (par défaut: false)
+     *
      * @return bool true si toutes les sous-chaînes sont trouvées, false sinon
      */
     public static function containsAll(string $haystack, iterable $needles, bool $ignoreCase = false): bool
@@ -616,10 +620,10 @@ class Text
     /**
      * Détermine si une chaîne donnée ne contient pas une sous-chaîne donnée.
      *
-     * @param string $haystack Chaîne dans laquelle chercher
-     * @param iterable<string>|string $needles Sous-chaîne(s) à rechercher
-     * @param bool $ignoreCase Ignorer la casse (par défaut: false)
-	 *
+     * @param string                  $haystack   Chaîne dans laquelle chercher
+     * @param iterable<string>|string $needles    Sous-chaîne(s) à rechercher
+     * @param bool                    $ignoreCase Ignorer la casse (par défaut: false)
+     *
      * @return bool true si la sous-chaîne n'est pas trouvée, false sinon
      */
     public static function doesntContain(string $haystack, iterable|string $needles, bool $ignoreCase = false): bool
@@ -630,10 +634,10 @@ class Text
     /**
      * Convertit la casse d'une chaîne.
      *
-     * @param string $string Chaîne à convertir
-     * @param int $mode Mode de conversion (par défaut: MB_CASE_FOLD)
+     * @param string      $string   Chaîne à convertir
+     * @param int         $mode     Mode de conversion (par défaut: MB_CASE_FOLD)
      * @param string|null $encoding Encodage (par défaut: 'UTF-8')
-	 *
+     *
      * @return string Chaîne convertie
      */
     public static function convertCase(string $string, int $mode = MB_CASE_FOLD, ?string $encoding = 'UTF-8'): string
@@ -644,20 +648,20 @@ class Text
     /**
      * Remplace les instances consécutives d'un caractère donné par un seul caractère.
      *
-     * @param string $string Chaîne source
-     * @param array<string>|string $characters Caractère(s) à dédupliquer
-	 *
+     * @param string              $string     Chaîne source
+     * @param list<string>|string $characters Caractère(s) à dédupliquer
+     *
      * @return string Chaîne modifiée
      */
     public static function deduplicate(string $string, array|string $characters = ' '): string
     {
         if (is_string($characters)) {
-            return preg_replace('/'.preg_quote($characters, '/').'+/u', $characters, $string) ?? $string;
+            return preg_replace('/' . preg_quote($characters, '/') . '+/u', $characters, $string) ?? $string;
         }
 
         return array_reduce(
             $characters,
-            fn ($carry, $character) => preg_replace('/'.preg_quote($character, '/').'+/u', $character, $carry) ?? $carry,
+            static fn ($carry, $character) => preg_replace('/' . preg_quote($character, '/') . '+/u', $character, $carry) ?? $carry,
             $string
         );
     }
@@ -665,9 +669,9 @@ class Text
     /**
      * Détermine si une chaîne donnée se termine par une sous-chaîne donnée.
      *
-     * @param string $haystack Chaîne à vérifier
-     * @param iterable<string>|string $needles Sous-chaîne(s) à rechercher
-	 *
+     * @param string                  $haystack Chaîne à vérifier
+     * @param iterable<string>|string $needles  Sous-chaîne(s) à rechercher
+     *
      * @return bool true si la chaîne se termine par l'une des sous-chaînes
      */
     public static function endsWith(string $haystack, iterable|string $needles): bool
@@ -688,9 +692,9 @@ class Text
     /**
      * Détermine si une chaîne donnée ne se termine pas par une sous-chaîne donnée.
      *
-     * @param string $haystack Chaîne à vérifier
-     * @param iterable<string>|string $needles Sous-chaîne(s) à rechercher
-	 *
+     * @param string                  $haystack Chaîne à vérifier
+     * @param iterable<string>|string $needles  Sous-chaîne(s) à rechercher
+     *
      * @return bool true si la chaîne ne se termine pas par les sous-chaînes
      */
     public static function doesntEndWith(string $haystack, iterable|string $needles): bool
@@ -701,18 +705,18 @@ class Text
     /**
      * Extrait un extrait de texte qui correspond à la première instance d'une phrase.
      *
-     * @param string $text Texte source
-     * @param string $phrase Phrase à rechercher
+     * @param string               $text    Texte source
+     * @param string               $phrase  Phrase à rechercher
      * @param array<string, mixed> $options Options d'extrait
-	 *
+     *
      * @return string|null L'extrait ou null si non trouvé
      */
     public static function excerpt(string $text, string $phrase = '', array $options = []): ?string
     {
-        $radius = $options['radius'] ?? 100;
+        $radius   = $options['radius'] ?? 100;
         $omission = $options['omission'] ?? '...';
 
-        preg_match('/^(.*?)('.preg_quote((string) $phrase, '/').')(.*)$/iu', (string) $text, $matches);
+        preg_match('/^(.*?)(' . preg_quote((string) $phrase, '/') . ')(.*)$/iu', (string) $text, $matches);
 
         if (empty($matches)) {
             return null;
@@ -721,15 +725,15 @@ class Text
         $start = ltrim($matches[1]);
 
         $start = self::of(mb_substr($start, max(mb_strlen($start, 'UTF-8') - $radius, 0), $radius, 'UTF-8'))->ltrim()->unless(
-            fn ($startWithRadius) => $startWithRadius->exactly($start),
-            fn ($startWithRadius) => $startWithRadius->prepend($omission),
+            static fn ($startWithRadius) => $startWithRadius->exactly($start),
+            static fn ($startWithRadius) => $startWithRadius->prepend($omission),
         );
 
         $end = rtrim($matches[3]);
 
         $end = self::of(mb_substr($end, 0, $radius, 'UTF-8'))->rtrim()->unless(
-            fn ($endWithRadius) => $endWithRadius->exactly($end),
-            fn ($endWithRadius) => $endWithRadius->append($omission),
+            static fn ($endWithRadius) => $endWithRadius->exactly($end),
+            static fn ($endWithRadius) => $endWithRadius->append($omission),
         );
 
         return $start->append($matches[2], $end)->toString();
@@ -739,8 +743,8 @@ class Text
      * Termine une chaîne avec une seule instance d'une valeur donnée.
      *
      * @param string $value Chaîne à terminer
-     * @param string $cap Valeur à ajouter à la fin
-	 *
+     * @param string $cap   Valeur à ajouter à la fin
+     *
      * @return string Chaîne terminée
      */
     public static function finish(string $value, string $cap): string
@@ -753,10 +757,10 @@ class Text
     /**
      * Met en surbrillance une phrase donnée dans un texte.
      *
-     * @param string $text Texte dans lequel rechercher
-     * @param array<int, string>|string $phrase La ou les phrases à rechercher
-     * @param array<string, mixed> $options Options de surbrillance
-	 *
+     * @param string                    $text    Texte dans lequel rechercher
+     * @param array<int, string>|string $phrase  La ou les phrases à rechercher
+     * @param array<string, mixed>      $options Options de surbrillance
+     *
      * @return string Texte avec surbrillance
      */
     public static function highlight(string $text, array|string $phrase, array $options = []): string
@@ -805,10 +809,10 @@ class Text
     /**
      * Encapsule une chaîne avec les chaînes données.
      *
-     * @param string $value Chaîne à encapsuler
-     * @param string $before Chaîne à placer avant
-     * @param string|null $after Chaîne à placer après (null = utilise $before)
-	 *
+     * @param string      $value  Chaîne à encapsuler
+     * @param string      $before Chaîne à placer avant
+     * @param string|null $after  Chaîne à placer après (null = utilise $before)
+     *
      * @return string Chaîne encapsulée
      */
     public static function wrap(string $value, string $before, ?string $after = null): string
@@ -819,10 +823,10 @@ class Text
     /**
      * Désencapsule une chaîne avec les chaînes données.
      *
-     * @param string $value Chaîne à désencapsuler
-     * @param string $before Chaîne au début
-     * @param string|null $after Chaîne à la fin (null = utilise $before)
-	 *
+     * @param string      $value  Chaîne à désencapsuler
+     * @param string      $before Chaîne au début
+     * @param string|null $after  Chaîne à la fin (null = utilise $before)
+     *
      * @return string Chaîne désencapsulée
      */
     public static function unwrap(string $value, string $before, ?string $after = null): string
@@ -841,10 +845,10 @@ class Text
     /**
      * Remplace les placeholders variables dans une chaîne par les données données.
      *
-     * @param string $str Chaîne contenant des placeholders
-     * @param array<string, mixed> $data Tableau clé => valeur où chaque clé correspond à un placeholder
+     * @param string               $str     Chaîne contenant des placeholders
+     * @param array<string, mixed> $data    Tableau clé => valeur où chaque clé correspond à un placeholder
      * @param array<string, mixed> $options Options de remplacement
-	 *
+     *
      * @return string Chaîne avec remplacements
      */
     public static function insert(string $str, array $data, array $options = []): string
@@ -908,9 +912,10 @@ class Text
     /**
      * Détermine si une chaîne donnée correspond à un motif donné.
      *
-     * @param iterable<string>|string $pattern Motif(s) à comparer
-     * @param string $value Valeur à tester
-     * @param bool $ignoreCase Ignorer la casse (par défaut: false)
+     * @param iterable<string>|string $pattern    Motif(s) à comparer
+     * @param string                  $value      Valeur à tester
+     * @param bool                    $ignoreCase Ignorer la casse (par défaut: false)
+     *
      * @return bool true si la chaîne correspond à l'un des motifs
      */
     public static function is(iterable|string $pattern, string $value, bool $ignoreCase = false): bool
@@ -950,14 +955,14 @@ class Text
      * Détermine si une chaîne donnée est en ASCII 7 bits.
      *
      * @param string $value Chaîne à vérifier
-	 *
+     *
      * @return bool true si la chaîne est en ASCII
      */
     public static function isAscii(string $value): bool
     {
-		if (class_exists('\voku\helper\ASCII')) {
-			return \voku\helper\ASCII::is_ascii($value);
-		}
+        if (class_exists('\voku\helper\ASCII')) {
+            return \voku\helper\ASCII::is_ascii($value);
+        }
 
         if (function_exists('mb_detect_encoding')) {
             return mb_detect_encoding($value, 'ASCII', true) !== false;
@@ -970,13 +975,14 @@ class Text
      * Détermine si une chaîne donnée est un JSON valide.
      *
      * @param string $value Chaîne à vérifier
+     *
      * @return bool true si la chaîne est un JSON valide
      */
     public static function isJson(string $value): bool
     {
-		if (function_exists('json_validate')) {
-			return json_validate($value, 512); // PHP 8.3+
-		}
+        if (function_exists('json_validate')) {
+            return json_validate($value, 512); // PHP 8.3+
+        }
 
         try {
             json_decode($value, true, 512, JSON_THROW_ON_ERROR);
@@ -990,9 +996,9 @@ class Text
     /**
      * Détermine si une chaîne donnée est une URL valide.
      *
-     * @param string $value Valeur à vérifier
-     * @param array $protocols Protocoles autorisés
-	 *
+     * @param string $value     Valeur à vérifier
+     * @param array  $protocols Protocoles autorisés
+     *
      * @return bool true si la valeur est une URL valide
      */
     public static function isUrl(string $value, array $protocols = []): bool
@@ -1034,33 +1040,33 @@ class Text
     /**
      * Détermine si une chaîne donnée est un UUID valide.
      *
-     * @param string $value Chaîne à vérifier
-	 * @param  int<0, 8>|'nil'|'max'|null  $version
-	 *
+     * @param string                     $value   Chaîne à vérifier
+     * @param 'max'|'nil'|int<0, 8>|null $version
+     *
      * @return bool true si la chaîne est un UUID valide
      */
     public static function isUuid(string $value, $version = null): bool
     {
-		if ($version === null) {
+        if ($version === null) {
             return preg_match('/^[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}$/D', $value) > 0;
         }
 
-		if ($version === 'max') {
-			return $value === Uuid::max();
-		}
+        if ($version === 'max') {
+            return $value === Uuid::max();
+        }
 
-		if ($version === 'nil') {
-			return Uuid::isNil($value);
-		}
+        if ($version === 'nil') {
+            return Uuid::isNil($value);
+        }
 
-		return Uuid::isValidVersion($value, $version);
+        return Uuid::isValidVersion($value, $version);
     }
 
     /**
      * Détermine si une chaîne donnée est un ULID valide.
      *
      * @param string $value Chaîne à vérifier
-	 *
+     *
      * @return bool true si la chaîne est un ULID valide
      */
     public static function isUlid(string $value): bool
@@ -1073,7 +1079,7 @@ class Text
      * Détermine si une chaîne donnée est une expression régulière valide.
      *
      * @param string $value Chaîne à vérifier
-	 *
+     *
      * @return bool true si la chaîne est une expression régulière valide
      */
     public static function isRegex(string $value): bool
@@ -1083,7 +1089,7 @@ class Text
         }
 
         $delimiters = ['/', '#', '~', '%', '|', '!', '@', '_'];
-        $firstChar = $value[0];
+        $firstChar  = $value[0];
 
         // Vérifier les délimiteurs appairés aussi
         $pairedDelimiters = ['(' => ')', '{' => '}', '[' => ']', '<' => '>'];
@@ -1091,16 +1097,17 @@ class Text
         // Si c'est un délimiteur appairé
         if (isset($pairedDelimiters[$firstChar])) {
             $closingChar = $pairedDelimiters[$firstChar];
-            $lastChar = substr(rtrim($value, 'imsxeADSUXJu'), -1);
+            $lastChar    = substr(rtrim($value, 'imsxeADSUXJu'), -1);
 
             if ($lastChar === $closingChar) {
                 return @preg_match($value, '') !== false;
             }
+
             return false;
         }
 
         // Si c'est un délimiteur simple
-        if (in_array($firstChar, $delimiters)) {
+        if (in_array($firstChar, $delimiters, true)) {
             // Cherche le délimiteur de fin (en ignorant les modificateurs)
             $pattern = '/^' . preg_quote($firstChar, '/') . '.*?' .
                 preg_quote($firstChar, '/') . '[imsxeADSUXJu]*$/';
@@ -1118,14 +1125,14 @@ class Text
      * Convertit une chaîne en kebab-case.
      *
      * @param string $value Chaîne à convertir
-	 *
+     *
      * @return string Chaîne en kebab-case
      */
     public static function kebab(string $value): string
     {
-		if (class_exists(Convert::class)) {
-			return static::jawiraConvert($value, 'kebab');
-		}
+        if (class_exists(Convert::class)) {
+            return static::jawiraConvert($value, 'kebab');
+        }
 
         return static::snake($value, '-');
     }
@@ -1133,9 +1140,9 @@ class Text
     /**
      * Retourne la longueur d'une chaîne donnée.
      *
-     * @param string $value Chaîne à mesurer
+     * @param string      $value    Chaîne à mesurer
      * @param string|null $encoding Encodage à utiliser (par défaut: UTF-8)
-	 *
+     *
      * @return int Longueur de la chaîne
      */
     public static function length(string $value, ?string $encoding = null): int
@@ -1146,11 +1153,11 @@ class Text
     /**
      * Limite le nombre de caractères dans une chaîne.
      *
-     * @param string $value Chaîne à limiter
-     * @param int $limit Limite de caractères (par défaut: 100)
-     * @param string $end Suffixe à ajouter si tronqué (par défaut: '...')
-     * @param bool $preserveWords Préserver les mots complets (par défaut: false)
-	 *
+     * @param string $value         Chaîne à limiter
+     * @param int    $limit         Limite de caractères (par défaut: 100)
+     * @param string $end           Suffixe à ajouter si tronqué (par défaut: '...')
+     * @param bool   $preserveWords Préserver les mots complets (par défaut: false)
+     *
      * @return string Chaîne tronquée
      */
     public static function limit(string $value, int $limit = 100, string $end = '...', bool $preserveWords = false): string
@@ -1171,14 +1178,14 @@ class Text
             return $trimmed . $end;
         }
 
-        return (preg_replace("/(.*)\s.*/", '$1', $trimmed) ?? $trimmed) . $end;
+        return (preg_replace('/(.*)\\s.*/', '$1', $trimmed) ?? $trimmed) . $end;
     }
 
     /**
      * Convertit la chaîne donnée en minuscules.
      *
      * @param string $value Chaîne à convertir
-	 *
+     *
      * @return string Chaîne en minuscules
      */
     public static function lower(string $value): string
@@ -1190,8 +1197,9 @@ class Text
      * Limite le nombre de mots dans une chaîne.
      *
      * @param string $value Chaîne à limiter
-     * @param int $words Nombre maximum de mots (par défaut: 100)
-     * @param string $end Suffixe à ajouter si tronqué (par défaut: '...')
+     * @param int    $words Nombre maximum de mots (par défaut: 100)
+     * @param string $end   Suffixe à ajouter si tronqué (par défaut: '...')
+     *
      * @return string Chaîne tronquée par mots
      */
     public static function words(string $value, int $words = 100, string $end = '...'): string
@@ -1208,19 +1216,19 @@ class Text
     /**
      * Convertit le Markdown GitHub en HTML.
      *
-     * @param string $string Chaîne Markdown
-     * @param array $options Options
-     * @param array $extensions Extensions
-	 *
+     * @param string $string     Chaîne Markdown
+     * @param array  $options    Options
+     * @param array  $extensions Extensions
+     *
      * @return string HTML
      */
     public static function markdown(string $string, array $options = [], array $extensions = []): string
     {
-		if (! class_exists('\League\CommonMark\GithubFlavoredMarkdownConverter')) {
-			return $string;
-		}
+        if (! class_exists('\League\CommonMark\GithubFlavoredMarkdownConverter')) {
+            return $string;
+        }
 
-		$converter = new \League\CommonMark\GithubFlavoredMarkdownConverter($options);
+        $converter = new \League\CommonMark\GithubFlavoredMarkdownConverter($options);
 
         $environment = $converter->getEnvironment();
 
@@ -1234,10 +1242,10 @@ class Text
     /**
      * Convertit le Markdown en ligne en HTML.
      *
-     * @param string $string Chaîne Markdown
-     * @param array $options Options
-     * @param array $extensions Extensions
-	 *
+     * @param string $string     Chaîne Markdown
+     * @param array  $options    Options
+     * @param array  $extensions Extensions
+     *
      * @return string HTML
      */
     public static function inlineMarkdown(string $string, array $options = [], array $extensions = []): string
@@ -1249,12 +1257,12 @@ class Text
     /**
      * Masque une partie d'une chaîne avec un caractère répété.
      *
-     * @param string $string Chaîne source
-     * @param string $character Caractère de masquage
-     * @param int $index Position de départ du masquage
-     * @param int|null $length Longueur à masquer (null = jusqu'à la fin)
-     * @param string $encoding Encodage (par défaut: 'UTF-8')
-	 *
+     * @param string   $string    Chaîne source
+     * @param string   $character Caractère de masquage
+     * @param int      $index     Position de départ du masquage
+     * @param int|null $length    Longueur à masquer (null = jusqu'à la fin)
+     * @param string   $encoding  Encodage (par défaut: 'UTF-8')
+     *
      * @return string Chaîne masquée
      */
     public static function mask(string $string, string $character, int $index, ?int $length = null, string $encoding = 'UTF-8'): string
@@ -1288,7 +1296,7 @@ class Text
      *
      * @param string $pattern Pattern regex
      * @param string $subject Chaîne source
-	 *
+     *
      * @return string Chaîne correspondante ou chaîne vide
      */
     public static function match(string $pattern, string $subject): string
@@ -1305,12 +1313,12 @@ class Text
     /**
      * Détermine si une chaîne donnée correspond à un motif regex.
      *
-     * @param string|iterable<string> $pattern Motif(s) regex
-     * @param string $value Valeur à tester
-	 *
+     * @param iterable<string>|string $pattern Motif(s) regex
+     * @param string                  $value   Valeur à tester
+     *
      * @return bool true si la chaîne correspond à l'un des motifs
      */
-    public static function isMatch(string|iterable $pattern, string $value): bool
+    public static function isMatch(iterable|string $pattern, string $value): bool
     {
         $value = (string) $value;
 
@@ -1334,7 +1342,7 @@ class Text
      *
      * @param string $pattern Pattern regex
      * @param string $subject Chaîne source
-	 *
+     *
      * @return Collection<string> Collection des correspondances
      */
     public static function matchAll(string $pattern, string $subject): Collection
@@ -1352,7 +1360,7 @@ class Text
      * Supprime tous les caractères non numériques d'une chaîne.
      *
      * @param string $value Chaîne source
-	 *
+     *
      * @return string Chaîne avec uniquement des chiffres
      */
     public static function numbers(string $value): string
@@ -1363,17 +1371,17 @@ class Text
     /**
      * Remplit les deux côtés d'une chaîne avec un autre caractère.
      *
-     * @param string $value Chaîne à remplir
-     * @param int $length Longueur totale souhaitée
-     * @param string $pad Caractère de remplissage (par défaut: espace)
-	 *
+     * @param string $value  Chaîne à remplir
+     * @param int    $length Longueur totale souhaitée
+     * @param string $pad    Caractère de remplissage (par défaut: espace)
+     *
      * @return string Chaîne remplie des deux côtés
      */
     public static function padBoth(string $value, int $length, string $pad = ' '): string
     {
-		if (function_exists('mb_str_pad')) {
-			return mb_str_pad($value, $length, $pad, STR_PAD_BOTH);
-		}
+        if (function_exists('mb_str_pad')) {
+            return mb_str_pad($value, $length, $pad, STR_PAD_BOTH);
+        }
 
         $short      = max(0, $length - mb_strlen($value));
         $shortLeft  = floor($short / 2);
@@ -1387,16 +1395,17 @@ class Text
     /**
      * Remplit le côté gauche d'une chaîne avec un autre caractère.
      *
-     * @param string $value Chaîne à remplir
-     * @param int $length Longueur totale souhaitée
-     * @param string $pad Caractère de remplissage (par défaut: espace)
+     * @param string $value  Chaîne à remplir
+     * @param int    $length Longueur totale souhaitée
+     * @param string $pad    Caractère de remplissage (par défaut: espace)
+     *
      * @return string Chaîne remplie à gauche
      */
     public static function padLeft(string $value, int $length, string $pad = ' '): string
     {
-		if (function_exists('mb_str_pad')) {
-			return mb_str_pad($value, $length, $pad, STR_PAD_LEFT);
-		}
+        if (function_exists('mb_str_pad')) {
+            return mb_str_pad($value, $length, $pad, STR_PAD_LEFT);
+        }
 
         $short = max(0, $length - mb_strlen($value));
 
@@ -1406,16 +1415,17 @@ class Text
     /**
      * Remplit le côté droit d'une chaîne avec un autre caractère.
      *
-     * @param string $value Chaîne à remplir
-     * @param int $length Longueur totale souhaitée
-     * @param string $pad Caractère de remplissage (par défaut: espace)
+     * @param string $value  Chaîne à remplir
+     * @param int    $length Longueur totale souhaitée
+     * @param string $pad    Caractère de remplissage (par défaut: espace)
+     *
      * @return string Chaîne remplie à droite
      */
     public static function padRight(string $value, int $length, string $pad = ' '): string
     {
-		if (function_exists('mb_str_pad')) {
-			return mb_str_pad($value, $length, $pad, STR_PAD_RIGHT);
-		}
+        if (function_exists('mb_str_pad')) {
+            return mb_str_pad($value, $length, $pad, STR_PAD_RIGHT);
+        }
 
         $short = max(0, $length - mb_strlen($value));
 
@@ -1425,8 +1435,9 @@ class Text
     /**
      * Parse un callback de style Class[@]method en classe et méthode.
      *
-     * @param string $callback Callback à parser
-     * @param string|null $default Valeur par défaut pour la méthode
+     * @param string      $callback Callback à parser
+     * @param string|null $default  Valeur par défaut pour la méthode
+     *
      * @return array<int, string|null> [classe, méthode]
      */
     public static function parseCallback(string $callback, ?string $default = null): array
@@ -1448,12 +1459,12 @@ class Text
     /**
      * Génère un mot de passe aléatoire sécurisé.
      *
-     * @param int $length Longueur du mot de passe (par défaut: 32)
+     * @param int  $length  Longueur du mot de passe (par défaut: 32)
      * @param bool $letters Inclure des lettres (par défaut: true)
      * @param bool $numbers Inclure des chiffres (par défaut: true)
      * @param bool $symbols Inclure des symboles (par défaut: true)
-     * @param bool $spaces Inclure des espaces (par défaut: false)
-	 *
+     * @param bool $spaces  Inclure des espaces (par défaut: false)
+     *
      * @return string Mot de passe généré
      */
     public static function password(int $length = 32, bool $letters = true, bool $numbers = true, bool $symbols = true, bool $spaces = false): string
@@ -1479,27 +1490,27 @@ class Text
             'spaces' => $spaces === true ? [' '] : null,
         ]))
             ->filter()
-            ->each(fn ($c) => $password->push($c[random_int(0, count($c) - 1)]))
+            ->each(static fn ($c) => $password->push($c[random_int(0, count($c) - 1)]))
             ->flatten();
 
-        $length = $length - $password->count();
+        $length -= $password->count();
 
         return $password->merge($options->pipe(
-            fn ($c) => Collection::times($length, fn () => $c[random_int(0, $c->count() - 1)])
+            static fn ($c) => Collection::times($length, static fn () => $c[random_int(0, $c->count() - 1)])
         ))->shuffle()->implode('');
     }
 
     /**
      * Trouve la position de la première occurrence d'une sous-chaîne.
      *
-     * @param string $haystack Chaîne dans laquelle chercher
-     * @param string $needle Sous-chaîne à rechercher
-     * @param int $offset Position de départ
+     * @param string      $haystack Chaîne dans laquelle chercher
+     * @param string      $needle   Sous-chaîne à rechercher
+     * @param int         $offset   Position de départ
      * @param string|null $encoding Encodage
-	 *
-     * @return int|false Position ou false si non trouvé
+     *
+     * @return false|int Position ou false si non trouvé
      */
-    public static function position(string $haystack, string $needle, int $offset = 0, ?string $encoding = null): int|false
+    public static function position(string $haystack, string $needle, int $offset = 0, ?string $encoding = null): false|int
     {
         return mb_strpos($haystack, $needle, $offset, $encoding);
     }
@@ -1507,10 +1518,10 @@ class Text
     /**
      * Récupère la forme plurielle d'un mot anglais.
      *
-     * @param string $value Mot au singulier
-     * @param array|Countable|int $count Nombre pour décider du pluriel (par défaut: 2)
-     * @param  bool  $prependCount
-	 *
+     * @param string              $value        Mot au singulier
+     * @param array|Countable|int $count        Nombre pour décider du pluriel (par défaut: 2)
+     * @param bool                $prependCount
+     *
      * @return string Mot au pluriel
      */
     public static function plural(string $value, array|Countable|int $count = 2, $prependCount = false): string
@@ -1519,9 +1530,9 @@ class Text
             $count = count($count);
         }
 
-		if ($count < 2) {
-			return $value;
-		}
+        if ($count < 2) {
+            return $value;
+        }
 
         return ($prependCount ? (string) $count . ' ' : '') . Inflector::pluralize($value);
     }
@@ -1529,9 +1540,9 @@ class Text
     /**
      * Met au pluriel le dernier mot d'une chaîne en StudlyCaps.
      *
-     * @param string $value Chaîne en StudlyCaps
+     * @param string              $value Chaîne en StudlyCaps
      * @param array|Countable|int $count Nombre pour décider du pluriel (par défaut: 2)
-	 *
+     *
      * @return string Chaîne avec dernier mot au pluriel
      */
     public static function pluralStudly(string $value, array|Countable|int $count = 2): string
@@ -1547,12 +1558,12 @@ class Text
         return implode('', $parts) . static::plural($lastWord, $count);
     }
 
-	/**
+    /**
      * Met au pluriel le dernier mot d'une chaîne en PascalCaps.
      *
-     * @param string $value Chaîne en PascalCaps
+     * @param string              $value Chaîne en PascalCaps
      * @param array|Countable|int $count Nombre pour décider du pluriel (par défaut: 2)
-	 *
+     *
      * @return string Chaîne avec dernier mot au pluriel
      */
     public static function pluralPascal(string $value, array|Countable|int $count = 2): string
@@ -1567,7 +1578,9 @@ class Text
      * dans la spécification HTTP, elle est échappée et placée entre guillemets.
      *
      * @credit <a href="symfony.com">Symfony - Symfony\Component\HttpFoundation::quote</a>
+     *
      * @param string $value Chaîne à encoder
+     *
      * @return string Chaîne encodée
      */
     public static function quote(string $value): string
@@ -1583,6 +1596,7 @@ class Text
      * Génère une chaîne alphanumérique vraiment "aléatoire".
      *
      * @param int $length Longueur de la chaîne (par défaut: 16)
+     *
      * @return string Chaîne aléatoire
      */
     public static function random(int $length = 16): string
@@ -1617,8 +1631,8 @@ class Text
     /**
      * Définit la séquence qui sera utilisée pour générer des chaînes aléatoires.
      *
-     * @param array<int, string> $sequence Séquence de chaînes
-     * @param callable|null $whenMissing Callback si la séquence est épuisée
+     * @param array<int, string> $sequence    Séquence de chaînes
+     * @param callable|null      $whenMissing Callback si la séquence est épuisée
      */
     public static function createRandomStringsUsingSequence(array $sequence, ?callable $whenMissing = null): void
     {
@@ -1660,8 +1674,8 @@ class Text
      * Répète la chaîne donnée.
      *
      * @param string $string Chaîne à répéter
-     * @param int $times Nombre de répétitions
-	 *
+     * @param int    $times  Nombre de répétitions
+     *
      * @return string Chaîne répétée
      */
     public static function repeat(string $string, int $times): string
@@ -1672,10 +1686,10 @@ class Text
     /**
      * Remplace une valeur donnée dans la chaîne séquentiellement avec un tableau.
      *
-     * @param string $search Valeur à rechercher
+     * @param string           $search  Valeur à rechercher
      * @param iterable<string> $replace Valeurs de remplacement
-     * @param string $subject Chaîne source
-	 *
+     * @param string           $subject Chaîne source
+     *
      * @return string Chaîne avec remplacements
      */
     public static function replaceArray(string $search, iterable $replace, string $subject): string
@@ -1710,11 +1724,11 @@ class Text
     /**
      * Remplace la valeur donnée dans la chaîne donnée.
      *
-     * @param iterable<string>|string $search Valeur(s) à rechercher
-     * @param iterable<string>|string $replace Valeur(s) de remplacement
-     * @param iterable<string>|string $subject Chaîne(s) source
-     * @param bool $caseSensitive Sensible à la casse (par défaut: true)
-	 *
+     * @param iterable<string>|string $search        Valeur(s) à rechercher
+     * @param iterable<string>|string $replace       Valeur(s) de remplacement
+     * @param iterable<string>|string $subject       Chaîne(s) source
+     * @param bool                    $caseSensitive Sensible à la casse (par défaut: true)
+     *
      * @return string Chaîne avec remplacements
      */
     public static function replace(iterable|string $search, iterable|string $replace, iterable|string $subject, bool $caseSensitive = true): string
@@ -1739,10 +1753,10 @@ class Text
     /**
      * Remplace la première occurrence d'une valeur donnée dans la chaîne.
      *
-     * @param string $search Valeur à rechercher
+     * @param string $search  Valeur à rechercher
      * @param string $replace Valeur de remplacement
      * @param string $subject Chaîne source
-	 *
+     *
      * @return string Chaîne avec remplacement
      */
     public static function replaceFirst(string $search, string $replace, string $subject): string
@@ -1763,10 +1777,10 @@ class Text
     /**
      * Remplace la dernière occurrence d'une valeur donnée dans la chaîne.
      *
-     * @param string $search Valeur à rechercher
+     * @param string $search  Valeur à rechercher
      * @param string $replace Valeur de remplacement
      * @param string $subject Chaîne source
-	 *
+     *
      * @return string Chaîne avec remplacement
      */
     public static function replaceLast(string $search, string $replace, string $subject): string
@@ -1787,10 +1801,10 @@ class Text
     /**
      * Remplace la première occurrence si elle apparaît au début de la chaîne.
      *
-     * @param string $search Valeur à rechercher
+     * @param string $search  Valeur à rechercher
      * @param string $replace Valeur de remplacement
      * @param string $subject Chaîne source
-	 *
+     *
      * @return string Chaîne modifiée
      */
     public static function replaceStart(string $search, string $replace, string $subject): string
@@ -1809,10 +1823,10 @@ class Text
     /**
      * Remplace la dernière occurrence si elle apparaît à la fin de la chaîne.
      *
-     * @param string $search Valeur à rechercher
+     * @param string $search  Valeur à rechercher
      * @param string $replace Valeur de remplacement
      * @param string $subject Chaîne source
-	 *
+     *
      * @return string Chaîne modifiée
      */
     public static function replaceEnd(string $search, string $replace, string $subject): string
@@ -1831,14 +1845,14 @@ class Text
     /**
      * Remplace les motifs correspondant à l'expression régulière donnée.
      *
-     * @param array|string $pattern Motif regex
+     * @param array|string                $pattern Motif regex
      * @param Closure|list<string>|string $replace Remplacement
-     * @param array|string $subject Sujet
-     * @param int $limit Limite de remplacements
-	 *
-     * @return string|array|null Résultat
+     * @param array|string                $subject Sujet
+     * @param int                         $limit   Limite de remplacements
+     *
+     * @return array|string|null Résultat
      */
-    public static function replaceMatches(array|string $pattern, Closure|array|string $replace, array|string $subject, int $limit = -1): string|array|null
+    public static function replaceMatches(array|string $pattern, array|Closure|string $replace, array|string $subject, int $limit = -1): array|string|null
     {
         if ($replace instanceof Closure) {
             return preg_replace_callback($pattern, $replace, $subject, $limit);
@@ -1850,10 +1864,10 @@ class Text
     /**
      * Supprime toute occurrence de la chaîne donnée dans le sujet.
      *
-     * @param iterable<string>|string $search Valeur(s) à supprimer
-     * @param string $subject Chaîne source
-     * @param bool $caseSensitive Sensible à la casse (par défaut: true)
-	 *
+     * @param iterable<string>|string $search        Valeur(s) à supprimer
+     * @param string                  $subject       Chaîne source
+     * @param bool                    $caseSensitive Sensible à la casse (par défaut: true)
+     *
      * @return string Chaîne sans les occurrences
      */
     public static function remove(iterable|string $search, string $subject, bool $caseSensitive = true): string
@@ -1871,7 +1885,7 @@ class Text
      * Supprime le dernier mot du texte.
      *
      * @param string $text Texte source
-	 *
+     *
      * @return string Texte sans le dernier mot
      */
     public static function removeLastWord(string $text): string
@@ -1897,7 +1911,7 @@ class Text
      * Inverse la chaîne donnée.
      *
      * @param string $value Chaîne à inverser
-	 *
+     *
      * @return string Chaîne inversée
      */
     public static function reverse(string $value): string
@@ -1908,9 +1922,9 @@ class Text
     /**
      * Commence une chaîne avec une seule instance d'une valeur donnée.
      *
-     * @param string $value Chaîne source
+     * @param string $value  Chaîne source
      * @param string $prefix Préfixe à ajouter
-	 *
+     *
      * @return string Chaîne avec préfixe
      */
     public static function start(string $value, string $prefix): string
@@ -1924,7 +1938,7 @@ class Text
      * Convertit la chaîne donnée en majuscules.
      *
      * @param string $value Chaîne à convertir
-	 *
+     *
      * @return string Chaîne en majuscules
      */
     public static function upper(string $value): string
@@ -1936,7 +1950,7 @@ class Text
      * Convertit la chaîne donnée en title case.
      *
      * @param string $value Chaîne à convertir
-	 *
+     *
      * @return string Chaîne en title case
      */
     public static function title(string $value): string
@@ -1948,7 +1962,7 @@ class Text
      * Convertit la chaîne donnée en title case pour chaque mot.
      *
      * @param string $value Chaîne à convertir
-	 *
+     *
      * @return string Chaîne en headline case
      */
     public static function headline(string $value): string
@@ -1968,10 +1982,10 @@ class Text
      * Convertit la chaîne donnée en casse de titre APA.
      *
      * @param string $value Chaîne à convertir
-	 *
+     *
      * @return string Chaîne en casse APA
-	 *
-	 * @see: https://apastyle.apa.org/style-grammar-guidelines/capitalization/title-case
+     *
+     * @see: https://apastyle.apa.org/style-grammar-guidelines/capitalization/title-case
      */
     public static function apa(string $value): string
     {
@@ -1986,7 +2000,7 @@ class Text
 
         $endPunctuation = ['.', '!', '?', ':', '—', ','];
 
-        $words = mb_split('\s+', $value);
+        $words     = mb_split('\s+', $value);
         $wordCount = count($words);
 
         for ($i = 0; $i < $wordCount; $i++) {
@@ -1995,17 +2009,15 @@ class Text
             if (str_contains($lowercaseWord, '-')) {
                 $hyphenatedWords = explode('-', $lowercaseWord);
 
-                $hyphenatedWords = array_map(function ($part) use ($minorWords) {
-                    return (in_array($part, $minorWords) && mb_strlen($part) <= 3)
+                $hyphenatedWords = array_map(static fn ($part) => (in_array($part, $minorWords, true) && mb_strlen($part) <= 3)
                         ? $part
-                        : mb_strtoupper(mb_substr($part, 0, 1)) . mb_substr($part, 1);
-                }, $hyphenatedWords);
+                        : mb_strtoupper(mb_substr($part, 0, 1)) . mb_substr($part, 1), $hyphenatedWords);
 
                 $words[$i] = implode('-', $hyphenatedWords);
             } else {
-                if (in_array($lowercaseWord, $minorWords) &&
-                    mb_strlen($lowercaseWord) <= 3 &&
-                    ! ($i === 0 || in_array(mb_substr($words[$i - 1], -1), $endPunctuation))) {
+                if (in_array($lowercaseWord, $minorWords, true)
+                    && mb_strlen($lowercaseWord) <= 3
+                    && ! ($i === 0 || in_array(mb_substr($words[$i - 1], -1), $endPunctuation, true))) {
                     $words[$i] = $lowercaseWord;
                 } else {
                     $words[$i] = mb_strtoupper(mb_substr($lowercaseWord, 0, 1)) . mb_substr($lowercaseWord, 1);
@@ -2020,22 +2032,22 @@ class Text
      * Récupère la forme singulière d'un mot anglais.
      *
      * @param string $value Mot au pluriel
-	 *
+     *
      * @return string Mot au singulier
      */
     public static function singular(string $value): string
     {
-		return Inflector::singularize($value);
+        return Inflector::singularize($value);
     }
 
     /**
      * Génère un "slug" convivial pour les URL à partir d'une chaîne donnée.
      *
-     * @param string $title Titre à slugifier
-     * @param string $separator Séparateur (par défaut: '-')
-     * @param string|null $language Langue pour la translittération
+     * @param string                $title      Titre à slugifier
+     * @param string                $separator  Séparateur (par défaut: '-')
+     * @param string|null           $language   Langue pour la translittération
      * @param array<string, string> $dictionary Dictionnaire de remplacements
-	 *
+     *
      * @return string Slug généré
      */
     public static function slug(string $title, string $separator = '-', ?string $language = 'en', array $dictionary = ['@' => 'at']): string
@@ -2066,16 +2078,16 @@ class Text
     /**
      * Convertit une chaîne en snake_case.
      *
-     * @param string $value Chaîne à convertir
+     * @param string $value     Chaîne à convertir
      * @param string $delimiter Délimateur (par défaut: '_')
-	 *
+     *
      * @return string Chaîne en snake_case
      */
     public static function snake(string $value, string $delimiter = '_'): string
     {
-		if (class_exists(Convert::class)) {
-			// return static::jawiraConvert($value, 'snake');
-		}
+        if (class_exists(Convert::class)) {
+            // return static::jawiraConvert($value, 'snake');
+        }
 
         $key = $value . $delimiter;
 
@@ -2094,9 +2106,9 @@ class Text
     /**
      * Supprime les espaces des deux extrémités d'une chaîne.
      *
-     * @param string $value Chaîne à trimer
+     * @param string      $value    Chaîne à trimer
      * @param string|null $charlist Liste de caractères à supprimer
-	 *
+     *
      * @return string Chaîne trimée
      */
     public static function trim(string $value, ?string $charlist = null): string
@@ -2113,9 +2125,9 @@ class Text
     /**
      * Supprime les espaces du début d'une chaîne.
      *
-     * @param string $value Chaîne à trimer
+     * @param string      $value    Chaîne à trimer
      * @param string|null $charlist Liste de caractères à supprimer
-	 *
+     *
      * @return string Chaîne trimée à gauche
      */
     public static function ltrim(string $value, ?string $charlist = null): string
@@ -2132,8 +2144,9 @@ class Text
     /**
      * Supprime les espaces de la fin d'une chaîne.
      *
-     * @param string $value Chaîne à trimer
+     * @param string      $value    Chaîne à trimer
      * @param string|null $charlist Liste de caractères à supprimer
+     *
      * @return string Chaîne trimée à droite
      */
     public static function rtrim(string $value, ?string $charlist = null): string
@@ -2151,7 +2164,7 @@ class Text
      * Supprime tous les espaces "extra" de la chaîne donnée.
      *
      * @param string $value Chaîne à nettoyer
-	 *
+     *
      * @return string Chaîne nettoyée
      */
     public static function squish(string $value): string
@@ -2162,9 +2175,9 @@ class Text
     /**
      * Détermine si une chaîne donnée commence par une sous-chaîne donnée.
      *
-     * @param string $haystack Chaîne à vérifier
-     * @param iterable<string>|string $needles Sous-chaîne(s) à rechercher
-	 *
+     * @param string                  $haystack Chaîne à vérifier
+     * @param iterable<string>|string $needles  Sous-chaîne(s) à rechercher
+     *
      * @return bool true si la chaîne commence par l'une des sous-chaînes
      */
     public static function startsWith(string $haystack, iterable|string $needles): bool
@@ -2185,9 +2198,9 @@ class Text
     /**
      * Détermine si une chaîne donnée ne commence pas par une sous-chaîne donnée.
      *
-     * @param string $haystack Chaîne à vérifier
-     * @param iterable<string>|string $needles Sous-chaîne(s) à rechercher
-	 *
+     * @param string                  $haystack Chaîne à vérifier
+     * @param iterable<string>|string $needles  Sous-chaîne(s) à rechercher
+     *
      * @return bool true si la chaîne ne commence pas par les sous-chaînes
      */
     public static function doesntStartWith(string $haystack, iterable|string $needles): bool
@@ -2202,9 +2215,9 @@ class Text
      * - `html` Si true, les entités HTML seront traitées comme des caractères décodés.
      * - `trimWidth` Si true, la largeur sera retournée.
      *
-     * @param string $text Texte à mesurer
+     * @param string               $text    Texte à mesurer
      * @param array<string, mixed> $options Options de mesure
-	 *
+     *
      * @return int Longueur de la chaîne
      */
     public static function strlen(string $text, array $options): int
@@ -2224,6 +2237,7 @@ class Text
             $pattern,
             static function ($match) use ($strlen) {
                 $utf8 = html_entity_decode($match[0], ENT_HTML5 | ENT_QUOTES, 'UTF-8');
+
                 return str_repeat(' ', $strlen($utf8, 'UTF-8'));
             },
             $text
@@ -2236,7 +2250,7 @@ class Text
      * Convertit une valeur en StudlyCaps.
      *
      * @param string $value Chaîne à convertir
-	 *
+     *
      * @return string Chaîne en StudlyCaps
      */
     public static function studly(string $value): string
@@ -2251,21 +2265,21 @@ class Text
 
         $studlyWords = array_map(static fn ($word) => static::ucfirst($word), $words);
 
-        return static::$studlyCache[$key] = implode($studlyWords);
+        return static::$studlyCache[$key] = implode('', $studlyWords);
     }
 
     /**
      * Convertit une valeur en PascalCase.
      *
      * @param string $value Chaîne à convertir
-	 *
+     *
      * @return string Chaîne en PascalCase
      */
     public static function pascal(string $value): string
     {
-		if (class_exists(Convert::class)) {
-			return static::jawiraConvert($value, 'pascal');
-		}
+        if (class_exists(Convert::class)) {
+            return static::jawiraConvert($value, 'pascal');
+        }
 
         return static::studly($value);
     }
@@ -2277,26 +2291,26 @@ class Text
      * - `html` Si true, les entités HTML seront traitées comme des caractères décodés.
      * - `trimWidth` Si true, sera tronqué avec la largeur spécifiée.
      *
-     * @param string $string Texte source
-     * @param int $start Position de départ
-     * @param int|null $length Longueur à extraire (null = jusqu'à la fin)
+     * @param string      $string   Texte source
+     * @param int         $start    Position de départ
+     * @param int|null    $length   Longueur à extraire (null = jusqu'à la fin)
      * @param string|null $encoding Encodage
-	 *
+     *
      * @return string Sous-chaîne extraite
      */
     public static function substr(string $string, int $start, ?int $length = null, ?string $encoding = null): string
     {
-		return mb_substr($string, $start, $length, $encoding);
+        return mb_substr($string, $start, $length, $encoding);
     }
 
     /**
      * Retourne le nombre d'occurrences d'une sous-chaîne.
      *
-     * @param string $haystack Chaîne dans laquelle chercher
-     * @param string $needle Sous-chaîne à compter
-     * @param int $offset Position de départ
-     * @param int|null $length Longueur à parcourir
-	 *
+     * @param string   $haystack Chaîne dans laquelle chercher
+     * @param string   $needle   Sous-chaîne à compter
+     * @param int      $offset   Position de départ
+     * @param int|null $length   Longueur à parcourir
+     *
      * @return int Nombre d'occurrences
      */
     public static function substrCount(string $haystack, string $needle, int $offset = 0, ?int $length = null): int
@@ -2311,14 +2325,14 @@ class Text
     /**
      * Remplace du texte dans une partie d'une chaîne.
      *
-     * @param list<string>|string $string Chaîne source
+     * @param list<string>|string $string  Chaîne source
      * @param list<string>|string $replace Texte de remplacement
-     * @param int|list<int> $offset Position de départ
-     * @param int|list<int>|null $length Longueur à remplacer
-	 *
+     * @param int|list<int>       $offset  Position de départ
+     * @param int|list<int>|null  $length  Longueur à remplacer
+     *
      * @return list<string>|string Chaîne modifiée
      */
-    public static function substrReplace(array|string $string, array|string $replace, int|array $offset = 0, int|array|null $length = null): array|string
+    public static function substrReplace(array|string $string, array|string $replace, array|int $offset = 0, array|int|null $length = null): array|string
     {
         if ($length === null) {
             $length = is_array($string) ? array_map(static::length(...), $string) : static::length($string);
@@ -2331,8 +2345,8 @@ class Text
      * Prend les N premiers ou derniers caractères d'une chaîne.
      *
      * @param string $string Chaîne source
-     * @param int $limit Nombre de caractères
-	 *
+     * @param int    $limit  Nombre de caractères
+     *
      * @return string Sous-chaîne
      */
     public static function take(string $string, int $limit): string
@@ -2347,8 +2361,9 @@ class Text
     /**
      * Échange plusieurs mots-clés dans une chaîne avec d'autres mots-clés.
      *
-     * @param array<string, string> $map Tableau de correspondances
-     * @param string $subject Chaîne source
+     * @param array<string, string> $map     Tableau de correspondances
+     * @param string                $subject Chaîne source
+     *
      * @return string Chaîne modifiée
      */
     public static function swap(array $map, string $subject): string
@@ -2360,7 +2375,7 @@ class Text
      * Convertit une chaîne en Base64.
      *
      * @param string $string Chaîne à encoder
-	 *
+     *
      * @return string Chaîne encodée en Base64
      */
     public static function toBase64(string $string): string
@@ -2372,11 +2387,11 @@ class Text
      * Décode une chaîne Base64.
      *
      * @param string $string Chaîne Base64
-     * @param bool $strict Mode strict
-	 *
-     * @return string|false Chaîne décodée ou false en cas d'erreur
+     * @param bool   $strict Mode strict
+     *
+     * @return false|string Chaîne décodée ou false en cas d'erreur
      */
-    public static function fromBase64(string $string, bool $strict = false): string|false
+    public static function fromBase64(string $string, bool $strict = false): false|string
     {
         return base64_decode($string, $strict);
     }
@@ -2385,7 +2400,7 @@ class Text
      * Met le premier caractère d'une chaîne en minuscule.
      *
      * @param string $string Chaîne à modifier
-	 *
+     *
      * @return string Chaîne modifiée
      */
     public static function lcfirst(string $string): string
@@ -2397,7 +2412,7 @@ class Text
      * Met le premier caractère d'une chaîne en majuscule.
      *
      * @param string $string Chaîne à modifier
-	 *
+     *
      * @return string Chaîne modifiée
      */
     public static function ucfirst(string $string): string
@@ -2408,25 +2423,23 @@ class Text
     /**
      * Met en majuscule la première lettre de chaque mot dans une chaîne.
      *
-     * @param string $string Chaîne à modifier
+     * @param string $string     Chaîne à modifier
      * @param string $separators Séparateurs de mots
-	 *
+     *
      * @return string Chaîne modifiée
      */
     public static function ucwords(string $string, string $separators = " \t\r\n\f\v"): string
     {
         $pattern = '/(^|[' . preg_quote($separators, '/') . '])(\p{Ll})/u';
 
-        return preg_replace_callback($pattern, function ($matches) {
-            return $matches[1] . mb_strtoupper($matches[2]);
-        }, $string) ?? $string;
+        return preg_replace_callback($pattern, static fn ($matches) => $matches[1] . mb_strtoupper($matches[2]), $string) ?? $string;
     }
 
     /**
      * Divise une chaîne en morceaux par caractères majuscules.
      *
      * @param string $string Chaîne à diviser
-	 *
+     *
      * @return list<string> Tableau de morceaux
      */
     public static function ucsplit(string $string): array
@@ -2437,10 +2450,10 @@ class Text
     /**
      * Tronque le texte en partant de la fin.
      *
-     * @param string $text Texte à tronquer
-     * @param int $length Longueur maximale
+     * @param string               $text    Texte à tronquer
+     * @param int                  $length  Longueur maximale
      * @param array<string, mixed> $options Options de troncature
-	 *
+     *
      * @return string Texte tronqué
      */
     public static function tail(string $text, int $length = 100, array $options = []): string
@@ -2470,11 +2483,11 @@ class Text
      * Tokenise une chaîne en utilisant $separator, en ignorant les instances de $separator
      * qui apparaissent entre $leftBound et $rightBound.
      *
-     * @param string $data Chaîne à tokeniser
-     * @param string $separator Séparateur (par défaut: ',')
-     * @param string $leftBound Délimiteur gauche (par défaut: '(')
+     * @param string $data       Chaîne à tokeniser
+     * @param string $separator  Séparateur (par défaut: ',')
+     * @param string $leftBound  Délimiteur gauche (par défaut: '(')
      * @param string $rightBound Délimiteur droit (par défaut: ')')
-	 *
+     *
      * @return array<int, string> Tableau de tokens
      */
     public static function tokenize(string $data, string $separator = ',', string $leftBound = '(', string $rightBound = ')'): array
@@ -2544,10 +2557,10 @@ class Text
     /**
      * Crée une liste séparée par des virgules où les deux derniers éléments sont joints avec 'et'.
      *
-     * @param list<string> $list Liste à joindre
-     * @param string $separator Séparateur (par défaut: ', ')
-     * @param string $and Mot pour "et" (par défaut: 'and')
-	 *
+     * @param list<string> $list      Liste à joindre
+     * @param string       $separator Séparateur (par défaut: ', ')
+     * @param string       $and       Mot pour "et" (par défaut: 'and')
+     *
      * @return string Liste formatée
      */
     public static function toList(array $list, string $separator = ', ', string $and = 'and'): string
@@ -2564,11 +2577,12 @@ class Text
      *
      * Tente de convertir une chaîne en UTF-8.
      *
-     * @param string $str Chaîne à convertir
+     * @param string $str      Chaîne à convertir
      * @param string $encoding Encodage source
-     * @return string|false Chaîne encodée en UTF-8 ou FALSE en cas d'échec
+     *
+     * @return false|string Chaîne encodée en UTF-8 ou FALSE en cas d'échec
      */
-    public static function toUtf8(string $str, string $encoding): string|false
+    public static function toUtf8(string $str, string $encoding): false|string
     {
         if (MB_ENABLED) {
             return mb_convert_encoding($str, 'UTF-8', $encoding);
@@ -2588,7 +2602,7 @@ class Text
      */
     public static function uuid(): string
     {
-		return Uuid::v4();
+        return Uuid::v4();
     }
 
     /**
@@ -2598,7 +2612,7 @@ class Text
      */
     public static function uuid7(): string
     {
-		return Uuid::v7();
+        return Uuid::v7();
     }
 
     /**
@@ -2609,12 +2623,13 @@ class Text
     public static function ulid(): string
     {
         $chars = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
-        $ulid = '';
+        $ulid  = '';
 
         // Partie timestamp (10 caractères)
         $time = microtime(true) * 1000;
+
         for ($i = 9; $i >= 0; $i--) {
-            $mod = $time % 32;
+            $mod  = $time % 32;
             $ulid = $chars[$mod] . $ulid;
             $time = ($time - $mod) / 32;
         }
@@ -2649,12 +2664,13 @@ class Text
      * Gèle la génération d'UUIDs.
      *
      * @param Closure|null $callback Callback à exécuter
+     *
      * @return string UUID gelé
      */
     public static function freezeUuids(?Closure $callback = null): string
     {
         $uuid = static::uuid();
-        static::createUuidsUsing(fn () => $uuid);
+        static::createUuidsUsing(static fn () => $uuid);
 
         if ($callback !== null) {
             try {
@@ -2689,12 +2705,13 @@ class Text
      * Gèle la génération d'ULIDs.
      *
      * @param Closure|null $callback Callback à exécuter
+     *
      * @return string ULID gelé
      */
     public static function freezeUlids(?Closure $callback = null): string
     {
         $ulid = static::ulid();
-        static::createUlidsUsing(fn () => $ulid);
+        static::createUlidsUsing(static fn () => $ulid);
 
         if ($callback !== null) {
             try {
@@ -2710,9 +2727,9 @@ class Text
     /**
      * Récupère le nombre de mots dans une chaîne.
      *
-     * @param string $string Chaîne à compter
+     * @param string      $string     Chaîne à compter
      * @param string|null $characters Caractères supplémentaires considérés comme faisant partie des mots
-	 *
+     *
      * @return int Nombre de mots
      */
     public static function wordCount(string $string, ?string $characters = null): int
@@ -2723,11 +2740,11 @@ class Text
     /**
      * Enveloppe une chaîne à un nombre donné de caractères.
      *
-     * @param string $string Chaîne à envelopper
-     * @param int $characters Nombre de caractères par ligne
-     * @param string $break Caractère de rupture
-     * @param bool $cutLongWords Couper les longs mots
-	 *
+     * @param string $string       Chaîne à envelopper
+     * @param int    $characters   Nombre de caractères par ligne
+     * @param string $break        Caractère de rupture
+     * @param bool   $cutLongWords Couper les longs mots
+     *
      * @return string Chaîne enveloppée
      */
     public static function wordWrap(string $string, int $characters = 75, string $break = "\n", bool $cutLongWords = false): string
@@ -2763,7 +2780,7 @@ class Text
      */
     public static function setTransliteratorId(string $transliteratorId): void
     {
-		static::$_defaultTransliteratorId = $transliteratorId;
+        static::$_defaultTransliteratorId = $transliteratorId;
     }
 
     /**
@@ -2906,6 +2923,7 @@ class Text
      * Note: Adapté de Stringy\Stringy.
      *
      * @param string $language Langue pour les caractères spécifiques
+     *
      * @return array<int, array<int, string>>|null Tableau de correspondances spécifiques à la langue
      *
      * @see https://github.com/danielstjules/Stringy/blob/3.1.0/LICENSE.txt

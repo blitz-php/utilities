@@ -66,8 +66,6 @@ class Uuid
 
     /**
      * Générateur de nombres aléatoires (PHP 8.2+)
-     *
-     * @var Randomizer|null
      */
     private static ?Randomizer $randomizer = null;
 
@@ -77,6 +75,7 @@ class Uuid
      * Note: Non implémenté dans la version originale, ajouté pour complétude.
      *
      * @return string UUID version 1
+     *
      * @throws RuntimeException Si l'extension ext-uuid n'est pas disponible
      */
     public static function v1(): string
@@ -100,11 +99,11 @@ class Uuid
      *
      * Note: Rarement utilisé, implémentation basique.
      *
-     * @param int $domain Domaine DCE (0-2)
+     * @param int      $domain     Domaine DCE (0-2)
      * @param int|null $identifier Identifiant local
-	 *
+     *
      * @return string UUID version 2
-	 *
+     *
      * @throws RuntimeException Si non supporté
      */
     public static function v2(int $domain = 0, ?int $identifier = null): string
@@ -116,7 +115,7 @@ class Uuid
         if (function_exists('uuid_create')) {
             // L'extension uuid ne supporte pas v2 directement
             // Nous générons un v4 et modifions les bits de version
-            $uuid = uuid_create(UUID_TYPE_RANDOM);
+            $uuid  = uuid_create(UUID_TYPE_RANDOM);
             $bytes = uuid_parse($uuid);
 
             // Définit la version à 2 (bits 4-7 de time_hi_and_version = 0x20)
@@ -135,10 +134,11 @@ class Uuid
      * Génère un UUID de type v3 (basé sur MD5)
      *
      * @param string $namespace Namespace UUID (doit être un UUID valide)
-     * @param string $name Nom à hache
-	 * r
+     * @param string $name      Nom à hache
+     *                          r
+     *
      * @return string UUID version 3
-	 *
+     *
      * @throws InvalidArgumentException Si le namespace n'est pas un UUID valide
      */
     public static function v3(string $namespace, string $name): string
@@ -199,6 +199,7 @@ class Uuid
      * Utile pour les tests ou quand random_bytes() n'est pas disponible.
      *
      * @return string UUID version 4 (non cryptographique)
+     *
      * @deprecated Utilisez v4() pour une version cryptographique
      */
     public static function v4NonSecure(): string
@@ -222,10 +223,10 @@ class Uuid
      * Similaire à v3 mais utilise SHA-1 au lieu de MD5.
      *
      * @param string $namespace Namespace UUID (doit être un UUID valide)
-     * @param string $name Nom à hacher
-	 *
+     * @param string $name      Nom à hacher
+     *
      * @return string UUID version 5
-	 *
+     *
      * @throws InvalidArgumentException Si le namespace n'est pas un UUID valide
      */
     public static function v5(string $namespace, string $name): string
@@ -264,7 +265,7 @@ class Uuid
      * Similaire à v1 mais avec les champs réordonnés pour un meilleur tri.
      *
      * @return string UUID version 6
-	 *
+     *
      * @throws RuntimeException Si non supporté
      */
     public static function v6(): string
@@ -275,7 +276,7 @@ class Uuid
 
         // Implémentation manuelle basique (simplifiée)
         $time = microtime(true);
-        $sec = (int) $time;
+        $sec  = (int) $time;
         $usec = (int) (($time - $sec) * 1000000);
 
         // Format 60-bit timestamp (RFC 4122 rev draft)
@@ -286,7 +287,7 @@ class Uuid
         );
 
         // Génère les octets aléatoires pour la partie "node"
-        $node = random_bytes(6);
+        $node     = random_bytes(6);
         $clockSeq = random_bytes(2);
 
         // Construit l'UUID v6
@@ -308,36 +309,36 @@ class Uuid
      * @return string UUID version 7
      */
     public static function v7(): string
-	{
-		// Timestamp Unix en millisecondes (48 bits)
-		$timestampMs = (int) (microtime(true) * 1000);
+    {
+        // Timestamp Unix en millisecondes (48 bits)
+        $timestampMs = (int) (microtime(true) * 1000);
 
-		// Extraire les parties du timestamp
-		$timeHigh = ($timestampMs >> 12) & 0xFFFFFFFF; // 32 bits hauts
-		$timeMid = ($timestampMs >> 28) & 0xFFFF;      // 16 bits suivants
-		$timeLow = $timestampMs & 0xFFF;               // 12 bits bas
+        // Extraire les parties du timestamp
+        $timeHigh = ($timestampMs >> 12) & 0xFFFFFFFF; // 32 bits hauts
+        $timeMid  = ($timestampMs >> 28) & 0xFFFF;      // 16 bits suivants
+        $timeLow  = $timestampMs & 0xFFF;               // 12 bits bas
 
-		// Version 7 (4 bits)
-		$version = 0x7;
+        // Version 7 (4 bits)
+        $version = 0x7;
 
-		// Bits aléatoires (74 bits)
-		$randBytes = random_bytes(10);
-		$randHex = bin2hex($randBytes);
+        // Bits aléatoires (74 bits)
+        $randBytes = random_bytes(10);
+        $randHex   = bin2hex($randBytes);
 
-		// Extraire les parties aléatoires
-		$rand1 = hexdec(substr($randHex, 0, 4)) & 0x3FFF; // 14 bits
-		$rand2 = substr($randHex, 4, 12);                 // 48 bits
+        // Extraire les parties aléatoires
+        $rand1 = hexdec(substr($randHex, 0, 4)) & 0x3FFF; // 14 bits
+        $rand2 = substr($randHex, 4, 12);                 // 48 bits
 
-		// Construire l'UUID
-		return sprintf(
-			'%08x-%04x-%04x-%04x-%012s',
-			$timeHigh,                     // 32 bits hauts du timestamp
-			$timeMid,                      // 16 bits suivants
-			($timeLow << 4) | $version,    // 12 bits bas + version
-			0x8000 | $rand1,               // Variant RFC 4122 + 14 bits aléatoires
-			$rand2                         // 48 bits aléatoires
-		);
-	}
+        // Construire l'UUID
+        return sprintf(
+            '%08x-%04x-%04x-%04x-%012s',
+            $timeHigh,                     // 32 bits hauts du timestamp
+            $timeMid,                      // 16 bits suivants
+            ($timeLow << 4) | $version,    // 12 bits bas + version
+            0x8000 | $rand1,               // Variant RFC 4122 + 14 bits aléatoires
+            $rand2                         // 48 bits aléatoires
+        );
+    }
 
     /**
      * Génère un UUID de type v8 (personnalisé/spécifique)
@@ -345,9 +346,9 @@ class Uuid
      * Pour les implémentations personnalisées.
      *
      * @param string $customData Données personnalisées (16 octets)
-	 *
+     *
      * @return string UUID version 8
-	 *
+     *
      * @throws InvalidArgumentException Si les données ne font pas 16 octets
      */
     public static function v8(string $customData): string
@@ -357,7 +358,7 @@ class Uuid
         }
 
         // Version 8 (bits 4-7 = 0x80)
-        $bytes = $customData;
+        $bytes    = $customData;
         $bytes[6] = chr(ord($bytes[6]) & 0x0F | 0x80);
         $bytes[8] = chr(ord($bytes[8]) & 0x3F | 0x80);
 
@@ -368,7 +369,7 @@ class Uuid
      * Vérifie si une chaîne donnée est un UUID valide.
      *
      * @param string $value Chaîne à vérifier
-	 *
+     *
      * @return bool true si la chaîne est un UUID valide
      */
     public static function isValid(string $value): bool
@@ -379,14 +380,14 @@ class Uuid
     /**
      * Vérifie si une chaîne donnée est un UUID valide d'une version spécifique.
      *
-     * @param string $value Chaîne à vérifier
-     * @param int $version Version UUID à vérifier (3, 4, 5)
-	 *
+     * @param string $value   Chaîne à vérifier
+     * @param int    $version Version UUID à vérifier (3, 4, 5)
+     *
      * @return bool true si la chaîne est un UUID valide de la version spécifiée
      */
     public static function isValidVersion(string $value, int $version): bool
     {
-        if (!isset(self::UUID_VERSION[$version])) {
+        if (! isset(self::UUID_VERSION[$version])) {
             throw new InvalidArgumentException(sprintf(
                 'Version UUID invalide : %s. Versions supportées : %s',
                 $version,
@@ -395,7 +396,7 @@ class Uuid
         }
 
         $versionHex = dechex($version);
-        $pattern = sprintf(self::UUID_VERSION_PATTERN, $versionHex);
+        $pattern    = sprintf(self::UUID_VERSION_PATTERN, $versionHex);
 
         return preg_match($pattern, $value) === 1;
     }
@@ -404,7 +405,7 @@ class Uuid
      * Extrait la version d'un UUID
      *
      * @param string $uuid UUID à analyser
-	 *
+     *
      * @return int Version de l'UUID (0 si non valide ou version inconnue)
      */
     public static function getVersion(string $uuid): int
@@ -419,57 +420,60 @@ class Uuid
         }
 
         $versionHex = $parts[2][0] ?? '0';
-        $version = hexdec($versionHex);
+        $version    = hexdec($versionHex);
 
         return isset(self::UUID_VERSION[$version]) ? $version : 0;
     }
 
     /**
-	 * Extrait la variante d'un UUID
-	 *
-	 * @param string $uuid UUID à analyser
-	 *
-	 * @return string Variante de l'UUID ('unknown', 'ncs', 'rfc4122', 'microsoft', 'future')
-	 */
-	public static function getVariant(string $uuid): string
-	{
-		if (! static::isValid($uuid)) {
-			return 'unknown';
-		}
+     * Extrait la variante d'un UUID
+     *
+     * @param string $uuid UUID à analyser
+     *
+     * @return string Variante de l'UUID ('unknown', 'ncs', 'rfc4122', 'microsoft', 'future')
+     */
+    public static function getVariant(string $uuid): string
+    {
+        if (! static::isValid($uuid)) {
+            return 'unknown';
+        }
 
-		$parts = explode('-', $uuid);
-		if (count($parts) !== 5) {
-			return 'unknown';
-		}
+        $parts = explode('-', $uuid);
+        if (count($parts) !== 5) {
+            return 'unknown';
+        }
 
-		// Prendre les deux premiers caractères hexadécimaux du segment 3 (octet clock_seq_hi)
-		$clockSeqHiHex = substr($parts[3], 0, 2);
-		$clockSeqHi = hexdec($clockSeqHiHex);
+        // Prendre les deux premiers caractères hexadécimaux du segment 3 (octet clock_seq_hi)
+        $clockSeqHiHex = substr($parts[3], 0, 2);
+        $clockSeqHi    = hexdec($clockSeqHiHex);
 
-		// Variant bits: positions 7-6 (en partant du MSB)
-		// Note: En PHP, les opérations bitwise fonctionnent sur les entiers
+        // Variant bits: positions 7-6 (en partant du MSB)
+        // Note: En PHP, les opérations bitwise fonctionnent sur les entiers
 
-		// Masque 0xC0 = 11000000 (bits 7 et 6)
-		// Masque 0xE0 = 11100000 (bits 7, 6 et 5)
+        // Masque 0xC0 = 11000000 (bits 7 et 6)
+        // Masque 0xE0 = 11100000 (bits 7, 6 et 5)
 
-		if (($clockSeqHi & 0x80) === 0x00) {
-			return 'ncs'; // NCS (bit 7 = 0)
-		} elseif (($clockSeqHi & 0xC0) === 0x80) {
-			return 'rfc4122'; // RFC 4122 (bits 7-6 = 10)
-		} elseif (($clockSeqHi & 0xE0) === 0xC0) {
-			return 'microsoft'; // Microsoft (bits 7-6 = 11, bit 5 = 0)
-		} elseif (($clockSeqHi & 0xE0) === 0xE0) {
-			return 'future'; // Future (bits 7-6-5 = 111)
-		}
+        if (($clockSeqHi & 0x80) === 0x00) {
+            return 'ncs'; // NCS (bit 7 = 0)
+        }
+        if (($clockSeqHi & 0xC0) === 0x80) {
+            return 'rfc4122'; // RFC 4122 (bits 7-6 = 10)
+        }
+        if (($clockSeqHi & 0xE0) === 0xC0) {
+            return 'microsoft'; // Microsoft (bits 7-6 = 11, bit 5 = 0)
+        }
+        if (($clockSeqHi & 0xE0) === 0xE0) {
+            return 'future'; // Future (bits 7-6-5 = 111)
+        }
 
-		return 'unknown';
-	}
+        return 'unknown';
+    }
 
     /**
      * Vérifie si un UUID est nul (tous les bits à 0)
      *
      * @param string $uuid UUID à vérifier
-	 *
+     *
      * @return bool true si l'UUID est nul
      */
     public static function isNil(string $uuid): bool
@@ -502,7 +506,7 @@ class Uuid
      *
      * @param string $uuid1 Premier UUID
      * @param string $uuid2 Deuxième UUID
-	 *
+     *
      * @return int -1 si $uuid1 < $uuid2, 0 si égaux, 1 si $uuid1 > $uuid2
      */
     public static function compare(string $uuid1, string $uuid2): int
@@ -518,14 +522,14 @@ class Uuid
      * Convertit un UUID en représentation binaire (16 octets)
      *
      * @param string $uuid UUID à convertir
-	 *
+     *
      * @return string Représentation binaire
-	 *
+     *
      * @throws InvalidArgumentException Si l'UUID n'est pas valide
      */
     public static function toBinary(string $uuid): string
     {
-        if (!static::isValid($uuid)) {
+        if (! static::isValid($uuid)) {
             throw new InvalidArgumentException('UUID invalide');
         }
 
@@ -533,6 +537,7 @@ class Uuid
 
         // Conversion hexadécimale vers binaire
         $binary = '';
+
         for ($i = 0; $i < strlen($hex); $i += 2) {
             $binary .= chr(hexdec($hex[$i] . $hex[$i + 1]));
         }
@@ -544,9 +549,9 @@ class Uuid
      * Convertit une représentation binaire en UUID
      *
      * @param string $binary Représentation binaire (16 octets)
-	 *
+     *
      * @return string UUID formaté
-	 *
+     *
      * @throws InvalidArgumentException Si la donnée binaire n'est pas de 16 octets
      */
     public static function fromBinary(string $binary): string
@@ -570,9 +575,9 @@ class Uuid
      *
      * Alias pour v5 avec namespace DNS par défaut.
      *
-     * @param string $name Nom à hacher
+     * @param string $name      Nom à hacher
      * @param string $namespace Namespace (par défaut: NAMESPACE_DNS)
-	 *
+     *
      * @return string UUID version 5
      */
     public static function fromString(string $name, string $namespace = self::NAMESPACE_DNS): string
@@ -584,17 +589,17 @@ class Uuid
      * Génère un UUID à partir d'un entier (128 bits)
      *
      * @param string $int Entier sous forme de chaîne (peut être très grand)
-	 *
+     *
      * @return string UUID correspondant
-	 *
-     * @throws RuntimeException Si l'extension GMP n'est pas installée
+     *
      * @throws InvalidArgumentException Si l'entier est trop grand
+     * @throws RuntimeException         Si l'extension GMP n'est pas installée
      */
     public static function fromInteger(string $int): string
     {
-		if (! extension_loaded('gmp')) {
-			throw new RuntimeException('Extension GMP requis');
-		}
+        if (! extension_loaded('gmp')) {
+            throw new RuntimeException('Extension GMP requis');
+        }
 
         // Convertit l'entier en hexadécimal
         $hex = gmp_strval(gmp_init($int, 10), 16);
@@ -619,17 +624,17 @@ class Uuid
      * Convertit un UUID en entier (128 bits)
      *
      * @param string $uuid UUID à convertir
-	 *
+     *
      * @return string Entier sous forme de chaîne
-	 *
-     * @throws RuntimeException Si l'extension GMP n'est pas installée
+     *
      * @throws InvalidArgumentException Si l'UUID n'est pas valide
+     * @throws RuntimeException         Si l'extension GMP n'est pas installée
      */
     public static function toInteger(string $uuid): string
     {
         if (! extension_loaded('gmp')) {
-			throw new RuntimeException('Extension GMP requis');
-		}
+            throw new RuntimeException('Extension GMP requis');
+        }
 
         if (! static::isValid($uuid)) {
             throw new InvalidArgumentException('UUID invalide');
@@ -650,14 +655,14 @@ class Uuid
     public static function sequential(): string
     {
         // Préfixe basé sur le temps (6 bytes)
-        $time = microtime(true);
+        $time   = microtime(true);
         $prefix = pack('J', (int) ($time * 1000000)); // Microsecondes
 
         // Partie aléatoire (10 bytes)
         $suffix = random_bytes(10);
 
         // Combine et formate en UUID v4
-        $bytes = substr($prefix, 2) . $suffix; // 16 bytes au total
+        $bytes    = substr($prefix, 2) . $suffix; // 16 bytes au total
         $bytes[6] = chr(ord($bytes[6]) & 0x0F | 0x40); // Version 4
         $bytes[8] = chr(ord($bytes[8]) & 0x3F | 0x80); // Variant RFC 4122
 

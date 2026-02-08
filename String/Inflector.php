@@ -413,7 +413,7 @@ class Inflector
     protected static array $_pluralRules = [
         'en' => [], // Utilise les règles par défaut $_plural
         'fr' => [
-			'/(s|x|z)$/i' => '\\1',  // Garde la terminaison, donc pas de changement
+            '/(s|x|z)$/i' => '\\1',  // Garde la terminaison, donc pas de changement
 
             // Règles générales françaises
             '/([^aeiou])eau$/i' => '\1eaux',          // château → châteaux
@@ -425,8 +425,8 @@ class Inflector
             // '/s$/i'             => 's',               // Déjà au pluriel
             // '/x$/i'             => 'x',               // Déjà au pluriel
             // '/z$/i'             => 'z',               // Déjà au pluriel
-            '/([aeiou])l$/i'    => '\1ls',            // détail → détails
-            '/([^sxz])$/i'      => '\1s',             // Règle générale: ajout de 's'
+            '/([aeiou])l$/i' => '\1ls',            // détail → détails
+            '/([^sxz])$/i'   => '\1s',             // Règle générale: ajout de 's'
         ],
     ];
 
@@ -487,49 +487,49 @@ class Inflector
     /**
      * Mots invariables par langue
      *
-     * @var array<string, array<string>>
+     * @var array<string, list<string>>
      */
     protected static array $_uninflectedRules = [
-		'en' => [], // Utilise $_uninflected par défaut
-    	'fr' => [
-			// Mots invariables français
-			/* retirer car problematique
-			'.*ois',
-			'.*ais',           // français, anglais, etc.
-			'.*z',            // gaz, nez, etc.
-			'.*s',            // déjà au pluriel
-			'.*x',            // déjà au pluriel
-			'.*eau',          // déjà au pluriel (eau)
-			'.*ieu',          // lieu, dieu
-			*/
+        'en' => [], // Utilise $_uninflected par défaut
+        'fr' => [
+            // Mots invariables français
+            /* retirer car problematique
+            '.*ois',
+            '.*ais',           // français, anglais, etc.
+            '.*z',            // gaz, nez, etc.
+            '.*s',            // déjà au pluriel
+            '.*x',            // déjà au pluriel
+            '.*eau',          // déjà au pluriel (eau)
+            '.*ieu',          // lieu, dieu
+            */
 
-			// Mots avec pluriels généralement privilégiés
-			'archives', 'fiançailles', 'intempéries', 'obsèques', 'vacances',
+            // Mots avec pluriels généralement privilégiés
+            'archives', 'fiançailles', 'intempéries', 'obsèques', 'vacances',
 
-			'acces', 'acné', 'agenda', 'alcool', 'amour', 'ananas', 'argent', 'art', 'as', 'atlas', 'autobus', 'automne', 'avant-bras', 'avis',
-			'bas', 'bois', 'bonus', 'box', 'bras', 'bronze', 'bus',
-			'cactus', 'caoutchouc', 'car', 'cas', 'cassis', 'chaos', 'châssis', 'chassis', 'choix', 'corps', 'cours', 'croix', 'cuir',
-			'début', 'délai', 'dés', 'discours',
-			'échec', 'ennui', 'envers',
-			'fait', 'faux', 'fax', 'feu', 'fils', 'foi', 'fois', 'frais',
-			'gars', 'gaz', 'gentilhomme', 'glas', 'gris', 'gros',
-			'huis', 'humour',
-			'impôt', 'index', 'iris',
-			'jeans', 'jus',
-			'las', 'lilas', 'lynx', 'lys',
-			'mars', 'mois', 'myosotis',
-			'nez', 'noix', 'nord', 'nœud',
-			'œil', 'œuf', 'or', 'os', 'ouest',
-			'pais', 'palais', 'paradis', 'parc', 'pardon', 'parfum', 'pas', 'pays', 'poids', 'pois', 'pomme de terre', 'prix', 'proces', 'progrès', 'puis', 'pus',
-			'quart', 'quiz', 'quinze',
-			'ras', 'relais', 'repas', 'revers', 'rez-de-chaussée', 'rhinocéros', 'riz', 'rubis',
-			'sang', 'sans', 'sec', 'secret', 'sel', 'selle', 'sens', 'shorts', 'silex', 'six', 'soixante', 'sol', 'souris', 'sous', 'sueur', 'sur', 'sûr',
-			'tapis', 'tas', 'temps', 'tennis', 'ton', 'tort', 'tôt', 'tout', 'tribu', 'trois', 'trop', 'truc',
-			'univers',
-			'velours', 'vers', 'vice', 'virus', 'voix',
-			'yeux',
-		],
-	];
+            'acces', 'acné', 'agenda', 'alcool', 'amour', 'ananas', 'argent', 'art', 'as', 'atlas', 'autobus', 'automne', 'avant-bras', 'avis',
+            'bas', 'bois', 'bonus', 'box', 'bras', 'bronze', 'bus',
+            'cactus', 'caoutchouc', 'car', 'cas', 'cassis', 'chaos', 'châssis', 'chassis', 'choix', 'corps', 'cours', 'croix', 'cuir',
+            'début', 'délai', 'dés', 'discours',
+            'échec', 'ennui', 'envers',
+            'fait', 'faux', 'fax', 'feu', 'fils', 'foi', 'fois', 'frais',
+            'gars', 'gaz', 'gentilhomme', 'glas', 'gris', 'gros',
+            'huis', 'humour',
+            'impôt', 'index', 'iris',
+            'jeans', 'jus',
+            'las', 'lilas', 'lynx', 'lys',
+            'mars', 'mois', 'myosotis',
+            'nez', 'noix', 'nord', 'nœud',
+            'œil', 'œuf', 'or', 'os', 'ouest',
+            'pais', 'palais', 'paradis', 'parc', 'pardon', 'parfum', 'pas', 'pays', 'poids', 'pois', 'pomme de terre', 'prix', 'proces', 'progrès', 'puis', 'pus',
+            'quart', 'quiz', 'quinze',
+            'ras', 'relais', 'repas', 'revers', 'rez-de-chaussée', 'rhinocéros', 'riz', 'rubis',
+            'sang', 'sans', 'sec', 'secret', 'sel', 'selle', 'sens', 'shorts', 'silex', 'six', 'soixante', 'sol', 'souris', 'sous', 'sueur', 'sur', 'sûr',
+            'tapis', 'tas', 'temps', 'tennis', 'ton', 'tort', 'tôt', 'tout', 'tribu', 'trois', 'trop', 'truc',
+            'univers',
+            'velours', 'vers', 'vice', 'virus', 'voix',
+            'yeux',
+        ],
+    ];
 
     /**
      * Cache des méthodes.
@@ -549,12 +549,11 @@ class Inflector
      * Définit la langue active pour l'inflection
      *
      * @param string $language Code de langue (ex: 'en', 'fr')
-     * @return void
      */
     public static function setLanguage(string $language): void
     {
         static::$_language = $language;
-        static::$_cache = []; // Vide le cache lors du changement de langue
+        static::$_cache    = []; // Vide le cache lors du changement de langue
     }
 
     /**
@@ -571,16 +570,15 @@ class Inflector
      * Ajoute des règles d'inflection personnalisées pour une langue spécifique
      *
      * @param string $language Code de langue
-     * @param string $type Type de règle ('plural', 'singular', 'irregular', 'uninflected')
-     * @param array $rules Tableau de règles
-     * @param bool $reset Si true, remplace toutes les règles existantes
-     * @return void
+     * @param string $type     Type de règle ('plural', 'singular', 'irregular', 'uninflected')
+     * @param array  $rules    Tableau de règles
+     * @param bool   $reset    Si true, remplace toutes les règles existantes
      */
     public static function addLanguageRules(string $language, string $type, array $rules, bool $reset = false): void
     {
         $var = '_' . $type . 'Rules';
 
-        if (!isset(static::${$var}[$language])) {
+        if (! isset(static::${$var}[$language])) {
             static::${$var}[$language] = [];
         }
 
@@ -597,11 +595,12 @@ class Inflector
      * Récupère les règles pour la langue active
      *
      * @param string $type Type de règle
+     *
      * @return array Tableau de règles
      */
     protected static function getRules(string $type): array
     {
-        $rulesVar = '_' . $type . 'Rules';
+        $rulesVar   = '_' . $type . 'Rules';
         $defaultVar = '_' . $type;
 
         // Récupère les règles pour la langue active
@@ -625,11 +624,11 @@ class Inflector
         $languageIrregular = static::$_irregularRules[static::$_language] ?? [];
 
         // Combine avec les irréguliers anglais si nécessaire
-        if (static::$_language !== 'en' && !empty(static::$_irregular)) {
+        if (static::$_language !== 'en' && ! empty(static::$_irregular)) {
             return array_merge(static::$_irregular, $languageIrregular);
         }
 
-        return !empty($languageIrregular) ? $languageIrregular : static::$_irregular;
+        return ! empty($languageIrregular) ? $languageIrregular : static::$_irregular;
     }
 
     /**
@@ -642,19 +641,20 @@ class Inflector
         $languageUninflected = static::$_uninflectedRules[static::$_language] ?? [];
 
         // Combine avec les invariables anglais si nécessaire
-        if (static::$_language !== 'en' && !empty(static::$_uninflected)) {
+        if (static::$_language !== 'en' && ! empty(static::$_uninflected)) {
             return array_merge(static::$_uninflected, $languageUninflected);
         }
 
-        return !empty($languageUninflected) ? $languageUninflected : static::$_uninflected;
+        return ! empty($languageUninflected) ? $languageUninflected : static::$_uninflected;
     }
 
     /**
      * Met en cache les valeurs infléchies et les retourne si déjà disponibles
      *
-     * @param string $type Type d'inflection
-     * @param string $key Valeur originale
+     * @param string      $type  Type d'inflection
+     * @param string      $key   Valeur originale
      * @param bool|string $value Valeur infléchie
+     *
      * @return false|string Valeur infléchie en cas de cache hit ou false en cas de cache miss
      */
     protected static function _cache(string $type, string $key, $value = false)
@@ -733,6 +733,7 @@ class Inflector
      * Retourne $word au pluriel.
      *
      * @param string $word Mot au singulier
+     *
      * @return string Mot au pluriel
      */
     public static function pluralize(string $word): string
@@ -747,33 +748,35 @@ class Inflector
         $irregular = static::getIrregular();
 
         if (! isset(static::$_cache['irregular'][$cacheKey])) {
-			static::$_cache['irregular'][$cacheKey] = '(?:' . implode('|', array_keys($irregular)) . ')';
+            static::$_cache['irregular'][$cacheKey] = '(?:' . implode('|', array_keys($irregular)) . ')';
         }
 
         // Vérifie les mots irréguliers
         if (preg_match('/(.*?(?:\\b|_))(' . static::$_cache['irregular'][$cacheKey] . ')$/i', $word, $regs)) {
             $result = $regs[1];
-			$value = $irregular[strtolower($regs[2])];
+            $value  = $irregular[strtolower($regs[2])];
 
-			if ($value[0] !== $regs[2][0]) { // cas de oeil => yeux
-				$result .= $value;
-			} else {
-				$result .= substr($regs[2], 0, 1) . substr($value, 1);
-			}
+            if ($value[0] !== $regs[2][0]) { // cas de oeil => yeux
+                $result .= $value;
+            } else {
+                $result .= substr($regs[2], 0, 1) . substr($value, 1);
+            }
 
             static::$_cache[$cacheKey][$word] = $result;
+
             return $result;
         }
 
         $uninflected = static::getUninflected();
 
-        if (!isset(static::$_cache['uninflected'][$cacheKey])) {
+        if (! isset(static::$_cache['uninflected'][$cacheKey])) {
             static::$_cache['uninflected'][$cacheKey] = '(?:' . implode('|', $uninflected) . ')';
         }
 
         // Vérifie les mots invariables
         if (preg_match('/^(' . static::$_cache['uninflected'][$cacheKey] . ')$/i', $word, $regs)) {
             static::$_cache[$cacheKey][$word] = $word;
+
             return $word;
         }
 
@@ -782,20 +785,23 @@ class Inflector
 
         foreach ($pluralRules as $rule => $replacement) {
             if (preg_match($rule, $word)) {
-                $result = preg_replace($rule, $replacement, $word);
+                $result                           = preg_replace($rule, $replacement, $word);
                 static::$_cache[$cacheKey][$word] = $result;
+
                 return $result;
             }
         }
 
         // Règle par défaut : ajout de 's'
         if (static::$_language === 'fr') {
-            $result = $word . 's';
+            $result                           = $word . 's';
             static::$_cache[$cacheKey][$word] = $result;
+
             return $result;
         }
 
         static::$_cache[$cacheKey][$word] = $word;
+
         return $word;
     }
 
@@ -803,6 +809,7 @@ class Inflector
      * Retourne $word au singulier.
      *
      * @param string $word Mot au pluriel
+     *
      * @return string Mot au singulier
      */
     public static function singularize(string $word): string
@@ -816,37 +823,39 @@ class Inflector
 
         $irregular = static::getIrregular();
 
-        if (!isset(static::$_cache['irregular_singular'][$cacheKey])) {
+        if (! isset(static::$_cache['irregular_singular'][$cacheKey])) {
             static::$_cache['irregular_singular'][$cacheKey] = '(?:' . implode('|', $irregular) . ')';
         }
 
         // Vérifie les mots irréguliers (inverse)
         if (preg_match('/(.*?(?:\\b|_))(' . static::$_cache['irregular_singular'][$cacheKey] . ')$/i', $word, $regs)) {
             $singular = array_search(strtolower($regs[2]), $irregular, true);
-			if ($singular !== false) {
-				$result = $regs[1];
-				$value = $singular;
+            if ($singular !== false) {
+                $result = $regs[1];
+                $value  = $singular;
 
-				if ($value[0] !== $regs[2][0]) { // cas de yeux => oeil
-					$result .= $value;
-				} else {
-					$result .= substr($regs[2], 0, 1) . substr($value, 1);
-				}
+                if ($value[0] !== $regs[2][0]) { // cas de yeux => oeil
+                    $result .= $value;
+                } else {
+                    $result .= substr($regs[2], 0, 1) . substr($value, 1);
+                }
 
                 static::$_cache[$cacheKey][$word] = $result;
+
                 return $result;
             }
         }
 
         $uninflected = static::getUninflected();
 
-        if (!isset(static::$_cache['uninflected'][$cacheKey])) {
+        if (! isset(static::$_cache['uninflected'][$cacheKey])) {
             static::$_cache['uninflected'][$cacheKey] = '(?:' . implode('|', $uninflected) . ')';
         }
 
         // Vérifie les mots invariables
         if (preg_match('/^(' . static::$_cache['uninflected'][$cacheKey] . ')$/i', $word, $regs)) {
             static::$_cache[$cacheKey][$word] = $word;
+
             return $word;
         }
 
@@ -855,8 +864,9 @@ class Inflector
 
         foreach ($singularRules as $rule => $replacement) {
             if (preg_match($rule, $word)) {
-                $result = preg_replace($rule, $replacement, $word);
+                $result                           = preg_replace($rule, $replacement, $word);
                 static::$_cache[$cacheKey][$word] = $result;
+
                 return $result;
             }
         }
@@ -864,15 +874,17 @@ class Inflector
         // Règle par défaut pour le français : retire le 's' final
         if (static::$_language === 'fr' && preg_match('/^(.*)s$/i', $word, $matches)) {
             // Vérifie que ce n'est pas un mot qui se termine par 's' au singulier
-            $exceptions = ['bras', 'as', 'tas', 'cas', 'gas', 'glas', 'hélas', 'fils', 'os', 'repas', 'sens', 'avis', 'bois', 'bonus', 'box', 'bus', 'chaos', 'chassis', 'choix', 'corps', 'cours', 'croix', 'discours', 'fax', 'fois', 'frais', 'gaz', 'index', 'las', 'lynx', 'mars', 'mois', 'nez', 'prix', 'proces', 'quiz', 'ras', 'revers', 'riz', 'virus', 'voix', /* etc. */];
-            if (!in_array(strtolower($word), $exceptions)) {
-                $result = $matches[1];
+            $exceptions = ['bras', 'as', 'tas', 'cas', 'gas', 'glas', 'hélas', 'fils', 'os', 'repas', 'sens', 'avis', 'bois', 'bonus', 'box', 'bus', 'chaos', 'chassis', 'choix', 'corps', 'cours', 'croix', 'discours', 'fax', 'fois', 'frais', 'gaz', 'index', 'las', 'lynx', 'mars', 'mois', 'nez', 'prix', 'proces', 'quiz', 'ras', 'revers', 'riz', 'virus', 'voix'/* etc. */];
+            if (! in_array(strtolower($word), $exceptions, true)) {
+                $result                           = $matches[1];
                 static::$_cache[$cacheKey][$word] = $result;
+
                 return $result;
             }
         }
 
         static::$_cache[$cacheKey][$word] = $word;
+
         return $word;
     }
 
@@ -881,20 +893,21 @@ class Inflector
      *
      * @param string $string    Chaîne à caméliser
      * @param string $delimiter Le délimiteur dans la chaîne d'entrée
-	 *
+     *
      * @return string Chaîne camélisée commeCeci.
      */
     public static function camelize(string $string, string $delimiter = '_'): string
     {
         $converted = str_replace($delimiter, '_', $string);
+
         return Text::camel($converted);
     }
 
-	/**
+    /**
      * Retourne la chaîne lower_case_delimited_string sous forme de PascalCasedString.
      *
-     * @param string $string    Chaîne à pascaliser
-	 *
+     * @param string $string Chaîne à pascaliser
+     *
      * @return string Chaîne pascalisée PommeCeci.
      */
     public static function pascalize(string $string): string
@@ -908,11 +921,12 @@ class Inflector
      * Remplace également les tirets par des underscores
      *
      * @param string $string CamelCasedString à "underscoriser"
+     *
      * @return string Version avec underscores de la chaîne d'entrée
      */
     public static function underscore(string $string): string
     {
-		return Text::snake($string, '_');
+        return Text::snake($string, '_');
     }
 
     /**
@@ -921,13 +935,14 @@ class Inflector
      * Remplace également les underscores par des tirets
      *
      * @param string $string La chaîne à transformer en tirets
+     *
      * @return string Version avec tirets de la chaîne d'entrée
      */
     public static function dasherize(string $string): string
     {
-		$snake = static::underscore($string);
+        $snake = static::underscore($string);
 
-		return str_replace('_', '-', $snake);
+        return str_replace('_', '-', $snake);
     }
 
     /**
@@ -936,6 +951,7 @@ class Inflector
      *
      * @param string $string    Chaîne à humaniser
      * @param string $delimiter Le caractère à remplacer par un espace
+     *
      * @return string Chaîne lisible par un humain
      */
     public static function humanize(string $string, string $delimiter = '_'): string
@@ -945,10 +961,10 @@ class Inflector
         $result = static::_cache($cacheKey, $string);
 
         if ($result === false) {
-			$converted  = str_replace($delimiter, '_', $string);
-			$snakeCase  = Text::snake($converted);
-			$withSpaces = str_replace('_', ' ', $snakeCase);
-			$result     = Text::title($withSpaces);
+            $converted  = str_replace($delimiter, '_', $string);
+            $snakeCase  = Text::snake($converted);
+            $withSpaces = str_replace('_', ' ', $snakeCase);
+            $result     = Text::title($withSpaces);
 
             static::_cache($cacheKey, $string, $result);
         }
@@ -961,6 +977,7 @@ class Inflector
      *
      * @param string $string    Chaîne à délimiter
      * @param string $delimiter Le caractère à utiliser comme délimiteur
+     *
      * @return string Chaîne délimitée
      */
     public static function delimit(string $string, string $delimiter = '_'): string
@@ -972,6 +989,7 @@ class Inflector
      * Retourne le nom de table correspondant pour le nom de classe $className donné. ("people" pour la classe de modèle "Person").
      *
      * @param string $className Nom de la classe pour obtenir le nom de table de base de données
+     *
      * @return string Nom de la table de base de données pour la classe donnée
      */
     public static function tableize(string $className): string
@@ -990,6 +1008,7 @@ class Inflector
      * Retourne le nom de la classe de modèle ("Person" pour la table de base de données "people".) pour une table de base de données donnée.
      *
      * @param string $tableName Nom de la table de base de données pour obtenir le nom de classe
+     *
      * @return string Nom de classe
      */
     public static function classify(string $tableName): string
@@ -1008,6 +1027,7 @@ class Inflector
      * Retourne la version camelBacked d'une chaîne avec underscores.
      *
      * @param string $string Chaîne à convertir.
+     *
      * @return string Sous forme de variable
      */
     public static function variable(string $string): string

@@ -57,8 +57,6 @@ class Jwt
      * Récupère l'instance singleton
      *
      * @param array $config Configuration JWT (si création de nouvelle instance)
-     *
-     * @return self
      */
     public static function instance(array $config = []): self
     {

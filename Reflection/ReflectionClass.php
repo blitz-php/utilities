@@ -12,10 +12,12 @@
 namespace BlitzPHP\Utilities\Reflection;
 
 use InvalidArgumentException;
+use ReflectionAttribute;
 use ReflectionClass as PhpReflectionClass;
 use ReflectionException;
 use ReflectionMethod;
 use ReflectionProperty;
+use ReflectionType;
 
 /**
  * Classe utilitaire de réflexion étendant la fonctionnalité native de PHP.
@@ -25,24 +27,25 @@ use ReflectionProperty;
  * supplémentaires utiles pour le testing et l'introspection.
  *
  * @template T of object
+ *
  * @extends PhpReflectionClass<T>
  *
- * @method string getName() Récupère le nom de la classe
- * @method bool isInstantiable() Vérifie si la classe est instanciable
- * @method ReflectionClass|null getParentClass() Récupère la classe parente
- * @method ReflectionMethod getMethod(string $name) Récupère une ReflectionMethod pour une méthode de la classe
- * @method ReflectionProperty[] getProperties(int|null $filter = null) Récupère les propriétés de la classe
- * @method array getConstants() Récupère les constantes de la classe
- * @method bool hasMethod(string $name) Vérifie si la classe possède une méthode
- * @method bool hasProperty(string $name) Vérifie si la classe possède une propriété
- * @method bool hasConstant(string $name) Vérifie si la classe possède une constante
- * @method bool isSubclassOf(string|object $class) Vérifie si la classe est une sous-classe
- * @method bool implementsInterface(string $interface) Vérifie si la classe implémente une interface
- * @method string getNamespaceName() Récupère le nom de l'espace de noms
- * @method string getShortName() Récupère le nom court de la classe (sans le namespace)
- * @method object newInstance(mixed ...$args) Crée une nouvelle instance de la classe
- * @method object newInstanceWithoutConstructor() Crée une nouvelle instance sans appeler le constructeur
- * @method object newInstanceArgs(array $args = []) Crée une nouvelle instance en utilisant un tableau d'arguments
+ * @method string                   getShortName() Récupère le nom court de la classe (sans le namespace)
+ * @method array                    getConstants()                                                          Récupère les constantes de la classe
+ * @method ReflectionMethod         getMethod(string $name)                                                 Récupère une ReflectionMethod pour une méthode de la classe
+ * @method string                   getName()                                                               Récupère le nom de la classe
+ * @method string                   getNamespaceName()                                                      Récupère le nom de l'espace de noms
+ * @method ReflectionClass|null     getParentClass()                                                        Récupère la classe parente
+ * @method list<ReflectionProperty> getProperties(int|null $filter = null)                                  Récupère les propriétés de la classe
+ * @method bool                     hasConstant(string $name)                                               Vérifie si la classe possède une constante
+ * @method bool                     hasMethod(string $name)                                                 Vérifie si la classe possède une méthode
+ * @method bool                     hasProperty(string $name)                                               Vérifie si la classe possède une propriété
+ * @method bool                     implementsInterface(string $interface)                                  Vérifie si la classe implémente une interface
+ * @method bool                     isInstantiable()                                                        Vérifie si la classe est instanciable
+ * @method bool                     isSubclassOf(object|string $class)                                      Vérifie si la classe est une sous-classe
+ * @method object                   newInstance(mixed ...$args)                                             Crée une nouvelle instance de la classe
+ * @method object                   newInstanceArgs(array $args = [])                                       Crée une nouvelle instance en utilisant un tableau d'arguments
+ * @method object                   newInstanceWithoutConstructor()                                         Crée une nouvelle instance sans appeler le constructeur
  */
 class ReflectionClass extends PhpReflectionClass
 {
@@ -75,7 +78,7 @@ class ReflectionClass extends PhpReflectionClass
      *
      * Cette méthode permet une création plus expressive et fluide.
      *
-     * @param object|class-string<T> $objectOrClass L'objet ou le nom de la classe à analyser.
+     * @param class-string<T>|object $objectOrClass L'objet ou le nom de la classe à analyser.
      *
      * @return static Une nouvelle instance de ReflectionClass.
      *
@@ -115,7 +118,7 @@ class ReflectionClass extends PhpReflectionClass
         if ($constructor === null || $constructor->isPublic()) {
             try {
                 return parent::newInstance(...$args);
-            } catch (\ReflectionException) {
+            } catch (ReflectionException) {
                 // Fallback pour certains cas
             }
         }
@@ -147,7 +150,7 @@ class ReflectionClass extends PhpReflectionClass
         // Fallback pour PHP < 8.0
         $className = $this->getName();
 
-        return (function() use ($className) {
+        return (static function () use ($className) {
             $object = unserialize(
                 sprintf('O:%d:"%s":0:{}', strlen($className), $className)
             );
@@ -178,6 +181,7 @@ class ReflectionClass extends PhpReflectionClass
     {
         try {
             $this->getMethod($name);
+
             return true;
         } catch (ReflectionException) {
             return false;
@@ -196,6 +200,7 @@ class ReflectionClass extends PhpReflectionClass
     {
         try {
             $this->getProperty($name);
+
             return true;
         } catch (ReflectionException) {
             return false;
@@ -204,8 +209,8 @@ class ReflectionClass extends PhpReflectionClass
 
     /**
      * Vérifie si la classe ou l'objet possède une propriété avec une valeur spécifique.
-	 *
-     * @param bool   $strict   Utiliser la comparaison stricte (===)
+     *
+     * @param bool $strict Utiliser la comparaison stricte (===)
      *
      * @return bool True si la propriété existe et a la valeur spécifiée
      *
@@ -218,7 +223,8 @@ class ReflectionClass extends PhpReflectionClass
     {
         try {
             $propertyValue = $this->getValue($property);
-            return $strict ? $propertyValue === $value : $propertyValue == $value;
+
+            return $strict ? $propertyValue === $value : $propertyValue === $value;
         } catch (ReflectionException) {
             return false;
         }
@@ -242,7 +248,7 @@ class ReflectionClass extends PhpReflectionClass
             ? spl_object_hash($this->objectOrClass) . '::' . $method
             : $this->objectOrClass . '::' . $method;
 
-        if (!isset($this->methodCache[$key])) {
+        if (! isset($this->methodCache[$key])) {
             $refMethod = new ReflectionMethod($this->objectOrClass, $method);
             $refMethod->setAccessible(true);
             $this->methodCache[$key] = $refMethod;
@@ -265,6 +271,7 @@ class ReflectionClass extends PhpReflectionClass
     public function invoke(string $method, mixed ...$args): mixed
     {
         $object = (gettype($this->objectOrClass) === 'object') ? $this->objectOrClass : null;
+
         return $this->getMethod($method)->invokeArgs($object, $args);
     }
 
@@ -275,11 +282,11 @@ class ReflectionClass extends PhpReflectionClass
      * un opérateur AND bitwise pour les filtres (par défaut), contrairement
      * au comportement OR bitwise natif de PHP.
      *
-     * @param int|null $filter          Flags de filtrage (ex. ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_STATIC)
-     * @param bool     $useAndOperator  Si true, utilise un AND bitwise strict pour le filtrage (par défaut)
-     *                                  Si false, utilise le comportement natif OR bitwise de PHP
+     * @param int|null $filter         Flags de filtrage (ex. ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_STATIC)
+     * @param bool     $useAndOperator Si true, utilise un AND bitwise strict pour le filtrage (par défaut)
+     *                                 Si false, utilise le comportement natif OR bitwise de PHP
      *
-     * @return ReflectionMethod[] Tableau d'objets ReflectionMethod
+     * @return list<ReflectionMethod> Tableau d'objets ReflectionMethod
      *
      * @example
      * // Récupère uniquement les méthodes publiques ET statiques
@@ -352,7 +359,7 @@ class ReflectionClass extends PhpReflectionClass
         $types      = [];
 
         foreach ($parameters as $parameter) {
-            $type = $parameter->getType();
+            $type                         = $parameter->getType();
             $types[$parameter->getName()] = $type ? $type->getName() : 'mixed';
         }
 
@@ -377,7 +384,7 @@ class ReflectionClass extends PhpReflectionClass
             ? spl_object_hash($this->objectOrClass) . '::$' . $name
             : $this->objectOrClass . '::$' . $name;
 
-        if (!isset($this->propertyCache[$key])) {
+        if (! isset($this->propertyCache[$key])) {
             // Cherche d'abord dans la classe courante
             try {
                 $property = new ReflectionProperty($this->getName(), $name);
@@ -398,10 +405,10 @@ class ReflectionClass extends PhpReflectionClass
      *
      * Ajoute le paramètre $useAndOperator pour un filtrage AND strict sur les modifiers.
      *
-     * @param int|null $filter          Flags de filtrage (ex. ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_STATIC)
-     * @param bool     $useAndOperator  Si true, utilise un filtrage AND strict (par défaut)
+     * @param int|null $filter         Flags de filtrage (ex. ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_STATIC)
+     * @param bool     $useAndOperator Si true, utilise un filtrage AND strict (par défaut)
      *
-     * @return ReflectionProperty[] Tableau de ReflectionProperty
+     * @return list<ReflectionProperty> Tableau de ReflectionProperty
      *
      * @example
      * // Récupère uniquement les propriétés privées ET statiques
@@ -451,8 +458,8 @@ class ReflectionClass extends PhpReflectionClass
      * Pour une classe (string), retourne les valeurs par défaut des propriétés statiques.
      * Pour une instance, retourne les valeurs actuelles.
      *
-     * @param int|null $filter          Flags de filtrage (ex. ReflectionProperty::IS_PRIVATE)
-     * @param bool     $useAndOperator  Si true, utilise un filtrage AND strict
+     * @param int|null $filter         Flags de filtrage (ex. ReflectionProperty::IS_PRIVATE)
+     * @param bool     $useAndOperator Si true, utilise un filtrage AND strict
      *
      * @return array<string, mixed> Tableau associatif [nom propriété => valeur]
      *
@@ -540,7 +547,7 @@ class ReflectionClass extends PhpReflectionClass
      * $type = $reflection->getPropertyType('name');
      * // Retourne un ReflectionType pour 'string'
      */
-    public function getPropertyType(string $property): ?\ReflectionType
+    public function getPropertyType(string $property): ?ReflectionType
     {
         return $this->getProperty($property)->getType();
     }
@@ -592,6 +599,7 @@ class ReflectionClass extends PhpReflectionClass
         }
 
         $refProperty = $this->getProperty($property);
+
         return $refProperty->isPublic() || $refProperty->isProtected();
     }
 
@@ -605,7 +613,7 @@ class ReflectionClass extends PhpReflectionClass
      * @param string $member Nom de la propriété ou méthode
      * @param string $type   Type: 'property' ou 'method'
      *
-     * @return array<string, string|array> Annotations parsées
+     * @return array<string, array|string> Annotations parsées
      *
      * @throws InvalidArgumentException Si le type n'est pas valide
      *
@@ -615,7 +623,7 @@ class ReflectionClass extends PhpReflectionClass
      */
     public function getAnnotations(string $member, string $type = 'property'): array
     {
-        $reflection = match($type) {
+        $reflection = match ($type) {
             'property' => $this->getProperty($member),
             'method'   => $this->getMethod($member),
             default    => throw new InvalidArgumentException('Type doit être "property" ou "method"')
@@ -629,7 +637,7 @@ class ReflectionClass extends PhpReflectionClass
      *
      * @param string $property Nom de la propriété
      *
-     * @return array<string, string|array> Annotations parsées
+     * @return array<string, array|string> Annotations parsées
      *
      * @example
      * $annotations = $reflection->getPropertyAnnotations('email');
@@ -644,7 +652,7 @@ class ReflectionClass extends PhpReflectionClass
      *
      * @param string $method Nom de la méthode
      *
-     * @return array<string, string|array> Annotations parsées
+     * @return array<string, array|string> Annotations parsées
      *
      * @example
      * $annotations = $reflection->getMethodAnnotations('calculate');
@@ -657,38 +665,38 @@ class ReflectionClass extends PhpReflectionClass
     /**
      * Parse un docblock pour en extraire les annotations.
      *
-     * @param string|false $docComment Le docblock à parser
+     * @param false|string $docComment Le docblock à parser
      *
-     * @return array<string, string|array> Annotations parsées
+     * @return array<string, array|string> Annotations parsées
      *
      * @internal Méthode interne utilisée pour parser les docblocks
      */
-    private function parseDocComment(string|false $docComment): array
-	{
-		if (!$docComment) {
-			return [];
-		}
+    private function parseDocComment(false|string $docComment): array
+    {
+        if (! $docComment) {
+            return [];
+        }
 
-		// Supprime les balises de commentaire
-		$content = trim($docComment);
-		$content = preg_replace(['/^\/\*\*\s*/', '/\s*\*\/$/'], '', $content);
+        // Supprime les balises de commentaire
+        $content = trim($docComment);
+        $content = preg_replace(['/^\/\*\*\s*/', '/\s*\*\/$/'], '', $content);
 
-		// Divise en lignes et nettoie
-		$lines = explode("\n", $content);
-		$cleanedLines = [];
+        // Divise en lignes et nettoie
+        $lines        = explode("\n", $content);
+        $cleanedLines = [];
 
-		foreach ($lines as $line) {
-			$line = trim(preg_replace('/^\s*\*\s*/', '', $line));
-			if ($line !== '') {
-				$cleanedLines[] = $line;
-			}
-		}
+        foreach ($lines as $line) {
+            $line = trim(preg_replace('/^\s*\*\s*/', '', $line));
+            if ($line !== '') {
+                $cleanedLines[] = $line;
+            }
+        }
 
-		// Rejoindre et analyser
-		$content = implode("\n", $cleanedLines);
+        // Rejoindre et analyser
+        $content = implode("\n", $cleanedLines);
 
-		// Pattern principal
-		$pattern = '/
+        // Pattern principal
+        $pattern = '/
 			@([a-zA-Z_\\\\][a-zA-Z0-9_\\\\]*)   # Nom de lannotation
 			(?:
 				\s*\(([^)]*)\)                  # Contenu entre parenthèses
@@ -703,159 +711,156 @@ class ReflectionClass extends PhpReflectionClass
 			(?=\s*@|$)
 		/sx';
 
-		preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
+        preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
 
-		$annotations = [];
+        $annotations = [];
 
-		foreach ($matches as $match) {
-			$name = $match[1];
-			$parenValue = isset($match[2]) ? trim($match[2]) : '';
-			$value = trim($match[3]);
+        foreach ($matches as $match) {
+            $name       = $match[1];
+            $parenValue = isset($match[2]) ? trim($match[2]) : '';
+            $value      = trim($match[3]);
 
-			if (!isset($annotations[$name])) {
-				$annotations[$name] = [];
-			}
+            if (! isset($annotations[$name])) {
+                $annotations[$name] = [];
+            }
 
-			// Traitement spécial pour @var et @return - ne prendre que le type
-			if ($name === 'var' || $name === 'return') {
-				// Extrait le type (premier mot)
-				$parts = preg_split('/\s+/', $value, 2);
-				$type = $parts[0] ?? '';
-				$rest = $parts[1] ?? '';
+            // Traitement spécial pour @var et @return - ne prendre que le type
+            if ($name === 'var' || $name === 'return') {
+                // Extrait le type (premier mot)
+                $parts = preg_split('/\s+/', $value, 2);
+                $type  = $parts[0] ?? '';
+                $rest  = $parts[1] ?? '';
 
-				$annotations[$name][] = $type;
+                $annotations[$name][] = $type;
 
-				// Si il y a une description après le type
-				if (!empty($rest)) {
-					// Stocke la description séparément
-					if (!isset($annotations[$name . '_desc'])) {
-						$annotations[$name . '_desc'] = [];
-					}
-					$annotations[$name . '_desc'][] = trim($rest);
-				}
+                // Si il y a une description après le type
+                if (! empty($rest)) {
+                    // Stocke la description séparément
+                    if (! isset($annotations[$name . '_desc'])) {
+                        $annotations[$name . '_desc'] = [];
+                    }
+                    $annotations[$name . '_desc'][] = trim($rest);
+                }
 
-				// Extrait les annotations inline du reste
-				$inlineAnnotations = $this->parseInlineAnnotations($rest);
-				foreach ($inlineAnnotations as $inlineName => $inlineValue) {
-					if (!isset($annotations[$inlineName])) {
-						$annotations[$inlineName] = [];
-					}
-					$annotations[$inlineName][] = $inlineValue;
-				}
-			}
-			// Traitement spécial pour @param - format: type $nom description
-			elseif ($name === 'param') {
-				// Pattern: type $variable description
-				if (preg_match('/^([^\s]+)\s+(\$\w+)(?:\s+(.*))?$/s', $value, $paramMatches)) {
-					$paramType = $paramMatches[1];
-					$paramName = $paramMatches[2];
-					$paramDesc = $paramMatches[3] ?? '';
+                // Extrait les annotations inline du reste
+                $inlineAnnotations = $this->parseInlineAnnotations($rest);
 
-					$annotations[$name][] = [
-						'type' => $paramType,
-						'name' => $paramName,
-						'description' => trim($paramDesc)
-					];
-				} else {
-					$annotations[$name][] = $value;
-				}
-			}
-			// Annotation avec parenthèses
-			elseif (!empty($parenValue)) {
-				$annotations[$name][] = $parenValue;
-			}
-			// Annotation normale
-			else {
-				$annotations[$name][] = $value;
-			}
-		}
+                foreach ($inlineAnnotations as $inlineName => $inlineValue) {
+                    if (! isset($annotations[$inlineName])) {
+                        $annotations[$inlineName] = [];
+                    }
+                    $annotations[$inlineName][] = $inlineValue;
+                }
+            }
+            // Traitement spécial pour @param - format: type $nom description
+            elseif ($name === 'param') {
+                // Pattern: type $variable description
+                if (preg_match('/^([^\s]+)\s+(\$\w+)(?:\s+(.*))?$/s', $value, $paramMatches)) {
+                    $paramType = $paramMatches[1];
+                    $paramName = $paramMatches[2];
+                    $paramDesc = $paramMatches[3] ?? '';
 
-		// Simplifie les annotations uniques
-		foreach ($annotations as $name => &$values) {
-			$values = array_map(function($value) {
-				return is_array($value) ? array_map('trim', $value) : trim($value);
-			}, $values);
-			$values = array_filter($values, fn($v) => $v !== '');
+                    $annotations[$name][] = [
+                        'type'        => $paramType,
+                        'name'        => $paramName,
+                        'description' => trim($paramDesc),
+                    ];
+                } else {
+                    $annotations[$name][] = $value;
+                }
+            }
+            // Annotation avec parenthèses
+            elseif (! empty($parenValue)) {
+                $annotations[$name][] = $parenValue;
+            }
+            // Annotation normale
+            else {
+                $annotations[$name][] = $value;
+            }
+        }
 
-			if (count($values) === 1 && $name !== 'param') {
-				$values = reset($values);
-			}
-		}
+        // Simplifie les annotations uniques
+        foreach ($annotations as $name => &$values) {
+            $values = array_map(static fn ($value) => is_array($value) ? array_map('trim', $value) : trim($value), $values);
+            $values = array_filter($values, static fn ($v) => $v !== '');
 
-		return $annotations;
-	}
+            if (count($values) === 1 && $name !== 'param') {
+                $values = reset($values);
+            }
+        }
 
-	/**
-	 * Extrait les annotations inline d'une chaîne de texte.
-	 *
-	 * Cette méthode analyse une chaîne de texte pour trouver et extraire
-	 * les annotations PHP qui sont présentes dans le texte. Elle supporte
-	 * deux formats d'annotations :
-	 * 1. Annotations simples : `@required`, `@deprecated`
-	 * 2. Annotations avec valeurs : `@min(18)`, `@max(100)`, `@length(min=2, max=50)`
-	 *
-	 * @param string $text Texte à analyser pour les annotations inline.
-	 *                     Peut contenir du texte libre avec des annotations
-	 *                     mélangées.
-	 *
-	 * @return array<string, string> Tableau associatif des annotations extraites.
-	 *                               Clé : nom de l'annotation (sans le @)
-	 *                               Valeur : contenu entre parenthèses ou chaîne vide
-	 *                                        pour les annotations sans valeur.
-	 *
-	 * @example
-	 * // Texte d'entrée
-	 * $text = "Le nom doit être @required et avoir entre @min(2) et @max(50) caractères";
-	 *
-	 * // Résultat
-	 * [
-	 *     'required' => '',      // Annotation sans valeur
-	 *     'min' => '2',          // Annotation avec valeur simple
-	 *     'max' => '50',         // Annotation avec valeur simple
-	 * ]
-	 *
-	 * @example
-	 * // Annotations avec valeurs complexes
-	 * $text = "Email @email @length(min=5, max=255)";
-	 * // Retourne:
-	 * [
-	 *     'email' => '',
-	 *     'length' => 'min=5, max=255'
-	 * ]
-	 *
-	 * @example
-	 * // Annotations multiples du même type
-	 * $text = "@deprecated depuis la version 2.0 @see NouvelleMethode";
-	 * // Retourne:
-	 * [
-	 *     'deprecated' => 'depuis la version 2.0',
-	 *     'see' => 'NouvelleMethode'
-	 * ]
-	 *
-	 * @note Cette méthode ne supporte PAS les annotations sur plusieurs lignes.
-	 *       Pour le parsing complet de docblocks multi-lignes, utilisez
-	 *       parseDocComment().
-	 *
-	 * @see parseDocComment() Pour le parsing complet des docblocks PHP
-	 * @since 1.0.0
-	 * @internal Méthode auxiliaire utilisée uniquement par parseDocComment()
-	 */
-	private function parseInlineAnnotations(string $text): array
-	{
-		$annotations = [];
+        return $annotations;
+    }
 
-		// Cherche @nom ou @nom(valeur)
-		preg_match_all('/@([a-zA-Z_][a-zA-Z0-9_]*)(?:\(([^)]*)\))?/', $text, $matches, PREG_SET_ORDER);
+    /**
+     * Extrait les annotations inline d'une chaîne de texte.
+     *
+     * Cette méthode analyse une chaîne de texte pour trouver et extraire
+     * les annotations PHP qui sont présentes dans le texte. Elle supporte
+     * deux formats d'annotations :
+     * 1. Annotations simples : `@required`, `@deprecated`
+     * 2. Annotations avec valeurs : `@min(18)`, `@max(100)`, `@length(min=2, max=50)`
+     *
+     * @param string $text Texte à analyser pour les annotations inline.
+     *                     Peut contenir du texte libre avec des annotations
+     *                     mélangées.
+     *
+     * @return array<string, string> Tableau associatif des annotations extraites.
+     *                               Clé : nom de l'annotation (sans le @)
+     *                               Valeur : contenu entre parenthèses ou chaîne vide
+     *                               pour les annotations sans valeur.
+     *
+     * @example
+     * // Texte d'entrée
+     * $text = "Le nom doit être @required et avoir entre @min(2) et @max(50) caractères";
+     *
+     * // Résultat
+     * [
+     *     'required' => '',      // Annotation sans valeur
+     *     'min' => '2',          // Annotation avec valeur simple
+     *     'max' => '50',         // Annotation avec valeur simple
+     * ]
+     * @example
+     * // Annotations avec valeurs complexes
+     * $text = "Email @email @length(min=5, max=255)";
+     * // Retourne:
+     * [
+     *     'email' => '',
+     *     'length' => 'min=5, max=255'
+     * ]
+     * @example
+     * // Annotations multiples du même type
+     * $text = "@deprecated depuis la version 2.0 @see NouvelleMethode";
+     * // Retourne:
+     * [
+     *     'deprecated' => 'depuis la version 2.0',
+     *     'see' => 'NouvelleMethode'
+     * ]
+     *
+     * @note Cette méthode ne supporte PAS les annotations sur plusieurs lignes.
+     *       Pour le parsing complet de docblocks multi-lignes, utilisez
+     *       parseDocComment().
+     *
+     * @see parseDocComment() Pour le parsing complet des docblocks PHP
+     * @since 1.0.0
+     * @internal Méthode auxiliaire utilisée uniquement par parseDocComment()
+     */
+    private function parseInlineAnnotations(string $text): array
+    {
+        $annotations = [];
 
-		foreach ($matches as $match) {
-			$name = $match[1];
-			$value = $match[2] ?? '';
+        // Cherche @nom ou @nom(valeur)
+        preg_match_all('/@([a-zA-Z_][a-zA-Z0-9_]*)(?:\(([^)]*)\))?/', $text, $matches, PREG_SET_ORDER);
 
-			$annotations[$name] = $value;
-		}
+        foreach ($matches as $match) {
+            $name  = $match[1];
+            $value = $match[2] ?? '';
 
-		return $annotations;
-	}
+            $annotations[$name] = $value;
+        }
+
+        return $annotations;
+    }
 
     // =========================================================================
     // SECTION: ATTRIBUTS PHP 8+
@@ -869,7 +874,7 @@ class ReflectionClass extends PhpReflectionClass
      * @param string|null $attributeName Nom spécifique d'attribut à filtrer
      * @param int         $flags         Flags de filtrage
      *
-     * @return array<\ReflectionAttribute> Tableau d'attributs
+     * @return list<ReflectionAttribute> Tableau d'attributs
      *
      * @throws InvalidArgumentException Si le type n'est pas valide
      *
@@ -877,17 +882,17 @@ class ReflectionClass extends PhpReflectionClass
      * $attributes = $reflection->getAttributesFor('name', 'property');
      */
     public function getAttributesFor(
-        string $member = null,
+        ?string $member = null,
         string $type = 'class',
         ?string $attributeName = null,
         int $flags = 0
     ): array {
-        $reflection = match($type) {
-			'class'     => $this,
-			'property'  => $this->getProperty($member),
-			'method'    => $this->getMethod($member),
-			'constant'  => $this->getReflectionConstant($member),
-			default     => throw new InvalidArgumentException('Type doit être "class", "property", "method", ou "constant"')
+        $reflection = match ($type) {
+            'class'    => $this,
+            'property' => $this->getProperty($member),
+            'method'   => $this->getMethod($member),
+            'constant' => $this->getReflectionConstant($member),
+            default    => throw new InvalidArgumentException('Type doit être "class", "property", "method", ou "constant"')
         };
 
         if ($attributeName !== null) {
@@ -903,7 +908,7 @@ class ReflectionClass extends PhpReflectionClass
      * @param string|null $attribute Nom spécifique d'attribut à filtrer
      * @param int         $flags     Flags de filtrage
      *
-     * @return array<\ReflectionAttribute> Tableau d'attributs de classe
+     * @return list<ReflectionAttribute> Tableau d'attributs de classe
      *
      * @example
      * $classAttributes = $reflection->getClassAttributes();
@@ -916,11 +921,11 @@ class ReflectionClass extends PhpReflectionClass
     /**
      * Récupère les attributs d'une propriété.
      *
-     * @param string      $property   Nom de la propriété
-     * @param string|null $attribute  Nom spécifique d'attribut à filtrer
-     * @param int         $flags      Flags de filtrage
+     * @param string      $property  Nom de la propriété
+     * @param string|null $attribute Nom spécifique d'attribut à filtrer
+     * @param int         $flags     Flags de filtrage
      *
-     * @return array<\ReflectionAttribute> Tableau d'attributs de propriété
+     * @return list<ReflectionAttribute> Tableau d'attributs de propriété
      *
      * @example
      * $propAttributes = $reflection->getPropertyAttributes('name', Validation::class);
@@ -933,11 +938,11 @@ class ReflectionClass extends PhpReflectionClass
     /**
      * Récupère les attributs d'une méthode.
      *
-     * @param string      $method     Nom de la méthode
-     * @param string|null $attribute  Nom spécifique d'attribut à filtrer
-     * @param int         $flags      Flags de filtrage
+     * @param string      $method    Nom de la méthode
+     * @param string|null $attribute Nom spécifique d'attribut à filtrer
+     * @param int         $flags     Flags de filtrage
      *
-     * @return array<\ReflectionAttribute> Tableau d'attributs de méthode
+     * @return list<ReflectionAttribute> Tableau d'attributs de méthode
      *
      * @example
      * $methodAttributes = $reflection->getMethodAttributes('process', Route::class);
@@ -963,7 +968,8 @@ class ReflectionClass extends PhpReflectionClass
     public function getUsedTraits(): array
     {
         $traits = parent::getTraits();
-        return array_map(fn($trait) => $trait->getName(), $traits);
+
+        return array_map(static fn ($trait) => $trait->getName(), $traits);
     }
 
     /**
@@ -978,7 +984,8 @@ class ReflectionClass extends PhpReflectionClass
     public function getInterfaceNames(): array
     {
         $interfaces = parent::getInterfaces();
-        return array_map(fn($interface) => $interface->getName(), $interfaces);
+
+        return array_map(static fn ($interface) => $interface->getName(), $interfaces);
     }
 
     /**
@@ -993,6 +1000,7 @@ class ReflectionClass extends PhpReflectionClass
     public function getParentClassName(): ?string
     {
         $parent = $this->getParentClass();
+
         return $parent ? $parent->getName() : null;
     }
 
@@ -1012,9 +1020,9 @@ class ReflectionClass extends PhpReflectionClass
     public function isSingleton(): bool
     {
         foreach (['getInstance', 'instance'] as $method) {
-            if ($this->hasMethod($method) &&
-                $this->getMethod($method)->isStatic() &&
-                $this->getMethod($method)->isPublic()) {
+            if ($this->hasMethod($method)
+                && $this->getMethod($method)->isStatic()
+                && $this->getMethod($method)->isPublic()) {
                 return true;
             }
         }
@@ -1041,8 +1049,8 @@ class ReflectionClass extends PhpReflectionClass
      */
     public static function cloneWithPrivateProperties(object $object): object
     {
-        $reflection = new self($object);
-        $clone = clone $object;
+        $reflection      = new self($object);
+        $clone           = clone $object;
         $cloneReflection = new self($clone);
 
         $properties = $reflection->getProperties(ReflectionProperty::IS_PRIVATE | ReflectionProperty::IS_PROTECTED);
@@ -1062,8 +1070,6 @@ class ReflectionClass extends PhpReflectionClass
      * Cette méthode est particulièrement utile pour les tests unitaires
      * où il faut réinitialiser l'état statique entre les tests.
      *
-     * @return void
-     *
      * @example
      * $reflection->resetStaticProperties();
      * // Toutes les propriétés statiques sont remises à leurs valeurs par défaut
@@ -1071,9 +1077,10 @@ class ReflectionClass extends PhpReflectionClass
     public function resetStaticProperties(): void
     {
         $properties = $this->getProperties(ReflectionProperty::IS_STATIC);
+
         foreach ($properties as $property) {
-			$value = $property->hasDefaultValue() ? $property->getDefaultValue() : null;
-			$property->setValue(null, $value);
+            $value = $property->hasDefaultValue() ? $property->getDefaultValue() : null;
+            $property->setValue(null, $value);
         }
     }
 }

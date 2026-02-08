@@ -35,6 +35,7 @@ use Traversable;
  * permettant de travailler avec de grands ensembles de données sans les charger entièrement en mémoire.
  *
  * @template TKey of array-key
+ *
  * @template-covariant TValue
  *
  * @implements \BlitzPHP\Contracts\Support\Enumerable<TKey, TValue>
@@ -45,6 +46,7 @@ class LazyCollection implements CanBeEscapedWhenCastToString, Enumerable
 {
     /**
      * Utilise le trait EnumeratesValues
+     *
      * @use \BlitzPHP\Traits\EnumeratesValues<TKey, TValue>
      */
     use EnumeratesValues;
@@ -571,7 +573,7 @@ class LazyCollection implements CanBeEscapedWhenCastToString, Enumerable
      * Intersecte la collection avec les éléments donnés, en utilisant un callback.
      *
      * @param Arrayable<array-key, TValue>|iterable<array-key, TValue> $items
-     * @param callable(TValue, TValue): int $callback
+     * @param callable(TValue, TValue): int                            $callback
      */
     public function intersectUsing($items, callable $callback): static
     {
@@ -592,7 +594,7 @@ class LazyCollection implements CanBeEscapedWhenCastToString, Enumerable
      * Intersecte la collection avec les éléments donnés avec une vérification d'index supplémentaire, en utilisant un callback.
      *
      * @param Arrayable<array-key, TValue>|iterable<array-key, TValue> $items
-     * @param callable(TValue, TValue): int $callback
+     * @param callable(TValue, TValue): int                            $callback
      */
     public function intersectAssocUsing($items, callable $callback): static
     {
@@ -941,7 +943,7 @@ class LazyCollection implements CanBeEscapedWhenCastToString, Enumerable
         /** @var (callable(TValue,TKey): bool) $predicate */
         $predicate = $this->useAsCallable($value)
             ? $value
-            : static fn ($item) => $strict ? $item === $value : $item == $value;
+            : static fn ($item) => $strict ? $item === $value : $item === $value;
 
         foreach ($this as $key => $item) {
             if ($predicate($item, $key)) {
@@ -966,7 +968,7 @@ class LazyCollection implements CanBeEscapedWhenCastToString, Enumerable
         /** @var (callable(TValue,TKey): bool) $predicate */
         $predicate = $this->useAsCallable($value)
             ? $value
-            : static fn ($item) => $strict ? $item === $value : $item == $value;
+            : static fn ($item) => $strict ? $item === $value : $item === $value;
 
         foreach ($this as $key => $item) {
             if ($predicate($item, $key)) {
@@ -993,7 +995,7 @@ class LazyCollection implements CanBeEscapedWhenCastToString, Enumerable
         /** @var (callable(TValue,TKey): bool) $predicate */
         $predicate = $this->useAsCallable($value)
             ? $value
-            : static fn ($item) => $strict ? $item === $value : $item == $value;
+            : static fn ($item) => $strict ? $item === $value : $item === $value;
 
         foreach ($this as $key => $item) {
             if ($found) {
@@ -1525,6 +1527,7 @@ class LazyCollection implements CanBeEscapedWhenCastToString, Enumerable
      * Obtient le nombre total de secondes à partir de l'intervalle donné.
      *
      * @param DateInterval $interval L'intervalle
+     *
      * @return int Le nombre de secondes
      */
     protected function intervalSeconds(DateInterval $interval): int
@@ -1650,8 +1653,7 @@ class LazyCollection implements CanBeEscapedWhenCastToString, Enumerable
      * Passe cette collection paresseuse à travers une méthode sur la classe de collection.
      *
      * @param string $method La méthode à appeler
-     * @param array $params Les paramètres à passer
-     * @return static
+     * @param array  $params Les paramètres à passer
      */
     protected function passthru(string $method, array $params): static
     {
@@ -1684,7 +1686,6 @@ class LazyCollection implements CanBeEscapedWhenCastToString, Enumerable
      * Met en pause l'exécution pour un nombre donné de microsecondes.
      *
      * @param int $microseconds Le nombre de microsecondes à attendre
-     * @return void
      */
     protected function usleep(int $microseconds): void
     {

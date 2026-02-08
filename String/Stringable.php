@@ -22,6 +22,7 @@ use Closure;
 use Countable;
 use Exception;
 use JsonSerializable;
+use Normalizer;
 use RuntimeException;
 use Stringable as NativeStringable;
 
@@ -35,7 +36,9 @@ use Stringable as NativeStringable;
  */
 class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
 {
-	use Conditionable, Macroable, Tappable;
+    use Conditionable;
+    use Macroable;
+    use Tappable;
 
     /**
      * La valeur de chaîne sous-jacente.
@@ -136,7 +139,7 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Récupère la partie d'une chaîne entre deux valeurs données.
      *
      * @param string $from Début de la sélection
-     * @param string $to Fin de la sélection
+     * @param string $to   Fin de la sélection
      */
     public function between(string $from, string $to): static
     {
@@ -147,7 +150,7 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Récupère la plus petite partie possible d'une chaîne entre deux valeurs données.
      *
      * @param string $from Début de la sélection
-     * @param string $to Fin de la sélection
+     * @param string $to   Fin de la sélection
      */
     public function betweenFirst(string $from, string $to): static
     {
@@ -203,8 +206,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Détermine si la chaîne contient une sous-chaîne donnée.
      *
-     * @param iterable<string>|string $needles Sous-chaîne(s) à rechercher
-     * @param bool $ignoreCase Ignorer la casse (par défaut: false)
+     * @param iterable<string>|string $needles    Sous-chaîne(s) à rechercher
+     * @param bool                    $ignoreCase Ignorer la casse (par défaut: false)
      */
     public function contains(iterable|string $needles, bool $ignoreCase = false): bool
     {
@@ -214,8 +217,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Détermine si la chaîne contient toutes les valeurs d'un tableau.
      *
-     * @param iterable<string> $needles Sous-chaînes à rechercher
-     * @param bool $ignoreCase Ignorer la casse (par défaut: false)
+     * @param iterable<string> $needles    Sous-chaînes à rechercher
+     * @param bool             $ignoreCase Ignorer la casse (par défaut: false)
      */
     public function containsAll(iterable $needles, bool $ignoreCase = false): bool
     {
@@ -225,7 +228,7 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Convertit la casse d'une chaîne.
      *
-     * @param int $mode Mode de conversion (par défaut: MB_CASE_FOLD)
+     * @param int         $mode     Mode de conversion (par défaut: MB_CASE_FOLD)
      * @param string|null $encoding Encodage (par défaut: 'UTF-8')
      */
     public function convertCase(int $mode = MB_CASE_FOLD, ?string $encoding = 'UTF-8'): static
@@ -253,11 +256,11 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
         return new static(dirname($this->value, $levels));
     }
 
-	/**
+    /**
      * Détermine si la chaîne ne contient pas une sous-chaîne donnée.
      *
-     * @param iterable<string>|string $needles Sous-chaîne(s) à rechercher
-     * @param bool $ignoreCase Ignorer la casse (par défaut: false)
+     * @param iterable<string>|string $needles    Sous-chaîne(s) à rechercher
+     * @param bool                    $ignoreCase Ignorer la casse (par défaut: false)
      */
     public function doesntContain($needles, $ignoreCase = false)
     {
@@ -268,6 +271,7 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Détermine si la chaîne ne se termine pas par une sous-chaîne donnée.
      *
      * @param iterable<string>|string $needles Sous-chaîne(s) à rechercher
+     *
      * @return bool true si la chaîne ne se termine pas par l'une des sous-chaînes
      */
     public function doesntEndWith($needles): bool
@@ -279,6 +283,7 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Détermine si la chaîne se termine par une sous-chaîne donnée.
      *
      * @param iterable<string>|string $needles Sous-chaîne(s) à rechercher
+     *
      * @return bool true si la chaîne se termine par l'une des sous-chaînes
      */
     public function endsWith(iterable|string $needles): bool
@@ -290,6 +295,7 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Détermine si la chaîne correspond exactement à la valeur donnée.
      *
      * @param string|Stringable $value Valeur à comparer
+     *
      * @return bool true si les chaînes sont identiques
      */
     public function exactly(string|Stringable $value): bool
@@ -304,8 +310,9 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Extrait un extrait de texte qui correspond à la première instance d'une phrase.
      *
-     * @param string $phrase Phrase à rechercher (vide pour tronquer)
+     * @param string               $phrase  Phrase à rechercher (vide pour tronquer)
      * @param array<string, mixed> $options Options d'extrait
+     *
      * @return string|null L'extrait ou null si non trouvé
      */
     public function excerpt(string $phrase = '', array $options = []): ?string
@@ -317,7 +324,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Explode la chaîne en tableau.
      *
      * @param string $delimiter Délimateur
-     * @param int $limit Limite d'éléments (par défaut: PHP_INT_MAX)
+     * @param int    $limit     Limite d'éléments (par défaut: PHP_INT_MAX)
+     *
      * @return Collection Collection des éléments
      */
     public function explode(string $delimiter, int $limit = PHP_INT_MAX): Collection
@@ -329,31 +337,31 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Divise une chaîne en utilisant une expression régulière ou par longueur.
      *
      * @param int|string $pattern Pattern regex ou longueur de morceaux
-     * @param int $limit Limite d'éléments (par défaut: -1)
-     * @param int $flags Flags preg_split (par défaut: 0)
-	 *
+     * @param int        $limit   Limite d'éléments (par défaut: -1)
+     * @param int        $flags   Flags preg_split (par défaut: 0)
+     *
      * @return Collection<int, string> Collection des segments
      */
     public function split(int|string $pattern, int $limit = -1, int $flags = 0): Collection
     {
-		if (is_int($pattern) || ctype_digit((string) $pattern)) {
+        if (is_int($pattern) || ctype_digit((string) $pattern)) {
             return new Collection(mb_str_split($this->value, (int) $pattern));
         }
 
-		// Si ce n'est pas une regex valide, on l'échappe pour en faire un pattern littéral
-		if (! Text::isRegex($pattern)) {
-			$delimiter = array_filter(
-				['/', '#', '~', '%', '|', '!', '@', '_'],
-				fn(string $del) => strpos($pattern, $del) === false
-			)[0] ?? '/';
+        // Si ce n'est pas une regex valide, on l'échappe pour en faire un pattern littéral
+        if (! Text::isRegex($pattern)) {
+            $delimiter = array_filter(
+                ['/', '#', '~', '%', '|', '!', '@', '_'],
+                static fn (string $del) => ! str_contains($pattern, $del)
+            )[0] ?? '/';
 
-			// Échapper le pattern et construire la regex
-			$pattern = $delimiter . preg_quote($pattern, $delimiter) . $delimiter;
-		}
+            // Échapper le pattern et construire la regex
+            $pattern = $delimiter . preg_quote($pattern, $delimiter) . $delimiter;
+        }
 
-		$segments = preg_split($pattern, $this->value, $limit, $flags);
+        $segments = preg_split($pattern, $this->value, $limit, $flags);
 
-        return !empty($segments) ? new Collection($segments) : new Collection();
+        return ! empty($segments) ? new Collection($segments) : new Collection();
     }
 
     /**
@@ -370,6 +378,7 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Détermine si la chaîne correspond à un motif donné.
      *
      * @param iterable<string>|string $pattern Motif(s) à comparer
+     *
      * @return bool true si la chaîne correspond à l'un des motifs
      */
     public function is(iterable|string $pattern): bool
@@ -401,8 +410,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Détermine si la chaîne est une URL valide.
      *
      * @param array $protocols Protocoles autorisés
-	 *
-	 * @return bool true si la chaîne est une URL valide
+     *
+     * @return bool true si la chaîne est une URL valide
      */
     public function isUrl(array $protocols = [])
     {
@@ -412,7 +421,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Détermine si la chaîne est un UUID valide.
      *
-     * @param int<0, 8>|'max'|null $version Version de l'UUID
+     * @param 'max'|int<0, 8>|null $version Version de l'UUID
+     *
      * @return bool true si la chaîne est un UUID valide
      */
     public function isUuid($version = null): bool
@@ -447,7 +457,7 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      */
     public function isNotEmpty(): bool
     {
-        return !$this->isEmpty();
+        return ! $this->isEmpty();
     }
 
     /**
@@ -464,7 +474,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Retourne la longueur de la chaîne.
      *
      * @param string|null $encoding Encodage à utiliser
-	 * @return int Longueur de la chaîne
+     *
+     * @return int Longueur de la chaîne
      */
     public function length(?string $encoding = null): int
     {
@@ -474,8 +485,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Limite le nombre de caractères dans la chaîne.
      *
-     * @param int $limit Limite de caractères (par défaut: 100)
-     * @param string $end Suffixe si tronqué (par défaut: '...')
+     * @param int    $limit Limite de caractères (par défaut: 100)
+     * @param string $end   Suffixe si tronqué (par défaut: '...')
      */
     public function limit(int $limit = 100, string $end = '...'): static
     {
@@ -513,10 +524,10 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Masque une portion d'une chaîne avec un caractère répété.
      *
-     * @param string $character Caractère de masquage
-     * @param int $index Position de départ du masquage
-     * @param int|null $length Longueur à masquer (null = jusqu'à la fin)
-     * @param string $encoding Encodage (par défaut: 'UTF-8')
+     * @param string   $character Caractère de masquage
+     * @param int      $index     Position de départ du masquage
+     * @param int|null $length    Longueur à masquer (null = jusqu'à la fin)
+     * @param string   $encoding  Encodage (par défaut: 'UTF-8')
      */
     public function mask(string $character, int $index, ?int $length = null, string $encoding = 'UTF-8'): static
     {
@@ -536,11 +547,11 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Détermine si une chaîne donnée correspond à un pattern donné.
      *
-     * @param string|iterable<string> $pattern Pattern(s) à comparer
-	 *
+     * @param iterable<string>|string $pattern Pattern(s) à comparer
+     *
      * @return bool true si la chaîne correspond à l'un des patterns
      */
-    public function isMatch(string|iterable $pattern): bool
+    public function isMatch(iterable|string $pattern): bool
     {
         return Text::isMatch($pattern, $this->value);
     }
@@ -549,7 +560,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Récupère toutes les chaînes correspondant au motif donné.
      *
      * @param string $pattern Pattern regex
-	 * @return Collection Collection des correspondances
+     *
+     * @return Collection Collection des correspondances
      */
     public function matchAll(string $pattern): Collection
     {
@@ -560,7 +572,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Détermine si la chaîne correspond au motif donné.
      *
      * @param string $pattern Pattern regex
-	 * @return bool true si une correspondance est trouvée
+     *
+     * @return bool true si une correspondance est trouvée
      */
     public function test(string $pattern): bool
     {
@@ -578,8 +591,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Remplit les deux côtés de la chaîne avec un autre caractère.
      *
-     * @param int $length Longueur totale souhaitée
-     * @param string $pad Caractère de remplissage (par défaut: espace)
+     * @param int    $length Longueur totale souhaitée
+     * @param string $pad    Caractère de remplissage (par défaut: espace)
      */
     public function padBoth(int $length, string $pad = ' '): static
     {
@@ -589,8 +602,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Remplit le côté gauche de la chaîne avec un autre caractère.
      *
-     * @param int $length Longueur totale souhaitée
-     * @param string $pad Caractère de remplissage (par défaut: espace)
+     * @param int    $length Longueur totale souhaitée
+     * @param string $pad    Caractère de remplissage (par défaut: espace)
      */
     public function padLeft(int $length, string $pad = ' '): static
     {
@@ -600,8 +613,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Remplit le côté droit de la chaîne avec un autre caractère.
      *
-     * @param int $length Longueur totale souhaitée
-     * @param string $pad Caractère de remplissage (par défaut: espace)
+     * @param int    $length Longueur totale souhaitée
+     * @param string $pad    Caractère de remplissage (par défaut: espace)
      */
     public function padRight(int $length, string $pad = ' '): static
     {
@@ -612,7 +625,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Parse un callback de style Class@method en classe et méthode.
      *
      * @param string|null $default Valeur par défaut pour la méthode
-	 * @return array<int, string|null> [classe, méthode]
+     *
+     * @return array<int, string|null> [classe, méthode]
      */
     public function parseCallback(?string $default = null): array
     {
@@ -672,8 +686,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Supprime toute occurrence de la chaîne donnée dans le sujet.
      *
-     * @param iterable<string>|string $search Valeur(s) à supprimer
-     * @param bool $caseSensitive Sensible à la casse (par défaut: true)
+     * @param iterable<string>|string $search        Valeur(s) à supprimer
+     * @param bool                    $caseSensitive Sensible à la casse (par défaut: true)
      */
     public function remove(iterable|string $search, bool $caseSensitive = true): static
     {
@@ -701,7 +715,7 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Remplace la valeur donnée dans la chaîne.
      *
-     * @param iterable<string>|string $search Valeur(s) à rechercher
+     * @param iterable<string>|string $search  Valeur(s) à rechercher
      * @param iterable<string>|string $replace Valeur(s) de remplacement
      */
     public function replace(iterable|string $search, iterable|string $replace): static
@@ -712,7 +726,7 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Remplace une valeur donnée dans la chaîne séquentiellement avec un tableau.
      *
-     * @param string $search Valeur à rechercher
+     * @param string           $search  Valeur à rechercher
      * @param iterable<string> $replace Valeurs de remplacement
      */
     public function replaceArray(string $search, iterable $replace): static
@@ -723,7 +737,7 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Remplace la première occurrence d'une valeur donnée dans la chaîne.
      *
-     * @param string $search Valeur à rechercher
+     * @param string $search  Valeur à rechercher
      * @param string $replace Valeur de remplacement
      */
     public function replaceFirst(string $search, string $replace): static
@@ -731,10 +745,10 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
         return new static(Text::replaceFirst($search, $replace, $this->value));
     }
 
-	/**
+    /**
      * Remplace la première occurrence de la valeur donnée si elle apparaît au début de la chaîne.
      *
-     * @param string $search Valeur à rechercher
+     * @param string $search  Valeur à rechercher
      * @param string $replace Valeur de remplacement
      */
     public function replaceStart(string $search, string $replace): static
@@ -745,7 +759,7 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Remplace la dernière occurrence d'une valeur donnée dans la chaîne.
      *
-     * @param string $search Valeur à rechercher
+     * @param string $search  Valeur à rechercher
      * @param string $replace Valeur de remplacement
      */
     public function replaceLast(string $search, string $replace): static
@@ -756,7 +770,7 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Remplace la dernière occurrence d'une valeur donnée si elle apparaît à la fin de la chaîne.
      *
-     * @param string $search Valeur à rechercher
+     * @param string $search  Valeur à rechercher
      * @param string $replace Valeur de remplacement
      */
     public function replaceEnd($search, $replace)
@@ -767,9 +781,9 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Remplace les motifs correspondant à l'expression régulière donnée.
      *
-     * @param string $pattern Pattern regex
+     * @param string         $pattern Pattern regex
      * @param Closure|string $replace Callback ou chaîne de remplacement
-     * @param int $limit Limite de remplacements (par défaut: -1)
+     * @param int            $limit   Limite de remplacements (par défaut: -1)
      */
     public function replaceMatches(string $pattern, Closure|string $replace, int $limit = -1): static
     {
@@ -784,7 +798,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Parse l'entrée d'une chaîne vers une collection, selon un format.
      *
      * @param string $format Format à utiliser (comme sscanf)
-	 * @return Collection Collection des valeurs parsées
+     *
+     * @return Collection Collection des valeurs parsées
      */
     public function scan(string $format): Collection
     {
@@ -857,7 +872,7 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Translittère une chaîne vers sa représentation ASCII la plus proche.
      *
      * @param string|null $unknown Caractère de remplacement pour caractères inconnus
-     * @param bool|null $strict Mode strict
+     * @param bool|null   $strict  Mode strict
      */
     public function transliterate(?string $unknown = '?', ?bool $strict = false): static
     {
@@ -875,8 +890,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Génère un "slug" convivial pour les URL.
      *
-     * @param string $separator Séparateur (par défaut: '-')
-     * @param string|null $language Langue pour la translittération
+     * @param string                $separator  Séparateur (par défaut: '-')
+     * @param string|null           $language   Langue pour la translittération
      * @param array<string, string> $dictionary Dictionnaire de remplacements
      */
     public function slug(string $separator = '-', ?string $language = 'en', array $dictionary = ['@' => 'at']): static
@@ -898,7 +913,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Détermine si la chaîne commence par une sous-chaîne donnée.
      *
      * @param iterable<string>|string $needles Sous-chaîne(s) à rechercher
-	 * @return bool true si la chaîne commence par l'une des sous-chaînes
+     *
+     * @return bool true si la chaîne commence par l'une des sous-chaînes
      */
     public function startsWith(iterable|string $needles): bool
     {
@@ -909,7 +925,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Détermine si la chaîne ne commence pas par une sous-chaîne donnée.
      *
      * @param iterable<string>|string $needles Sous-chaîne(s) à rechercher
-	 * @return bool true si la chaîne ne commence pas par l'une des sous-chaînes
+     *
+     * @return bool true si la chaîne ne commence pas par l'une des sous-chaînes
      */
     public function doesntStartWith(iterable|string $needles)
     {
@@ -937,9 +954,9 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Retourne la partie de chaîne spécifiée par les paramètres start et length.
      *
-     * @param int $start Position de départ
-     * @param int|null $length Longueur à extraire (null = jusqu'à la fin)
-     * @param string $encoding Encodage (par défaut: 'UTF-8')
+     * @param int      $start    Position de départ
+     * @param int|null $length   Longueur à extraire (null = jusqu'à la fin)
+     * @param string   $encoding Encodage (par défaut: 'UTF-8')
      */
     public function substr(int $start, ?int $length = null, string $encoding = 'UTF-8'): static
     {
@@ -949,8 +966,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Retourne le nombre d'occurrences d'une sous-chaîne.
      *
-     * @param string $needle Sous-chaîne à compter
-     * @param int $offset Position de départ
+     * @param string   $needle Sous-chaîne à compter
+     * @param int      $offset Position de départ
      * @param int|null $length Longueur à parcourir
      */
     public function substrCount(string $needle, int $offset = 0, ?int $length = null): int
@@ -962,10 +979,10 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Remplace du texte dans une partie d'une chaîne.
      *
      * @param list<string>|string $replace Texte de remplacement
-     * @param int|list<int> $offset Position de départ
-     * @param int|list<int>|null $length Longueur à remplacer
+     * @param int|list<int>       $offset  Position de départ
+     * @param int|list<int>|null  $length  Longueur à remplacer
      */
-    public function substrReplace(array|string $replace, int|array $offset = 0, int|array|null $length = null): static
+    public function substrReplace(array|string $replace, array|int $offset = 0, array|int|null $length = null): static
     {
         return new static(Text::substrReplace($this->value, $replace, $offset, $length));
     }
@@ -1001,7 +1018,7 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      */
     public function trim(?string $characters = null): static
     {
-       return new static(Text::trim(...array_merge([$this->value], func_get_args())));
+        return new static(Text::trim(...array_merge([$this->value], func_get_args())));
     }
 
     /**
@@ -1021,7 +1038,7 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      */
     public function rtrim(?string $characters = null): static
     {
-		return new static(Text::rtrim(...array_merge([$this->value], func_get_args())));
+        return new static(Text::rtrim(...array_merge([$this->value], func_get_args())));
     }
 
     /**
@@ -1063,9 +1080,9 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Exécute le callback donné si la chaîne contient une sous-chaîne donnée.
      *
-     * @param string|iterable<string> $needles Sous-chaîne(s) à rechercher
-     * @param callable $callback Callback à exécuter
-     * @param callable|null $default Callback par défaut (optionnel)
+     * @param iterable<string>|string $needles  Sous-chaîne(s) à rechercher
+     * @param callable                $callback Callback à exécuter
+     * @param callable|null           $default  Callback par défaut (optionnel)
      */
     public function whenContains(iterable|string $needles, callable $callback, ?callable $default = null): static
     {
@@ -1075,9 +1092,9 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Exécute le callback donné si la chaîne contient toutes les valeurs du tableau.
      *
-     * @param iterable<string> $needles Sous-chaînes à rechercher
-     * @param callable $callback Callback à exécuter
-     * @param callable|null $default Callback par défaut (optionnel)
+     * @param iterable<string> $needles  Sous-chaînes à rechercher
+     * @param callable         $callback Callback à exécuter
+     * @param callable|null    $default  Callback par défaut (optionnel)
      */
     public function whenContainsAll(array $needles, callable $callback, ?callable $default = null): static
     {
@@ -1087,8 +1104,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Exécute le callback donné si la chaîne est vide.
      *
-     * @param callable $callback Callback à exécuter
-     * @param callable|null $default Callback par défaut (optionnel)
+     * @param callable      $callback Callback à exécuter
+     * @param callable|null $default  Callback par défaut (optionnel)
      */
     public function whenEmpty(callable $callback, ?callable $default = null): static
     {
@@ -1098,8 +1115,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Exécute le callback donné si la chaîne n'est pas vide.
      *
-     * @param callable $callback Callback à exécuter
-     * @param callable|null $default Callback par défaut (optionnel)
+     * @param callable      $callback Callback à exécuter
+     * @param callable|null $default  Callback par défaut (optionnel)
      */
     public function whenNotEmpty(callable $callback, ?callable $default = null): static
     {
@@ -1109,9 +1126,9 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Exécute le callback donné si la chaîne se termine par une sous-chaîne donnée.
      *
-     * @param string|iterable<string> $needles Sous-chaîne(s) à rechercher
-     * @param callable $callback Callback à exécuter
-     * @param callable|null $default Callback par défaut (optionnel)
+     * @param iterable<string>|string $needles  Sous-chaîne(s) à rechercher
+     * @param callable                $callback Callback à exécuter
+     * @param callable|null           $default  Callback par défaut (optionnel)
      */
     public function whenEndsWith(iterable|string $needles, callable $callback, ?callable $default = null): static
     {
@@ -1121,9 +1138,9 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Exécute le callback donné si la chaîne ne se termine pas par une sous-chaîne donnée.
      *
-     * @param string|iterable<string> $needles Sous-chaîne(s) à rechercher
-     * @param callable $callback Callback à exécuter
-     * @param callable|null $default Callback par défaut (optionnel)
+     * @param iterable<string>|string $needles  Sous-chaîne(s) à rechercher
+     * @param callable                $callback Callback à exécuter
+     * @param callable|null           $default  Callback par défaut (optionnel)
      */
     public function whenDoesntEndWith(iterable|string $needles, callable $callback, ?callable $default = null): static
     {
@@ -1133,9 +1150,9 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Exécute le callback donné si la chaîne correspond exactement à la valeur donnée.
      *
-     * @param string $value Valeur à comparer
-     * @param callable $callback Callback à exécuter
-     * @param callable|null $default Callback par défaut (optionnel)
+     * @param string        $value    Valeur à comparer
+     * @param callable      $callback Callback à exécuter
+     * @param callable|null $default  Callback par défaut (optionnel)
      */
     public function whenExactly(string $value, callable $callback, ?callable $default = null): static
     {
@@ -1145,9 +1162,9 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Exécute le callback donné si la chaîne ne correspond pas exactement à la valeur donnée.
      *
-     * @param string $value Valeur à comparer
-     * @param callable $callback Callback à exécuter
-     * @param callable|null $default Callback par défaut (optionnel)
+     * @param string        $value    Valeur à comparer
+     * @param callable      $callback Callback à exécuter
+     * @param callable|null $default  Callback par défaut (optionnel)
      */
     public function whenNotExactly(string $value, callable $callback, ?callable $default = null): static
     {
@@ -1157,9 +1174,9 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Exécute le callback donné si la chaîne correspond à un pattern donné.
      *
-     * @param string|iterable<string> $pattern Pattern(s) à comparer
-     * @param callable $callback Callback à exécuter
-     * @param callable|null $default Callback par défaut (optionnel)
+     * @param iterable<string>|string $pattern  Pattern(s) à comparer
+     * @param callable                $callback Callback à exécuter
+     * @param callable|null           $default  Callback par défaut (optionnel)
      */
     public function whenIs(iterable|string $pattern, callable $callback, ?callable $default = null): static
     {
@@ -1169,8 +1186,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Exécute le callback donné si la chaîne est en ASCII 7 bits.
      *
-     * @param callable $callback Callback à exécuter
-     * @param callable|null $default Callback par défaut (optionnel)
+     * @param callable      $callback Callback à exécuter
+     * @param callable|null $default  Callback par défaut (optionnel)
      */
     public function whenIsAscii(callable $callback, ?callable $default = null): static
     {
@@ -1180,8 +1197,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Exécute le callback donné si la chaîne est un UUID valide.
      *
-     * @param callable $callback Callback à exécuter
-     * @param callable|null $default Callback par défaut (optionnel)
+     * @param callable      $callback Callback à exécuter
+     * @param callable|null $default  Callback par défaut (optionnel)
      */
     public function whenIsUuid(callable $callback, ?callable $default = null): static
     {
@@ -1191,8 +1208,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Exécute le callback donné si la chaîne est un ULID valide.
      *
-     * @param callable $callback Callback à exécuter
-     * @param callable|null $default Callback par défaut (optionnel)
+     * @param callable      $callback Callback à exécuter
+     * @param callable|null $default  Callback par défaut (optionnel)
      */
     public function whenIsUlid(callable $callback, ?callable $default = null): static
     {
@@ -1202,9 +1219,9 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Exécute le callback donné si la chaîne commence par une sous-chaîne donnée.
      *
-     * @param string|iterable<string> $needles Sous-chaîne(s) à rechercher
-     * @param callable $callback Callback à exécuter
-     * @param callable|null $default Callback par défaut (optionnel)
+     * @param iterable<string>|string $needles  Sous-chaîne(s) à rechercher
+     * @param callable                $callback Callback à exécuter
+     * @param callable|null           $default  Callback par défaut (optionnel)
      */
     public function whenStartsWith(iterable|string $needles, callable $callback, ?callable $default = null): static
     {
@@ -1214,9 +1231,9 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Exécute le callback donné si la chaîne ne commence pas par une sous-chaîne donnée.
      *
-     * @param string|iterable<string> $needles Sous-chaîne(s) à rechercher
-     * @param callable $callback Callback à exécuter
-     * @param callable|null $default Callback par défaut (optionnel)
+     * @param iterable<string>|string $needles  Sous-chaîne(s) à rechercher
+     * @param callable                $callback Callback à exécuter
+     * @param callable|null           $default  Callback par défaut (optionnel)
      */
     public function whenDoesntStartWith(iterable|string $needles, callable $callback, ?callable $default = null): static
     {
@@ -1226,9 +1243,9 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Exécute le callback donné si la chaîne correspond au pattern donné.
      *
-     * @param string $pattern Pattern regex
-     * @param callable $callback Callback à exécuter
-     * @param callable|null $default Callback par défaut (optionnel)
+     * @param string        $pattern  Pattern regex
+     * @param callable      $callback Callback à exécuter
+     * @param callable|null $default  Callback par défaut (optionnel)
      */
     public function whenTest(string $pattern, callable $callback, ?callable $default = null): static
     {
@@ -1238,8 +1255,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Limite le nombre de mots dans la chaîne.
      *
-     * @param int $words Nombre maximum de mots (par défaut: 100)
-     * @param string $end Suffixe si tronqué (par défaut: '...')
+     * @param int    $words Nombre maximum de mots (par défaut: 100)
+     * @param string $end   Suffixe si tronqué (par défaut: '...')
      */
     public function words(int $words = 100, string $end = '...'): static
     {
@@ -1250,7 +1267,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Récupère le nombre de mots dans la chaîne.
      *
      * @param string|null $characters Caractères supplémentaires considérés comme faisant partie des mots
-	 * @return int Nombre de mots
+     *
+     * @return int Nombre de mots
      */
     public function wordCount(?string $characters = null): int
     {
@@ -1260,9 +1278,9 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Wrap une chaîne sur un nombre donné de caractères.
      *
-     * @param int $characters Nombre de caractères par ligne (par défaut: 75)
-     * @param string $break Caractère de rupture de ligne (par défaut: "\n")
-     * @param bool $cutLongWords Couper les mots longs (par défaut: false)
+     * @param int    $characters   Nombre de caractères par ligne (par défaut: 75)
+     * @param string $break        Caractère de rupture de ligne (par défaut: "\n")
+     * @param bool   $cutLongWords Couper les mots longs (par défaut: false)
      */
     public function wordWrap(int $characters = 75, string $break = "\n", bool $cutLongWords = false): static
     {
@@ -1272,8 +1290,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Encapsule la chaîne avec les chaînes données.
      *
-     * @param string $before Chaîne à placer avant
-     * @param string|null $after Chaîne à placer après (null = utilise $before)
+     * @param string      $before Chaîne à placer avant
+     * @param string|null $after  Chaîne à placer après (null = utilise $before)
      */
     public function wrap(string $before, ?string $after = null): static
     {
@@ -1283,8 +1301,8 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Désencapsule la chaîne avec les chaînes données.
      *
-     * @param string $before Chaîne à retirer devant
-     * @param string|null $after Chaîne à retirer derrière (null = utilise $before)
+     * @param string      $before Chaîne à retirer devant
+     * @param string|null $after  Chaîne à retirer derrière (null = utilise $before)
      */
     public function unwrap(string $before, ?string $after = null): static
     {
@@ -1323,15 +1341,16 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Crypte la chaîne.
      *
      * @param bool $serialize Sérialiser les données (par défaut: false)
-	 * @return static
+     *
+     * @return static
      */
     public function encrypt(bool $serialize = false)
     {
-		if (function_exists('service')) {
-			return new static(service('encrypter')->encrypt($this->value));
-		}
+        if (function_exists('service')) {
+            return new static(service('encrypter')->encrypt($this->value));
+        }
 
-		throw new RuntimeException();
+        throw new RuntimeException();
     }
 
     /**
@@ -1341,11 +1360,11 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      */
     public function decrypt(bool $serialize = false): static
     {
-		if (function_exists('service')) {
-			return new static(service('encrypter')->decrypt($this->value));
-		}
+        if (function_exists('service')) {
+            return new static(service('encrypter')->decrypt($this->value));
+        }
 
-		throw new RuntimeException();
+        throw new RuntimeException();
     }
 
     /**
@@ -1372,7 +1391,7 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Récupère la valeur de chaîne sous-jacente sous forme d'entier.
      *
      * @param int $base Base numérique (par défaut: 10)
-	 *
+     *
      * @return int Valeur entière
      */
     public function toInteger(int $base = 10): int
@@ -1407,9 +1426,11 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Récupère la valeur de chaîne sous-jacente sous forme d'instance Date.
      *
      * @param string|null $format Format de date spécifique
-     * @param string|null $tz Fuseau horaire
-	 * @return Date Instance Date
-	 * @throws Exception Si le format est invalide
+     * @param string|null $tz     Fuseau horaire
+     *
+     * @return Date Instance Date
+     *
+     * @throws Exception Si le format est invalide
      */
     public function toDate(?string $format = null, ?string $tz = null): Date
     {
@@ -1454,7 +1475,7 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Définit la valeur à l'offset donné.
      *
      * @param mixed $offset Offset à définir
-     * @param mixed $value Valeur à assigner
+     * @param mixed $value  Valeur à assigner
      */
     public function offsetSet(mixed $offset, mixed $value): void
     {
@@ -1475,17 +1496,18 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Proxy des propriétés dynamiques vers les méthodes.
      *
      * @param string $key Nom de la propriété
+     *
      * @return mixed Résultat de la méthode correspondante
      */
     public function __get(string $key): mixed
     {
         $value = $this->{$key}();
 
-		if ($value instanceof self) {
-			return $value->toString();
-		}
+        if ($value instanceof self) {
+            return $value->toString();
+        }
 
-		return $value;
+        return $value;
     }
 
     /**
@@ -1502,6 +1524,7 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Transforme la chaîne en utilisant un callback et retourne le résultat.
      *
      * @param callable $callback Callback de transformation
+     *
      * @return mixed Résultat de la transformation
      */
     public function transform(callable $callback): mixed
@@ -1509,12 +1532,12 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
         return $callback($this);
     }
 
-
     /**
      * Compare la chaîne avec une autre (insensible à la casse par défaut).
      *
-     * @param string|Stringable $value Valeur à comparer
-     * @param bool $caseSensitive Sensible à la casse (par défaut: false)
+     * @param string|Stringable $value         Valeur à comparer
+     * @param bool              $caseSensitive Sensible à la casse (par défaut: false)
+     *
      * @return int -1 si inférieur, 0 si égal, 1 si supérieur
      */
     public function compare(string|Stringable $value, bool $caseSensitive = false): int
@@ -1533,8 +1556,9 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Vérifie si la chaîne est égale à une autre (insensible à la casse par défaut).
      *
-     * @param string|Stringable $value Valeur à comparer
-     * @param bool $caseSensitive Sensible à la casse (par défaut: false)
+     * @param string|Stringable $value         Valeur à comparer
+     * @param bool              $caseSensitive Sensible à la casse (par défaut: false)
+     *
      * @return bool true si les chaînes sont égales
      */
     public function equals(string|Stringable $value, bool $caseSensitive = false): bool
@@ -1553,12 +1577,13 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Récupère la position de la première occurrence d'une sous-chaîne.
      *
-     * @param string $needle Sous-chaîne à rechercher
-     * @param int $offset Position de départ
+     * @param string      $needle   Sous-chaîne à rechercher
+     * @param int         $offset   Position de départ
      * @param string|null $encoding Encodage utilisé
-	 * @return int|false Position ou false si non trouvé
+     *
+     * @return false|int Position ou false si non trouvé
      */
-    public function position(string $needle, int $offset = 0, ?string $encoding = null): int|false
+    public function position(string $needle, int $offset = 0, ?string $encoding = null): false|int
     {
         return Text::position($this->value, $needle, $offset, $encoding);
     }
@@ -1566,12 +1591,13 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Récupère la position de la dernière occurrence d'une sous-chaîne.
      *
-     * @param string $needle Sous-chaîne à rechercher
-     * @param int $offset Position de départ
-     * @param bool $caseSensitive Sensible à la casse (par défaut: true)
-     * @return int|false Position ou false si non trouvé
+     * @param string $needle        Sous-chaîne à rechercher
+     * @param int    $offset        Position de départ
+     * @param bool   $caseSensitive Sensible à la casse (par défaut: true)
+     *
+     * @return false|int Position ou false si non trouvé
      */
-    public function lastPosition(string $needle, int $offset = 0, bool $caseSensitive = true): int|false
+    public function lastPosition(string $needle, int $offset = 0, bool $caseSensitive = true): false|int
     {
         if ($caseSensitive) {
             return strrpos($this->value, $needle, $offset);
@@ -1623,8 +1649,9 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
     /**
      * Convertit la chaîne en encodage spécifié.
      *
-     * @param string $toEncoding Encodage de destination
+     * @param string $toEncoding   Encodage de destination
      * @param string $fromEncoding Encodage source (par défaut: détection automatique)
+     *
      * @return static Nouvelle instance avec le résultat
      */
     public function convertEncoding(string $toEncoding, string $fromEncoding = 'UTF-8'): static
@@ -1636,12 +1663,13 @@ class Stringable implements JsonSerializable, ArrayAccess, NativeStringable
      * Normalise la chaîne selon la forme Unicode spécifiée.
      *
      * @param int $form Forme de normalisation (par défaut: Normalizer::FORM_C)
+     *
      * @return static Nouvelle instance avec le résultat
      */
-    public function normalize(int $form = \Normalizer::FORM_C): static
+    public function normalize(int $form = Normalizer::FORM_C): static
     {
-        if (class_exists('Normalizer') && \Normalizer::isNormalized($this->value, $form)) {
-            return new static(\Normalizer::normalize($this->value, $form));
+        if (class_exists('Normalizer') && Normalizer::isNormalized($this->value, $form)) {
+            return new static(Normalizer::normalize($this->value, $form));
         }
 
         return $this;

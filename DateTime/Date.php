@@ -204,7 +204,7 @@ class Date extends DateTime implements Stringable
         // Si la chaîne de temps était une chaîne relative (par exemple 'next Tuesday'),
         // nous devons alors ajuster l'heure afin d'obtenir le fuseau horaire actuel avec lequel travailler.
         if ($time !== '' && static::hasRelativeKeywords($time)) {
-			$instance = new DateTime(static::$testNow?->format('Y-m-d H:i:s.u') ?? 'now', $this->timezone);
+            $instance = new DateTime(static::$testNow?->format('Y-m-d H:i:s.u') ?? 'now', $this->timezone);
             $instance->modify($time);
             $time = $instance->format('Y-m-d H:i:s.u');
         }
@@ -322,11 +322,11 @@ class Date extends DateTime implements Stringable
      */
     public static function now(DateTimeZone|string|null $timezone = null, ?string $format = null): static|string
     {
-		$date = new static(null, $timezone);
+        $date = new static(null, $timezone);
 
-		if (! static::hasTestNow()) {
-			$date->setTimestamp(time());
-		}
+        if (! static::hasTestNow()) {
+            $date->setTimestamp(time());
+        }
 
         if (null !== $format) {
             return $date->format($format);
@@ -485,8 +485,8 @@ class Date extends DateTime implements Stringable
 
     /**
      * Retourne le jour du mois (01 à 31).
-	 *
-	 * @return numeric-string
+     *
+     * @return numeric-string
      */
     public function getDay(): string
     {
@@ -818,37 +818,38 @@ class Date extends DateTime implements Stringable
     // --------------------------------------------------------------------
 
     /**
-	 * Convertit toute date-heure textuelle en anglais en un objet date.
-	 *
-	 * @param DateTimeInterface|string $date La date à convertir (chaîne ou objet).
-	 * @param DateTimeZone|string|null $timezone Fuseau horaire optionnel (défaut : UTC).
-	 *
-	 * @return static L'instance Date convertie.
-	 *
-	 * @throws InvalidArgumentException Si la date est invalide et ne peut être parsée.
-	 */
-	public static function convertToDate(DateTimeInterface|string $date, DateTimeZone|string|null $timezone = null): static
-	{
-		$tz = static::parseSuppliedTimezone($timezone ?? static::getDefaultTimezone());
+     * Convertit toute date-heure textuelle en anglais en un objet date.
+     *
+     * @param DateTimeInterface|string $date     La date à convertir (chaîne ou objet).
+     * @param DateTimeZone|string|null $timezone Fuseau horaire optionnel (défaut : UTC).
+     *
+     * @return static L'instance Date convertie.
+     *
+     * @throws InvalidArgumentException Si la date est invalide et ne peut être parsée.
+     */
+    public static function convertToDate(DateTimeInterface|string $date, DateTimeZone|string|null $timezone = null): static
+    {
+        $tz = static::parseSuppliedTimezone($timezone ?? static::getDefaultTimezone());
 
-		if ($date instanceof DateTimeInterface) {
-			$date = $date->format('Y-m-d H:i:s.U');
-		}
+        if ($date instanceof DateTimeInterface) {
+            $date = $date->format('Y-m-d H:i:s.U');
+        }
 
-		if (static::$testNow && static::hasRelativeKeywords($date)) {
-			$now = static::now($tz);
-			$now->modify($date);
+        if (static::$testNow && static::hasRelativeKeywords($date)) {
+            $now = static::now($tz);
+            $now->modify($date);
 
-			return $now;
-		}
+            return $now;
+        }
 
-		try {
-			$dt = new DateTime($date, $tz);
-			return static::createFromInstance($dt);
-		} catch (Exception) {
-			return static::createFromAnyFormat($date, $tz);
-		}
-	}
+        try {
+            $dt = new DateTime($date, $tz);
+
+            return static::createFromInstance($dt);
+        } catch (Exception) {
+            return static::createFromAnyFormat($date, $tz);
+        }
+    }
 
     /**
      * Retourne la date et l'heure au format localisé (ex : 2024-01-31 13:45:00).
@@ -1195,20 +1196,20 @@ class Date extends DateTime implements Stringable
      * Vérifie si la date courante est strictement identique à une autre (avec fuseau).
      */
     public function sameAs(DateTimeInterface|string $testTime, ?string $timezone = null): bool
-	{
-		if ($testTime instanceof DateTimeInterface) {
-			$testTimestamp = $testTime->getTimestamp();
-		} else {
-			$timezone      = $timezone ?: $this->timezone;
-			$timezone      = $timezone instanceof DateTimeZone ? $timezone : new DateTimeZone($timezone);
-			$testTime      = new DateTime($testTime, $timezone);
-			$testTimestamp = $testTime->getTimestamp();
-		}
+    {
+        if ($testTime instanceof DateTimeInterface) {
+            $testTimestamp = $testTime->getTimestamp();
+        } else {
+            $timezone      = $timezone ?: $this->timezone;
+            $timezone      = $timezone instanceof DateTimeZone ? $timezone : new DateTimeZone($timezone);
+            $testTime      = new DateTime($testTime, $timezone);
+            $testTimestamp = $testTime->getTimestamp();
+        }
 
-		$ourTimestamp = $this->timestamp;
+        $ourTimestamp = $this->timestamp;
 
-		return $testTimestamp === $ourTimestamp;
-	}
+        return $testTimestamp === $ourTimestamp;
+    }
 
     /**
      * Vérifie si la date est aujourd'hui.
@@ -1743,71 +1744,75 @@ class Date extends DateTime implements Stringable
      *
      * @param self        $endDate     La date de fin (inclusive).
      * @param string|null $countryCode Le code du pays pour vérifier les jours fériés (ex: 'FR').
-	 * @param bool 		  $inclusive Si true (défaut), inclut start et end ; si false, exclut end.
+     * @param bool        $inclusive   Si true (défaut), inclut start et end ; si false, exclut end.
      */
-	public function diffInBusinessDays(self $endDate, ?string $countryCode = null, bool $inclusive = true): int
-	{
-		if ($this->greaterThan($endDate)) {
-			return 0;
-		}
+    public function diffInBusinessDays(self $endDate, ?string $countryCode = null, bool $inclusive = true): int
+    {
+        if ($this->greaterThan($endDate)) {
+            return 0;
+        }
 
-		$start = $this->startOfDay();
-		$end   = $endDate->startOfDay();
+        $start = $this->startOfDay();
+        $end   = $endDate->startOfDay();
 
-		// Ajuster pour exclusif
-		if (!$inclusive) {
-			if ($start->equalTo($end)) {
-				return 0;
-			}
-			$end = $end->subDay();
-		}
+        // Ajuster pour exclusif
+        if (! $inclusive) {
+            if ($start->equalTo($end)) {
+                return 0;
+            }
+            $end = $end->subDay();
+        }
 
-		$totalDays = $start->diffInDays($end) + 1;
-		if ($totalDays <= 0) {
-			return 0;
-		}
+        $totalDays = $start->diffInDays($end) + 1;
+        if ($totalDays <= 0) {
+            return 0;
+        }
 
-		// Seuil pour optimisation (ex. : > 365 jours, utiliser approximation ; sinon itération complète)
-		$threshold = 365;
-		if ($totalDays <= $threshold) {
-			// Itération complète pour précision
-			$businessDays = 0;
-			$current = $start->copy();
-			$holidays = Holiday::getHolidaysInPeriod($start, $end, $countryCode);
-			while ($current->lessOrEqualTo($end)) {
-				if ($current->isWeekday() && !in_array($current->toDateString(), $holidays, true)) {
-					$businessDays++;
-				}
-				$current = $current->addDay();
-			}
-			return $businessDays;
-		}
+        // Seuil pour optimisation (ex. : > 365 jours, utiliser approximation ; sinon itération complète)
+        $threshold = 365;
+        if ($totalDays <= $threshold) {
+            // Itération complète pour précision
+            $businessDays = 0;
+            $current      = $start->copy();
+            $holidays     = Holiday::getHolidaysInPeriod($start, $end, $countryCode);
 
-		// Optimisation pour grandes périodes : total weekdays - weekday holidays
-		$completeWeeks = (int)($totalDays / 7);
-		$remainingDays = $totalDays % 7;
-		$businessDays  = $completeWeeks * 5;
+            while ($current->lessOrEqualTo($end)) {
+                if ($current->isWeekday() && ! in_array($current->toDateString(), $holidays, true)) {
+                    $businessDays++;
+                }
+                $current = $current->addDay();
+            }
 
-		// Ajouter weekdays des remaining days
-		$current = $start->copy()->addDays($completeWeeks * 7);
-		for ($i = 0; $i < $remainingDays; $i++) {
-			if ($current->isWeekday()) {
-				$businessDays++;
-			}
-			$current = $current->addDay();
-		}
+            return $businessDays;
+        }
 
-		// Soustraire tous les weekday holidays dans la période
-		$holidays = Holiday::getHolidaysInPeriod($start, $end, $countryCode);
-		foreach ($holidays as $holidayStr) {
-			$holidayDate = static::parse($holidayStr);
-			if ($holidayDate->isWeekday() && $holidayDate->greaterOrEqualTo($start) && $holidayDate->lessOrEqualTo($end)) {
-				$businessDays--;
-			}
-		}
+        // Optimisation pour grandes périodes : total weekdays - weekday holidays
+        $completeWeeks = (int) ($totalDays / 7);
+        $remainingDays = $totalDays % 7;
+        $businessDays  = $completeWeeks * 5;
 
-		return max(0, $businessDays);
-	}
+        // Ajouter weekdays des remaining days
+        $current = $start->copy()->addDays($completeWeeks * 7);
+
+        for ($i = 0; $i < $remainingDays; $i++) {
+            if ($current->isWeekday()) {
+                $businessDays++;
+            }
+            $current = $current->addDay();
+        }
+
+        // Soustraire tous les weekday holidays dans la période
+        $holidays = Holiday::getHolidaysInPeriod($start, $end, $countryCode);
+
+        foreach ($holidays as $holidayStr) {
+            $holidayDate = static::parse($holidayStr);
+            if ($holidayDate->isWeekday() && $holidayDate->greaterOrEqualTo($start) && $holidayDate->lessOrEqualTo($end)) {
+                $businessDays--;
+            }
+        }
+
+        return max(0, $businessDays);
+    }
 
     /**
      * Ajoute ou soustrait un nombre de jours ouvrés à la date actuelle, en optimisant pour les grandes plages.
@@ -2181,60 +2186,62 @@ class Date extends DateTime implements Stringable
     }
 
     /**
-	 * Ajoute un nombre de mois à la date.
-	 *
-	 * Si $overflow = true (défaut), autorise le dépassement (ex. : 31 janv. +1 mois = 3 mars).
-	 * Si $overflow = false, clamp au dernier jour du mois cible (ex. : 31 janv. +1 mois = 28 fév.).
-	 *
-	 * @param float|int $value Nombre de mois à ajouter (positif ou négatif). Les floats sont arrondis à l'entier le plus proche.
-	 * @param bool $overflow Autoriser le dépassement (true par défaut).
-	 *
-	 * @return static Une nouvelle instance avec la date ajustée.
-	 *
-	 * @throws InvalidArgumentException Si $value n'est pas numérique.
-	 */
-	public function addMonths(float|int $value, bool $overflow = true): static
-	{
-		if (!is_numeric($value)) {
-			throw new InvalidArgumentException('Le paramètre $value doit être numérique.');
-		}
+     * Ajoute un nombre de mois à la date.
+     *
+     * Si $overflow = true (défaut), autorise le dépassement (ex. : 31 janv. +1 mois = 3 mars).
+     * Si $overflow = false, clamp au dernier jour du mois cible (ex. : 31 janv. +1 mois = 28 fév.).
+     *
+     * @param float|int $value    Nombre de mois à ajouter (positif ou négatif). Les floats sont arrondis à l'entier le plus proche.
+     * @param bool      $overflow Autoriser le dépassement (true par défaut).
+     *
+     * @return static Une nouvelle instance avec la date ajustée.
+     *
+     * @throws InvalidArgumentException Si $value n'est pas numérique.
+     */
+    public function addMonths(float|int $value, bool $overflow = true): static
+    {
+        if (! is_numeric($value)) {
+            throw new InvalidArgumentException('Le paramètre $value doit être numérique.');
+        }
 
-		$months = (int) round($value); // Arrondir les floats pour simplicité
-		if ($months === 0) {
-			return $this->copy();
-		}
+        $months = (int) round($value); // Arrondir les floats pour simplicité
+        if ($months === 0) {
+            return $this->copy();
+        }
 
-		$date = clone $this;
-		$sign = $months > 0 ? '+' : '-';
-		$absMonths = abs($months);
+        $date      = clone $this;
+        $sign      = $months > 0 ? '+' : '-';
+        $absMonths = abs($months);
 
-		if ($overflow) {
-			// Overflow standard : utilise modify
-			$date->modify("{$sign}{$absMonths} months");
-		} else {
-			// No overflow : ajoute les mois, puis clamp le jour
-			$currentYear = $date->year;
-			$currentMonth = $date->month;
-			$currentDay = $date->day;
+        if ($overflow) {
+            // Overflow standard : utilise modify
+            $date->modify("{$sign}{$absMonths} months");
+        } else {
+            // No overflow : ajoute les mois, puis clamp le jour
+            $currentYear  = $date->year;
+            $currentMonth = $date->month;
+            $currentDay   = $date->day;
 
-			$newMonth = $currentMonth + $months;
-			while ($newMonth > 12) {
-				$newMonth -= 12;
-				$currentYear++;
-			}
-			while ($newMonth < 1) {
-				$newMonth += 12;
-				$currentYear--;
-			}
+            $newMonth = $currentMonth + $months;
 
-			$daysInNewMonth = $date->createFromDate($currentYear, $newMonth, 1)->daysInMonth;
-			$newDay = min($currentDay, $daysInNewMonth);
+            while ($newMonth > 12) {
+                $newMonth -= 12;
+                $currentYear++;
+            }
 
-			$date->setDate($currentYear, $newMonth, $newDay);
-		}
+            while ($newMonth < 1) {
+                $newMonth += 12;
+                $currentYear--;
+            }
 
-		return $date;
-	}
+            $daysInNewMonth = $date->createFromDate($currentYear, $newMonth, 1)->daysInMonth;
+            $newDay         = min($currentDay, $daysInNewMonth);
+
+            $date->setDate($currentYear, $newMonth, $newDay);
+        }
+
+        return $date;
+    }
 
     /**
      * Ajoute un trimestre à la date (nouvelle instance).
@@ -2299,32 +2306,32 @@ class Date extends DateTime implements Stringable
     }
 
     /**
-	 * Ajoute un nombre de minutes à la date (support des floats : ex. 1.5 = 1 min 30 s).
-	 *
-	 * @param float|int $value Nombre de minutes à ajouter (positif ou négatif).
-	 *
-	 * @return static Une nouvelle instance avec la date ajustée.
-	 */
+     * Ajoute un nombre de minutes à la date (support des floats : ex. 1.5 = 1 min 30 s).
+     *
+     * @param float|int $value Nombre de minutes à ajouter (positif ou négatif).
+     *
+     * @return static Une nouvelle instance avec la date ajustée.
+     */
     public function addMinutes(float|int $value): static
     {
         $date = clone $this;
 
-		if ($value == 0) {
-			return $date;
-		}
+        if ($value === 0) {
+            return $date;
+        }
 
-		$minutes = (int) floor(abs($value));
-		$seconds = (int) ((abs($value) - $minutes) * 60);
+        $minutes = (int) floor(abs($value));
+        $seconds = (int) ((abs($value) - $minutes) * 60);
 
-		$interval = new DateInterval(sprintf('PT%sM%sS', $minutes, $seconds));
+        $interval = new DateInterval(sprintf('PT%sM%sS', $minutes, $seconds));
 
-		if ($value < 0) {
-			$date->sub($interval);
-		} else {
-			$date->add($interval);
-		}
+        if ($value < 0) {
+            $date->sub($interval);
+        } else {
+            $date->add($interval);
+        }
 
-		return $date;
+        return $date;
     }
 
     /**

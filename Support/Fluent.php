@@ -62,8 +62,6 @@ class Fluent implements Arrayable, ArrayAccess, Jsonable, JsonSerializable
      * Crée une nouvelle instance fluent
      *
      * @param iterable<TKey, TValue> $attributes Attributs initiaux
-     *
-     * @return static
      */
     public static function make($attributes = []): static
     {
@@ -76,9 +74,9 @@ class Fluent implements Arrayable, ArrayAccess, Jsonable, JsonSerializable
      * @template TGetDefault
      *
      * @param TKey                                 $key     Clé de l'attribut
-     * @param TGetDefault|(Closure(): TGetDefault) $default Valeur par défaut si la clé n'existe pas
+     * @param (Closure(): TGetDefault)|TGetDefault $default Valeur par défaut si la clé n'existe pas
      *
-     * @return TValue|TGetDefault
+     * @return TGetDefault|TValue
      */
     public function get($key, $default = null): mixed
     {
@@ -286,8 +284,6 @@ class Fluent implements Arrayable, ArrayAccess, Jsonable, JsonSerializable
      *
      * @param TKey   $offset Position à modifier
      * @param TValue $value  Nouvelle valeur
-     *
-     * @return void
      */
     public function offsetSet($offset, $value): void
     {
@@ -298,8 +294,6 @@ class Fluent implements Arrayable, ArrayAccess, Jsonable, JsonSerializable
      * Supprime une valeur à la position donnée
      *
      * @param TKey $offset Position à supprimer
-     *
-     * @return void
      */
     public function offsetUnset($offset): void
     {
@@ -352,8 +346,6 @@ class Fluent implements Arrayable, ArrayAccess, Jsonable, JsonSerializable
      *
      * @param TKey   $key   Clé de l'attribut
      * @param TValue $value Nouvelle valeur
-     *
-     * @return void
      */
     public function __set($key, $value): void
     {
@@ -376,8 +368,6 @@ class Fluent implements Arrayable, ArrayAccess, Jsonable, JsonSerializable
      * Suppression dynamique d'attributs
      *
      * @param TKey $key Clé de l'attribut à supprimer
-     *
-     * @return void
      */
     public function __unset($key): void
     {

@@ -65,7 +65,7 @@ class Arr
     /**
      * Ajoute un élément à un tableau en utilisant la notation "point" s'il n'existe pas.
      *
-     * @param string|int|float $key
+     * @param float|int|string $key
      */
     public static function add(array $array, $key, mixed $value): array
     {
@@ -81,7 +81,7 @@ class Arr
      *
      * @throws InvalidArgumentException
      */
-    public static function array(ArrayAccess|array $array, string|int|null $key, ?array $default = null): array
+    public static function array(array|ArrayAccess $array, int|string|null $key, ?array $default = null): array
     {
         $value = self::get($array, $key, $default);
 
@@ -99,7 +99,7 @@ class Arr
      *
      * @throws InvalidArgumentException
      */
-    public static function boolean(ArrayAccess|array $array, string|int|null $key, ?bool $default = null): bool
+    public static function boolean(array|ArrayAccess $array, int|string|null $key, ?bool $default = null): bool
     {
         $value = Arr::get($array, $key, $default);
 
@@ -351,12 +351,12 @@ class Arr
     {
         $results = [];
 
-        $flatten = function ($data, $prefix) use (&$results, &$flatten): void {
+        $flatten = static function ($data, $prefix) use (&$results, &$flatten): void {
             foreach ($data as $key => $value) {
-                $newKey = $prefix.$key;
+                $newKey = $prefix . $key;
 
                 if (is_array($value) && ! empty($value)) {
-                    $flatten($value, $newKey.'.');
+                    $flatten($value, $newKey . '.');
                 } else {
                     $results[$newKey] = $value;
                 }
@@ -397,7 +397,7 @@ class Arr
     /**
      * Détermine si la clé donnée existe dans le tableau fourni.
      */
-    public static function exists(array|ArrayAccess|Enumerable $array, int|float|string $key): bool
+    public static function exists(array|ArrayAccess|Enumerable $array, float|int|string $key): bool
     {
         if ($array instanceof Enumerable) {
             return $array->has($key);
@@ -551,16 +551,16 @@ class Arr
 
     /**
      * Retourne le premier élément d'un tableau passant un test de vérité donné.
-	 *
-	 * @template TKey
+     *
+     * @template TKey
      * @template TValue
      * @template TFirstDefault
      *
-     * @param  iterable<TKey, TValue>  $array
-     * @param  (callable(TValue, TKey): bool)|null  $callback
-     * @param  TFirstDefault|(\Closure(): TFirstDefault)  $default
-	 *
-     * @return TValue|TFirstDefault
+     * @param iterable<TKey, TValue>                   $array
+     * @param (callable(TValue, TKey): bool)|null      $callback
+     * @param (Closure(): TFirstDefault)|TFirstDefault $default
+     *
+     * @return TFirstDefault|TValue
      */
     public static function first(iterable $array, ?callable $callback = null, mixed $default = null): mixed
     {
@@ -588,7 +588,7 @@ class Arr
     /**
      * Aplatit un tableau multidimensionnel en un seul niveau.
      */
-    public static function flatten(iterable $array, int|float $depth = INF): array
+    public static function flatten(iterable $array, float|int $depth = INF): array
     {
         $result = [];
 
@@ -657,7 +657,7 @@ class Arr
     /**
      * Obtient un élément flottant à partir d'un tableau en utilisant la notation "point".
      */
-    public static function float(ArrayAccess|array $array, string|int|null $key, ?float $default = null): float
+    public static function float(array|ArrayAccess $array, int|string|null $key, ?float $default = null): float
     {
         $value = Arr::get($array, $key, $default);
 
@@ -775,7 +775,7 @@ class Arr
      * @template TKey of array-key = array-key
      * @template TValue = mixed
      *
-     * @param array<TKey, TValue>|Enumerable<TKey, TValue>|Arrayable<TKey, TValue>|WeakMap<object, TValue>|Traversable<TKey, TValue>|Jsonable|JsonSerializable|object $items
+     * @param array<TKey, TValue>|Arrayable<TKey, TValue>|Enumerable<TKey, TValue>|Jsonable|JsonSerializable|object|Traversable<TKey, TValue>|WeakMap<object, TValue> $items
      *
      * @return ($items is WeakMap ? list<TValue> : array<TKey, TValue>)
      *
@@ -784,15 +784,15 @@ class Arr
     public static function from($items)
     {
         return match (true) {
-            is_array($items) => $items,
-            $items instanceof Enumerable => $items->all(),
-            $items instanceof Arrayable => $items->toArray(),
-            $items instanceof WeakMap => iterator_to_array($items, false),
-            $items instanceof Traversable => iterator_to_array($items),
-            $items instanceof Jsonable => json_decode($items->toJson(), true),
+            is_array($items)                   => $items,
+            $items instanceof Enumerable       => $items->all(),
+            $items instanceof Arrayable        => $items->toArray(),
+            $items instanceof WeakMap          => iterator_to_array($items, false),
+            $items instanceof Traversable      => iterator_to_array($items),
+            $items instanceof Jsonable         => json_decode($items->toJson(), true),
             $items instanceof JsonSerializable => (array) $items->jsonSerialize(),
-            is_object($items) => (array) $items,
-            default => throw new InvalidArgumentException('Les éléments ne peuvent pas être représentés par une valeur scalaire.'),
+            is_object($items)                  => (array) $items,
+            default                            => throw new InvalidArgumentException('Les éléments ne peuvent pas être représentés par une valeur scalaire.'),
         };
     }
 
@@ -954,7 +954,7 @@ class Arr
     public static function every(iterable $array, callable $callback): bool
     {
         foreach ($array as $key => $value) {
-            if (!$callback($value, $key)) {
+            if (! $callback($value, $key)) {
                 return false;
             }
         }
@@ -1011,7 +1011,7 @@ class Arr
      *
      * @throws InvalidArgumentException
      */
-    public static function integer(ArrayAccess|array $array, string|int|null $key, ?int $default = null): int
+    public static function integer(array|ArrayAccess $array, int|string|null $key, ?int $default = null): int
     {
         $value = Arr::get($array, $key, $default);
 
@@ -1092,11 +1092,11 @@ class Arr
      * @template TValue
      * @template TLastDefault
      *
-     * @param iterable<TKey, TValue> $array
-     * @param (callable(TValue, TKey): bool)|null $callback
-     * @param TLastDefault|(\Closure(): TLastDefault) $default
+     * @param iterable<TKey, TValue>                 $array
+     * @param (callable(TValue, TKey): bool)|null    $callback
+     * @param (Closure(): TLastDefault)|TLastDefault $default
      *
-     * @return TValue|TLastDefault
+     * @return TLastDefault|TValue
      */
     public static function last(iterable $array, ?callable $callback = null, mixed $default = null): mixed
     {
@@ -1340,7 +1340,7 @@ class Arr
      */
     public static function prepend(array $array, mixed $value, int|string|null $key = null): array
     {
-        if (func_num_args() == 2) {
+        if (func_num_args() === 2) {
             array_unshift($array, $value);
         } else {
             $array = [$key => $value] + $array;
@@ -1364,7 +1364,7 @@ class Arr
     /**
      * Ajoute un élément à un tableau en utilisant la notation "point".
      */
-    public static function push(ArrayAccess|array &$array, string|int|null $key, mixed ...$values): array
+    public static function push(array|ArrayAccess &$array, int|string|null $key, mixed ...$values): array
     {
         $target = static::array($array, $key, []);
 
@@ -1682,8 +1682,9 @@ class Arr
     /**
      * Méthode interne pour obtenir la valeur d'un champ pour le tri
      *
-     * @param mixed $element L'élément à traiter
-     * @param string $field Le chemin du champ
+     * @param mixed  $element L'élément à traiter
+     * @param string $field   Le chemin du champ
+     *
      * @return mixed
      */
     private static function _getSortField_($element, $field)
@@ -1740,7 +1741,7 @@ class Arr
      *
      * @throws InvalidArgumentException
      */
-    public static function string(ArrayAccess|array $array, string|int|null $key, ?string $default = null): string
+    public static function string(array|ArrayAccess $array, int|string|null $key, ?string $default = null): string
     {
         $value = Arr::get($array, $key, $default);
 

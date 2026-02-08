@@ -42,10 +42,10 @@ class Helpers
      */
     private static array $purifierConfigs = [
         'comment' => [
-            'HTML.Allowed' => 'p,a[href|title],abbr[title],acronym[title],b,strong,blockquote[cite],code,em,i,strike',
+            'HTML.Allowed'             => 'p,a[href|title],abbr[title],acronym[title],b,strong,blockquote[cite],code,em,i,strike',
             'AutoFormat.AutoParagraph' => true,
-            'AutoFormat.Linkify' => true,
-            'AutoFormat.RemoveEmpty' => true,
+            'AutoFormat.Linkify'       => true,
+            'AutoFormat.RemoveEmpty'   => true,
         ],
         'default' => [
             // Configuration par défaut vide
@@ -64,7 +64,7 @@ class Helpers
      *
      * @var \Laminas\Escaper\Escaper|null
      */
-    private static $escaper = null;
+    private static $escaper;
 
     /**
      * Récupère la classe "basename" de l'objet/classe donné.
@@ -132,7 +132,7 @@ class Helpers
             $result .= '@';
         }
 
-		if (! empty($urlParts['host'])) {
+        if (! empty($urlParts['host'])) {
             $result .= $urlParts['host'];
         }
 
@@ -156,7 +156,7 @@ class Helpers
             $result .= '?' . $urlParts['query'];
         }
 
-        if (!empty($urlParts['fragment'])) {
+        if (! empty($urlParts['fragment'])) {
             $result .= '#' . $urlParts['fragment'];
         }
 
@@ -178,9 +178,9 @@ class Helpers
     /**
      * Remplit les données manquantes dans un tableau ou un objet en utilisant la notation "point".
      *
-     * @param mixed            &$target La cible à remplir (par référence)
-     * @param array|string      $key     La clé sous forme de tableau ou de chaîne avec notation point
-     * @param mixed             $value   La valeur à définir
+     * @param mixed        &$target La cible à remplir (par référence)
+     * @param array|string $key     La clé sous forme de tableau ou de chaîne avec notation point
+     * @param mixed        $value   La valeur à définir
      *
      * @return mixed La cible modifiée
      */
@@ -192,8 +192,8 @@ class Helpers
     /**
      * Supprime un élément d'un tableau ou d'un objet en utilisant la notation "point".
      *
-     * @param mixed                       &$target La cible à modifier (par référence)
-     * @param array|int|string|null        $key     La clé à supprimer
+     * @param mixed                 &$target La cible à modifier (par référence)
+     * @param array|int|string|null $key     La clé à supprimer
      *
      * @return mixed La cible modifiée
      */
@@ -227,8 +227,8 @@ class Helpers
     /**
      * Détermine si une clé/propriété existe sur un tableau ou un objet en utilisant la notation "point".
      *
-     * @param mixed                       $target La cible à vérifier
-     * @param array|int|string|null       $key    La clé à vérifier
+     * @param mixed                 $target La cible à vérifier
+     * @param array|int|string|null $key    La clé à vérifier
      *
      * @return bool True si la clé existe, false sinon
      */
@@ -256,9 +256,9 @@ class Helpers
     /**
      * Récupère un élément d'un tableau ou d'un objet en utilisant la notation "point".
      *
-     * @param mixed                       $target  La cible à partir de laquelle récupérer
-     * @param array|int|string|null       $key     La clé à récupérer
-     * @param mixed                       $default La valeur par défaut si la clé n'existe pas
+     * @param mixed                 $target  La cible à partir de laquelle récupérer
+     * @param array|int|string|null $key     La clé à récupérer
+     * @param mixed                 $default La valeur par défaut si la clé n'existe pas
      *
      * @return mixed La valeur récupérée
      */
@@ -317,10 +317,10 @@ class Helpers
     /**
      * Définit un élément sur un tableau ou un objet en utilisant la notation point.
      *
-     * @param mixed            &$target   La cible à modifier (par référence)
-     * @param array|string      $key      La clé sous forme de tableau ou de chaîne avec notation point
-     * @param mixed             $value    La valeur à définir
-     * @param bool              $overwrite Si true, écrase les valeurs existantes
+     * @param mixed        &$target   La cible à modifier (par référence)
+     * @param array|string $key       La clé sous forme de tableau ou de chaîne avec notation point
+     * @param mixed        $value     La valeur à définir
+     * @param bool         $overwrite Si true, écrase les valeurs existantes
      *
      * @return mixed La cible modifiée
      */
@@ -524,9 +524,9 @@ class Helpers
      *
      * Valeurs de contexte valides : html, js, css, url, attr, raw, null
      *
-     * @param array|string $data      Les données à échapper
-     * @param string|null  $context   Le contexte d'échappement
-     * @param string|null  $encoding  L'encodage à utiliser
+     * @param array|string $data     Les données à échapper
+     * @param string|null  $context  Le contexte d'échappement
+     * @param string|null  $encoding L'encodage à utiliser
      *
      * @return array|string Les données échappées
      *
@@ -794,6 +794,7 @@ class Helpers
         }
 
         $decoded = base64_decode($input, true);
+
         return $decoded !== false && base64_encode($decoded) === $input;
     }
 
@@ -819,9 +820,10 @@ class Helpers
     {
         foreach ($endpoints as $endpoint) {
             [$host, $port] = explode(':', $endpoint . ':80'); // Port par défaut 80
-            $connected = @fsockopen($host, (int)$port, $errno, $errstr, $timeout);
+            $connected     = @fsockopen($host, (int) $port, $errno, $errstr, $timeout);
             if ($connected) {
                 fclose($connected);
+
                 return true;
             }
         }
@@ -841,13 +843,13 @@ class Helpers
         if (empty($host)) {
             return false;
         }
-		$localPatterns = [
-        	'/\.dev$/i',
-        	'/\.test$/i',
-        	'/\.lab$/i',
-        	'/\.loc(al)?$/i',
-        	'/\.localhost$/i',
-    	];
+        $localPatterns = [
+            '/\.dev$/i',
+            '/\.test$/i',
+            '/\.lab$/i',
+            '/\.loc(al)?$/i',
+            '/\.localhost$/i',
+        ];
 
         foreach ($localPatterns as $pattern) {
             if (preg_match($pattern, $host)) {
@@ -979,8 +981,6 @@ class Helpers
      *
      * @param string $name   Le nom de la configuration
      * @param array  $config La configuration
-     *
-     * @return void
      */
     public static function registerPurifierConfig(string $name, array $config): void
     {
@@ -1003,9 +1003,11 @@ class Helpers
     {
         if (is_array($dirty_html)) {
             $clean_html = [];
+
             foreach ($dirty_html as $key => $val) {
                 $clean_html[$key] = self::purify($val, $config);
             }
+
             return $clean_html;
         }
 
@@ -1021,13 +1023,14 @@ class Helpers
             } else {
                 throw new InvalidArgumentException(
                     'La configuration HTMLPurifier intitulée "' .
-                    htmlspecialchars((string)$config, ENT_QUOTES, $charset) .
+                    htmlspecialchars((string) $config, ENT_QUOTES, $charset) .
                     '" est introuvable.'
                 );
             }
         }
 
         $purifier = new HTMLPurifier($purifierConfig);
+
         return $purifier->purify($dirty_html);
     }
 
@@ -1037,8 +1040,8 @@ class Helpers
      * Cela empêche de prendre en sandwich des caractères nuls
      * entre les caractères ascii, comme Java\0script.
      *
-     * @param string $str          La chaîne à nettoyer
-     * @param bool   $url_encoded  Si true, nettoie également les caractères encodés dans l'URL
+     * @param string $str         La chaîne à nettoyer
+     * @param bool   $url_encoded Si true, nettoie également les caractères encodés dans l'URL
      *
      * @return string La chaîne nettoyée
      */
@@ -1064,10 +1067,10 @@ class Helpers
     /**
      * Réessayez une opération un certain nombre de fois.
      *
-     * @param array|int                  $times              Le nombre de tentatives ou un tableau de délais d'attente
-     * @param callable                   $callback           La fonction à réessayer
-     * @param Closure|int                $sleepMilliseconds  Le temps d'attente entre les tentatives
-     * @param callable|null              $when               Condition pour continuer à réessayer
+     * @param array|int     $times             Le nombre de tentatives ou un tableau de délais d'attente
+     * @param callable      $callback          La fonction à réessayer
+     * @param Closure|int   $sleepMilliseconds Le temps d'attente entre les tentatives
+     * @param callable|null $when              Condition pour continuer à réessayer
      *
      * @return mixed Le résultat de la fonction callback
      *
@@ -1078,13 +1081,13 @@ class Helpers
     public static function retry(array|int $times, callable $callback, Closure|int $sleepMilliseconds = 0, ?callable $when = null): mixed
     {
         $maxAttempts = is_array($times) ? count($times) + 1 : $times;
-        $backoff = is_array($times) ? $times : [];
+        $backoff     = is_array($times) ? $times : [];
 
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
             try {
                 return $callback($attempt);
             } catch (Exception $e) {
-                if ($attempt === $maxAttempts || ($when && !$when($e))) {
+                if ($attempt === $maxAttempts || ($when && ! $when($e))) {
                     throw $e;
                 }
 
@@ -1156,8 +1159,8 @@ class Helpers
     /**
      * Appelez la Closure donnée avec cette instance puis renvoyez l'instance.
      *
-     * @param mixed           $value    La valeur à passer au callback
-     * @param callable|null   $callback Le callback à exécuter
+     * @param mixed         $value    La valeur à passer au callback
+     * @param callable|null $callback Le callback à exécuter
      *
      * @return mixed La valeur originale ou une instance de HigherOrderTapProxy
      */
@@ -1175,9 +1178,9 @@ class Helpers
     /**
      * Lève l'exception donnée si la condition donnée est vraie.
      *
-     * @param mixed                 $condition  La condition à vérifier
-     * @param string|Throwable      $exception  L'exception à lever ou son nom de classe
-     * @param mixed                 ...$parameters Les paramètres pour l'exception
+     * @param mixed            $condition     La condition à vérifier
+     * @param string|Throwable $exception     L'exception à lever ou son nom de classe
+     * @param mixed            ...$parameters Les paramètres pour l'exception
      *
      * @return mixed La condition
      *
@@ -1220,8 +1223,6 @@ class Helpers
      * Déclenche un E_USER_WARNING.
      *
      * @param string $message Le message d'avertissement
-     *
-     * @return void
      */
     public static function triggerWarning(string $message): void
     {
@@ -1255,7 +1256,7 @@ class Helpers
     /**
      * Renvoie la valeur par défaut de la valeur donnée.
      *
-     * @param mixed $value La valeur à évaluer
+     * @param mixed $value   La valeur à évaluer
      * @param mixed ...$args Arguments additionnels pour les closures
      *
      * @return mixed La valeur résolue
@@ -1268,9 +1269,9 @@ class Helpers
     /**
      * Renvoie une valeur si la condition donnée est vraie.
      *
-     * @param mixed            $condition La condition à vérifier
-     * @param Closure|mixed    $value     La valeur à retourner si la condition est vraie
-     * @param Closure|mixed    $default   La valeur à retourner si la condition est fausse
+     * @param mixed         $condition La condition à vérifier
+     * @param Closure|mixed $value     La valeur à retourner si la condition est vraie
+     * @param Closure|mixed $default   La valeur à retourner si la condition est fausse
      *
      * @return mixed La valeur appropriée selon la condition
      */
@@ -1288,8 +1289,8 @@ class Helpers
     /**
      * Renvoie la valeur donnée, éventuellement transmise via le rappel donné.
      *
-     * @param mixed           $value    La valeur à traiter
-     * @param callable|null   $callback Le callback à appliquer
+     * @param mixed         $value    La valeur à traiter
+     * @param callable|null $callback Le callback à appliquer
      *
      * @return mixed La valeur originale ou le résultat du callback
      */
