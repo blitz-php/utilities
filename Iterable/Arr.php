@@ -1609,7 +1609,7 @@ class Arr
         }
 
         if ($count > 1) {
-            throw new MultipleItemsFoundException($count, 'Plusieurs éléments trouvés.');
+            throw new MultipleItemsFoundException($count);
         }
 
         return static::first($array);
