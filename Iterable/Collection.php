@@ -378,15 +378,17 @@ class Collection implements ArrayAccess, Enumerable
      *
      * @return static<int, mixed>
      */
-    public function flatten(float|int $depth = INF): static
+    public function flatten(float|int $depth = INF)
     {
         return new static(Arr::flatten($this->items, $depth));
     }
 
     /**
      * {@inheritDoc}
+	 *
+	 * @return static<TKey, TValue>
      */
-    public function flip(): static
+    public function flip()
     {
         return new static(array_flip($this->items));
     }
@@ -681,8 +683,10 @@ class Collection implements ArrayAccess, Enumerable
 
     /**
      * {@inheritDoc}
+	 *
+	 * @return static<TKey, TValue>
      */
-    public function pluck($value, $key = null): static
+    public function pluck($value, $key = null)
     {
         return new static(Arr::pluck($this->items, $value, $key));
     }
@@ -690,7 +694,7 @@ class Collection implements ArrayAccess, Enumerable
     /**
      * {@inheritDoc}
      */
-    public function map(callable $callback): static
+    public function map(callable $callback)
     {
         return new static(Arr::map($this->items, $callback));
     }
@@ -1520,6 +1524,8 @@ class Collection implements ArrayAccess, Enumerable
 
     /**
      * {@inheritDoc}
+	 *
+	 * @return static<TKey, TValue>
      */
     public function values()
     {
@@ -1528,8 +1534,10 @@ class Collection implements ArrayAccess, Enumerable
 
     /**
      * {@inheritDoc}
+	 *
+	 * @return static<TKey, TValue>
      */
-    public function zip($items): static
+    public function zip($items)
     {
         $arrayableItems = array_map(fn ($items) => $this->getArrayableItems($items), func_get_args());
 
@@ -1540,8 +1548,10 @@ class Collection implements ArrayAccess, Enumerable
 
     /**
      * {@inheritDoc}
+     *
+     * @return static<TKey, TValue>
      */
-    public function pad(int $size, mixed $value): static
+    public function pad(int $size, mixed $value)
     {
         return new static(array_pad($this->items, $size, $value));
     }
@@ -1566,8 +1576,10 @@ class Collection implements ArrayAccess, Enumerable
 
     /**
      * {@inheritDoc}
+	 *
+	 * @return static<TKey, int>
      */
-    public function countBy($countBy = null): static
+    public function countBy($countBy = null)
     {
         return new static($this->lazy()->countBy($countBy)->all());
     }
