@@ -44,6 +44,11 @@ abstract class Resource extends DataTransfertObject implements Arrayable, Jsonab
     protected array $with = [];
 
     /**
+     * Métadonnées personnalisées.
+     */
+    protected array $meta = [];
+
+    /**
      * Les métadonnées supplémentaires ajoutées lors de la construction de la réponse.
      */
     protected array $additional = [];
@@ -57,11 +62,6 @@ abstract class Resource extends DataTransfertObject implements Arrayable, Jsonab
      * Métadonnées de pagination.
      */
     protected ?array $pagination = null;
-
-    /**
-     * Métadonnées personnalisées.
-     */
-    protected ?array $meta = null;
 
     /**
      * Indique si la ressource est une collection.
