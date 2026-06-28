@@ -105,8 +105,10 @@ abstract class AbstractCursorPaginator implements Stringable
 
     /**
      * Obtient l'URL pour un curseur donné.
+	 *
+	 * @param Cursor|null $cursor
      */
-    public function url(?Cursor $cursor): string
+    public function url($cursor): string
     {
         // Si nous avons des paires clé/valeur supplémentaires de chaîne de requête qui doivent être ajoutées
         // à l'URL, nous les mettrons sous forme de chaîne de requête puis les attacherons
