@@ -25,7 +25,7 @@ use ReflectionClass;
 use ReflectionProperty;
 use Stringable;
 
-class DataTransfertObject implements Arrayable, Jsonable
+class DataTransfertObject implements Arrayable, Jsonable, JsonSerializable
 {
     /**
      * Donnees originales sans alteration quelconque
@@ -33,6 +33,11 @@ class DataTransfertObject implements Arrayable, Jsonable
      * @var array<string, mixed>
      */
     private array $original = [];
+
+	/**
+	 * @var list<string>
+	 */
+	protected array $fillable = [];
 
     /**
      * Proprietes a ne pas afficher lors de la serialisation
@@ -116,8 +121,18 @@ class DataTransfertObject implements Arrayable, Jsonable
      *
      * @return Collection<static>
      */
-    public static function collection(array $arrayOfattributes): Collection
+    public static function collection(mixed $arrayOfattributes)
     {
+		if (is_object($arrayOfattributes)) {
+			$arrayOfattributes = method_exists($arrayOfattributes, 'toArray')
+				? $arrayOfattributes->toArray()
+				: (array) $arrayOfattributes;
+		}
+
+		if (! is_array($arrayOfattributes)) {
+			throw new InvalidArgumentException();
+		}
+
         if (empty($arrayOfattributes)) {
             return Helpers::collect($arrayOfattributes);
         }
@@ -165,13 +180,17 @@ class DataTransfertObject implements Arrayable, Jsonable
      */
     public function toArray(): array
     {
-        if (count($this->only)) {
-            $data = Arr::only($this->all(), $this->only);
-        } else {
-            $data = Arr::except($this->all(), $this->except);
+		$data = $this->all();
+
+        if ($this->only !== []) {
+            $data = Arr::only($data, $this->only);
+        } else if ($this->except !== []) {
+            $data = Arr::except($data, $this->except);
         }
 
-        $data = Arr::except($data, array_keys($this->attributes));
+		$diff = array_diff(array_keys($this->attributes), $this->fillable);
+
+        $data = Arr::except($data, $diff);
 
         foreach ($this->appends as $computed) {
             $data[$computed] = $this->__get($computed);
@@ -189,7 +208,23 @@ class DataTransfertObject implements Arrayable, Jsonable
      */
     public function toJson(int $options = 0): string
     {
-        return json_encode($this->toArray(), $options);
+        return json_encode($this->jsonSerialize(), $options);
+    }
+
+    /**
+     * Converti l'instance en sa representation json claire
+     */
+    public function toPrettyJson(int $options = 0): string
+    {
+        return $this->toJson(JSON_PRETTY_PRINT | $options);
+    }
+
+    /**
+     * Sérialisation JSON
+     */
+    public function jsonSerialize(): array
+    {
+        return $this->toArray();
     }
 
     public function __get($name)
@@ -282,7 +317,7 @@ class DataTransfertObject implements Arrayable, Jsonable
     /**
      * Cree le nom de la methode a utiliser pour obtenir la valeur d'une proprieté calculée
      */
-    private function getComputedAttributeName(string $name): string
+    protected function getComputedAttributeName(string $name): string
     {
         return Text::camel('get_' . $name . '_attribute');
     }
