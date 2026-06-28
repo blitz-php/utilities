@@ -82,8 +82,8 @@ abstract class Resource extends DataTransfertObject implements Arrayable, Jsonab
     {
         // Gestion de la pagination
         if ($resource instanceof LengthAwarePaginator) {
-            $this->pagination = $this->extractPaginationData($resource);
-            $resource = $resource->items();
+            $this->pagination   = static::extractPaginationData($resource);
+            $resource           = $resource->items();
             $this->isCollection = true;
         }
 
@@ -218,19 +218,20 @@ abstract class Resource extends DataTransfertObject implements Arrayable, Jsonab
             $result = $data;
         }
 
-        if (!empty($this->with)) {
-            $result['meta'] = array_merge($result['meta'] ?? [], $this->with);
-        }
-
-        if (!empty($this->meta)) {
-            $result['meta'] = array_merge($result['meta'] ?? [], $this->meta);
+        // Ajouter les métadonnées
+        if ($this->with !== [] || $this->meta !== []) {
+            $result['meta'] = array_merge(
+                $result['meta'] ?? [],
+                $this->with,
+                $this->meta
+            );
         }
 
         if (!is_null($this->pagination)) {
             $result['pagination'] = $this->pagination;
         }
 
-        if (!empty($this->additional)) {
+        if ($this->additional !== []) {
             $result = array_merge($result, $this->additional);
         }
 
@@ -275,7 +276,7 @@ abstract class Resource extends DataTransfertObject implements Arrayable, Jsonab
 
         // Filtrer les valeurs nulles si nécessaire
         if (!$this->preserveNullValues) {
-            $data = array_filter($data, fn($value)  => $value !== null);
+            $data = array_filter($data, fn($value) => $value !== null);
         }
 
         // Formater les valeurs
@@ -294,10 +295,16 @@ abstract class Resource extends DataTransfertObject implements Arrayable, Jsonab
     /**
      * Formate une valeur pour la sérialisation.
      */
-    protected function formatValue($value): mixed
+    protected function formatValue($value, array $visited = []): mixed
     {
         // Si c'est une ressource, on la convertit en tableau
         if ($value instanceof self) {
+			// Protection contre la récursion infinie
+            $hash = spl_object_hash($value);
+            if (in_array($hash, $visited, true)) {
+                return null;
+            }
+            $visited[] = $hash;
             return $value->toArray();
         }
 
@@ -308,12 +315,12 @@ abstract class Resource extends DataTransfertObject implements Arrayable, Jsonab
 
         // Si c'est une collection, on formate récursivement
         if ($value instanceof Collection) {
-            return $value->map(fn ($item) => $this->formatValue($item))->all();
+            return $value->map(fn ($item) => $this->formatValue($item, $visited))->all();
         }
 
         // Si c'est un tableau, on formate récursivement
         if (is_array($value)) {
-            return array_map([$this, 'formatValue'], $value);
+            return array_map(fn ($item) => $this->formatValue($item, $visited), $value);
         }
 
         // Si l'objet a une méthode toArray, on l'utilise
@@ -354,8 +361,11 @@ abstract class Resource extends DataTransfertObject implements Arrayable, Jsonab
 
     /**
      * Extrait les données de pagination.
+     *
+     * Cette méthode peut être surchargée dans les classes enfants pour personnaliser
+     * les données de pagination retournées.
      */
-    protected function extractPaginationData(LengthAwarePaginator $paginator): array
+    public static function extractPaginationData(LengthAwarePaginator $paginator): array
     {
         return [
             'current_page'   => $paginator->currentPage(),
@@ -433,6 +443,8 @@ abstract class Resource extends DataTransfertObject implements Arrayable, Jsonab
             if (isset($this->attributes[$property])) {
                 return $this->attributes[$property];
             }
+            // Si la propriété n'existe pas, retourner null
+            return null;
         }
 
         // Vérifier si la méthode existe sur la ressource

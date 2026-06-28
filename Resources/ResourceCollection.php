@@ -16,16 +16,6 @@ use JsonSerializable;
 class ResourceCollection implements Arrayable, JsonSerializable
 {
     /**
-     * La classe Resource à utiliser.
-     */
-    protected string $resourceClass;
-
-    /**
-     * Les données à transformer.
-     */
-    protected mixed $data;
-
-    /**
      * Les données supplémentaires au niveau supérieur.
      */
     protected array $additional = [];
@@ -38,7 +28,7 @@ class ResourceCollection implements Arrayable, JsonSerializable
     /**
      * Les métadonnées personnalisées.
      */
-    protected ?array $meta = null;
+    protected array $meta = [];
 
     /**
      * Le wrapper pour les données.
@@ -63,13 +53,11 @@ class ResourceCollection implements Arrayable, JsonSerializable
     /**
      * Constructeur de la collection de ressources.
      *
-     * @param string $resourceClass La classe Resource à utiliser
+     * @param class-string<Resource> $resourceClass La classe Resource à utiliser
      * @param mixed $data Les données à transformer
      */
-    public function __construct(string $resourceClass, mixed $data)
+    public function __construct(protected string $resourceClass, protected mixed $data)
     {
-        $this->resourceClass = $resourceClass;
-        $this->data = $data;
     }
 
     /**
@@ -164,14 +152,13 @@ class ResourceCollection implements Arrayable, JsonSerializable
             $result['data'] = $data;
         }
 
-        // Ajouter les métadonnées (with)
-        if (!empty($this->with)) {
-            $result['meta'] = array_merge($result['meta'] ?? [], $this->with);
-        }
-
-        // Ajouter les métadonnées personnalisées (meta)
-        if (!empty($this->meta)) {
-            $result['meta'] = array_merge($result['meta'] ?? [], $this->meta);
+        // Ajouter les métadonnées
+        if ($this->with !== [] || $this->meta !== []) {
+            $result['meta'] = array_merge(
+                $result['meta'] ?? [],
+                $this->with,
+                $this->meta
+            );
         }
 
         // Ajouter la pagination
@@ -180,7 +167,7 @@ class ResourceCollection implements Arrayable, JsonSerializable
         }
 
         // Ajouter les données supplémentaires
-        if (!empty($this->additional)) {
+        if ($this->additional !== []) {
             $result = array_merge($result, $this->additional);
         }
 
@@ -202,11 +189,16 @@ class ResourceCollection implements Arrayable, JsonSerializable
     {
         // Gestion de la pagination
         if ($this->data instanceof LengthAwarePaginator) {
-            $items = $this->data->items();
-            $this->pagination = $this->extractPaginationData($this->data);
+            $items            = $this->data->items();
+            $this->pagination = $this->resourceClass::extractPaginationData($this->data);
         } else {
-            $items = $this->data instanceof Collection ? $this->data->all() : $this->data;
+            $items            = $this->data instanceof Collection ? $this->data->all() : $this->data;
             $this->pagination = null;
+        }
+
+        // Si la collection est vide, retourner un tableau vide
+        if (empty($items)) {
+            return [];
         }
 
         // Transformation des items en ressources
@@ -232,26 +224,6 @@ class ResourceCollection implements Arrayable, JsonSerializable
         }
 
         return $resources;
-    }
-
-    /**
-     * Extrait les données de pagination.
-     */
-    protected function extractPaginationData(LengthAwarePaginator $paginator): array
-    {
-        return [
-            'current_page'   => $paginator->currentPage(),
-            'per_page'       => $paginator->perPage(),
-            'total'          => $paginator->total(),
-            'last_page'      => $paginator->lastPage(),
-            'from'           => $paginator->firstItem(),
-            'to'             => $paginator->lastItem(),
-            'path'           => $paginator->path(),
-            'first_page_url' => $paginator->url(1),
-            'last_page_url'  => $paginator->url($paginator->lastPage()),
-            'next_page_url'  => $paginator->nextPageUrl(),
-            'prev_page_url'  => $paginator->previousPageUrl(),
-        ];
     }
 
     /**
