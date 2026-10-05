@@ -259,7 +259,7 @@ abstract class Resource extends DataTransfertObject implements Arrayable, Jsonab
     /**
      * Vérifie si une clé existe dans la ressource.
      */
-    protected function offsetExists(string $key): bool
+    public function offsetExists(mixed $key): bool
     {
         return isset($this->attributes[$key]) ||
                property_exists($this, $key) ||

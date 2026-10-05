@@ -11,6 +11,7 @@
 
 namespace BlitzPHP\Utilities\Data;
 
+use ArrayAccess;
 use BlitzPHP\Annotations\AnnotationReader;
 use BlitzPHP\Contracts\Support\Arrayable;
 use BlitzPHP\Contracts\Support\Jsonable;
@@ -25,7 +26,7 @@ use ReflectionClass;
 use ReflectionProperty;
 use Stringable;
 
-class DataTransfertObject implements Arrayable, Jsonable, JsonSerializable
+class DataTransfertObject implements Arrayable, ArrayAccess, Jsonable, JsonSerializable
 {
     /**
      * Donnees originales sans alteration quelconque
@@ -227,22 +228,64 @@ class DataTransfertObject implements Arrayable, Jsonable, JsonSerializable
         return $this->toArray();
     }
 
-    public function __get($name)
+    /**
+     * {@inheritDoc}
+     */
+    public function offsetGet(mixed $offset): mixed
     {
-        if (isset($this->attributes[$name])) {
-            return $this->attributes[$name];
+        if (isset($this->attributes[$offset])) {
+            return $this->attributes[$offset];
         }
 
-        if (method_exists($this, $method = $this->getComputedAttributeName($name))) {
+        if (method_exists($this, $method = $this->getComputedAttributeName($offset))) {
             return $this->{$method}();
         }
 
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
+        $this->attributes[$offset] = $value;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function offsetExists(mixed $offset): bool
+    {
+        return array_key_exists($offset, $this->attributes);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function offsetUnset(mixed $offset): void
+    {
+        unset($this->attributes[$offset]);
+    }
+
+    public function __get($name)
+    {
+        return $this->offsetGet($name);
+    }
+
     public function __set($name, $value)
     {
-        $this->attributes[$name] = $value;
+        $this->offsetSet($name, $value);
+    }
+
+    public function __isset(string $key): bool
+    {
+        return $this->offsetExists($key);
+    }
+
+    public function __unset(string $key): void
+    {
+        $this->offsetUnset($key);
     }
 
     /**
